@@ -2,5 +2,3 @@
 *.ez
 /build
 erl_crash.dump
-
-sqlc_gen_gleam
