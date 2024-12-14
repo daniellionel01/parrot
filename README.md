@@ -13,7 +13,11 @@ This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellion
 which it then converts into gleam code.
 
 So in a simplified manner, the pipeline looks like this:
-SQL Queries -> JSON Schema -> Gleam Code
+```mermaid
+graph TD
+    SQL[SQL Queries] -- sqlc-gen-json --> JSON[JSON Schema]
+    JSON -- sql-gen-gleam --> Gleam[Gleam Code]
+```
 
 # Installation
 
