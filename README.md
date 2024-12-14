@@ -19,12 +19,28 @@ graph LR
     JSON -- sql-gen-gleam --> Gleam[Gleam Code]
 ```
 
-# Installation
+# Usage
 
+1. Install
 ```sh
 $ gleam add sqlc_gen_gleam@1
 ```
+
+2. Setup sqlc
+
+Now setup your `sqlc.yaml`, `schema.sql` and `query.sql` like in any other sqlc project.
+
+Here are some links to help you start out:
+- [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html)
+- [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html)
+- [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html)
+
+2. Generate Gleam code
 ```sh
+# we first need the json from sqlc
+$ sqlc generate
+
+# then we use this library to turn it into gleam code
 $ gleam run -m sqlc_gen_gleam
 ```
 
