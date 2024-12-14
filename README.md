@@ -22,7 +22,7 @@ graph LR
 # Installation
 
 ```sh
-gleam add sqlc_gen_gleam@1
+$ gleam add sqlc_gen_gleam@1
 ```
 ```sh
 $ gleam run -m sqlc_gen_gleam
