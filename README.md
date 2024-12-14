@@ -16,9 +16,16 @@ pub fn main() {
 
 Further documentation can be found at <https://hexdocs.pm/sqlc_gen_gleam>.
 
-## Development
+# Development
 
 ```sh
 gleam run   # Run the project
 gleam test  # Run the tests
 ```
+
+# Acknowledgements
+- Thank you to `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)) for a lot of the code and repository structure inspiration (https://github.com/giacomocavalieri)
+- Thank you to `sqlc`([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))
+
+# License
+[Apache License, Version 2.0](./LICENSE)
