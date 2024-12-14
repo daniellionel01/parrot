@@ -20,9 +20,23 @@ Further documentation can be found at <https://hexdocs.pm/sqlc_gen_gleam>.
 
 # Development
 
+## Database
+
+There are scripts to spawn MySQL or PostgreSQL docker container:
+-  [MySQL Script](./scripts/mysql/docker.sh)
+-  [PostgreSQL Script](./scripts/psql/docker.sh)
+
+For example:
 ```sh
-gleam run   # Run the project
-gleam test  # Run the tests
+$ ./scripts/mysql/docker.sh
+# or
+$ ./scripts/psql/docker.sh
+```
+
+## Running the project and tests
+```sh
+$ gleam run   # Run the project
+$ gleam test  # Run the tests
 ```
 
 # Acknowledgements
