@@ -7,6 +7,14 @@
 
 **this library project is currently pre-alpha. it will be released under v1.0.0 once ready for usage.**
 
+# How it works
+
+This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellionel01/sqlc-gen-json),
+which it then converts into gleam code.
+
+So in a simplified manner, the pipeline looks like this:
+SQL Queries -> JSON Schema -> Gleam Code
+
 # Installation
 
 ```sh
@@ -47,7 +55,7 @@ $ gleam test  # Run the tests
 ```
 
 # Acknowledgements
-- Thank you to `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)) for a lot of the code and repository structure inspiration (https://github.com/giacomocavalieri)
+- This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
 - Thank you to `sqlc`([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))
 
 # License
