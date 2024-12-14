@@ -1,4 +1,4 @@
-# sqlc_gen_gleam
+# SQL -> Gleam (sqlc-gen-gleam)
 
 [![Package Version](https://img.shields.io/hexpm/v/sqlc_gen_gleam)](https://hex.pm/packages/sqlc_gen_gleam)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/sqlc_gen_gleam/)
