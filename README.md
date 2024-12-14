@@ -5,7 +5,7 @@
 
 # Project Status
 
-**this library project is currently pre-alpha. it will be released under v1.0.0 once ready for usage.**
+**this project is currently pre-alpha. it will be released under v1.0.0 once ready for usage.**
 
 # How it works
 
