@@ -12,12 +12,8 @@
 ```sh
 gleam add sqlc_gen_gleam@1
 ```
-```gleam
-import sqlc_gen_gleam
-
-pub fn main() {
-  // TODO: An example of the project in use
-}
+```sh
+$ gleam run -m sqlc_gen_gleam
 ```
 
 Further documentation can be found at <https://hexdocs.pm/sqlc_gen_gleam>.
