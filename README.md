@@ -30,10 +30,6 @@ $ gleam run -m sqlc_gen_gleam
 
 Further documentation can be found at <https://hexdocs.pm/sqlc_gen_gleam>.
 
-# Currently unsupported sqlc functionality
-
-- embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
-
 # Development
 
 ## 1. Database
@@ -68,3 +64,7 @@ $ gleam test  # Run the tests
 
 # License
 [Apache License, Version 2.0](./LICENSE)
+
+# Currently unsupported sqlc functionality
+
+- embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
