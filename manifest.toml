@@ -2,18 +2,10 @@
 # You typically do not need to edit this file
 
 packages = [
-  { name = "argv", version = "1.0.2", build_tools = ["gleam"], requirements = [], otp_app = "argv", source = "hex", outer_checksum = "BA1FF0929525DEBA1CE67256E5ADF77A7CDDFE729E3E3F57A5BDCAA031DED09D" },
-  { name = "filepath", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "filepath", source = "hex", outer_checksum = "67A6D15FB39EEB69DD31F8C145BB5A421790581BD6AA14B33D64D5A55DBD6587" },
-  { name = "gleam_erlang", version = "0.33.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_erlang", source = "hex", outer_checksum = "A1D26B80F01901B59AABEE3475DD4C18D27D58FA5C897D922FCB9B099749C064" },
   { name = "gleam_stdlib", version = "0.47.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "3B22D46743C46498C8355365243327AC731ECD3959216344FA9CF9AD348620AC" },
-  { name = "gleescript", version = "1.4.0", build_tools = ["gleam"], requirements = ["argv", "filepath", "gleam_erlang", "gleam_stdlib", "simplifile", "snag", "tom"], otp_app = "gleescript", source = "hex", outer_checksum = "8CDDD29F91064E69950A91A40061785F10275ADB70A0520075591F61A724C455" },
   { name = "gleeunit", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "F7A7228925D3EE7D0813C922E062BFD6D7E9310F0BEE585D3A42F3307E3CFD13" },
-  { name = "simplifile", version = "2.2.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "0DFABEF7DC7A9E2FF4BB27B108034E60C81BEBFCB7AB816B9E7E18ED4503ACD8" },
-  { name = "snag", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "snag", source = "hex", outer_checksum = "08E9EB87C413457DB1DD66CD704C6878DACC9C93B418600F63873D0CD224E756" },
-  { name = "tom", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "tom", source = "hex", outer_checksum = "228E667239504B57AD05EC3C332C930391592F6C974D0EFECF32FFD0F3629A27" },
 ]
 
 [requirements]
 gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
-gleescript = { version = ">= 1.4.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
