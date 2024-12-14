@@ -63,6 +63,32 @@
                 "array_dims": 0
               },
               {
+                "name": "created_at",
+                "not_null": true,
+                "is_array": false,
+                "comment": "",
+                "length": 19,
+                "is_named_param": false,
+                "is_func_call": false,
+                "scope": "",
+                "table": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "authors"
+                },
+                "table_alias": "",
+                "type": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "datetime"
+                },
+                "is_sqlc_slice": false,
+                "embed_table": null,
+                "original_name": "",
+                "unsigned": false,
+                "array_dims": 0
+              },
+              {
                 "name": "name",
                 "not_null": true,
                 "is_array": false,
@@ -125,7 +151,7 @@
   },
   "queries": [
     {
-      "text": "SELECT\n  id, name, bio\nFROM\n  authors\nWHERE\n  id = ?\nLIMIT\n  1",
+      "text": "SELECT\n  id, created_at, name, bio\nFROM\n  authors\nWHERE\n  id = ?\nLIMIT\n  1",
       "name": "GetAuthor",
       "cmd": ":one",
       "columns": [
@@ -152,6 +178,32 @@
           "is_sqlc_slice": false,
           "embed_table": null,
           "original_name": "id",
+          "unsigned": false,
+          "array_dims": 0
+        },
+        {
+          "name": "created_at",
+          "not_null": true,
+          "is_array": false,
+          "comment": "",
+          "length": 19,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "authors"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "datetime"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "created_at",
           "unsigned": false,
           "array_dims": 0
         },
@@ -244,7 +296,7 @@
       "insert_into_table": null
     },
     {
-      "text": "SELECT\n  id, name, bio\nFROM\n  authors\nORDER BY\n  name",
+      "text": "SELECT\n  id, created_at, name, bio\nFROM\n  authors\nORDER BY\n  name",
       "name": "ListAuthors",
       "cmd": ":many",
       "columns": [
@@ -271,6 +323,32 @@
           "is_sqlc_slice": false,
           "embed_table": null,
           "original_name": "id",
+          "unsigned": false,
+          "array_dims": 0
+        },
+        {
+          "name": "created_at",
+          "not_null": true,
+          "is_array": false,
+          "comment": "",
+          "length": 19,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "authors"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "datetime"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "created_at",
           "unsigned": false,
           "array_dims": 0
         },
@@ -328,6 +406,153 @@
         }
       ],
       "params": [],
+      "comments": [
+        " additional comments!"
+      ],
+      "filename": "query.sql",
+      "insert_into_table": null
+    },
+    {
+      "text": "SELECT\n  id, created_at, name, bio\nFROM\n  authors\nWHERE\n  authors.created_at \u003e ?\nORDER BY\n  name",
+      "name": "NewAuthorsSince",
+      "cmd": ":many",
+      "columns": [
+        {
+          "name": "id",
+          "not_null": true,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "authors"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "bigint"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "id",
+          "unsigned": false,
+          "array_dims": 0
+        },
+        {
+          "name": "created_at",
+          "not_null": true,
+          "is_array": false,
+          "comment": "",
+          "length": 19,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "authors"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "datetime"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "created_at",
+          "unsigned": false,
+          "array_dims": 0
+        },
+        {
+          "name": "name",
+          "not_null": true,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "authors"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "text"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "name",
+          "unsigned": false,
+          "array_dims": 0
+        },
+        {
+          "name": "bio",
+          "not_null": false,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "authors"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "text"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "bio",
+          "unsigned": false,
+          "array_dims": 0
+        }
+      ],
+      "params": [
+        {
+          "number": 1,
+          "column": {
+            "name": "created_at",
+            "not_null": true,
+            "is_array": false,
+            "comment": "",
+            "length": 19,
+            "is_named_param": false,
+            "is_func_call": false,
+            "scope": "",
+            "table": {
+              "catalog": "",
+              "schema": "",
+              "name": "authors"
+            },
+            "table_alias": "",
+            "type": {
+              "catalog": "",
+              "schema": "",
+              "name": "datetime"
+            },
+            "is_sqlc_slice": false,
+            "embed_table": null,
+            "original_name": "created_at",
+            "unsigned": false,
+            "array_dims": 0
+          }
+        }
+      ],
       "comments": [],
       "filename": "query.sql",
       "insert_into_table": null
@@ -441,6 +666,39 @@
           }
         }
       ],
+      "comments": [],
+      "filename": "query.sql",
+      "insert_into_table": null
+    },
+    {
+      "text": "SELECT\n  count(*)\nFROM\n  authors",
+      "name": "CountAuthors",
+      "cmd": ":many",
+      "columns": [
+        {
+          "name": "count",
+          "not_null": true,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": true,
+          "scope": "",
+          "table": null,
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "bigint"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "",
+          "unsigned": false,
+          "array_dims": 0
+        }
+      ],
+      "params": [],
       "comments": [],
       "filename": "query.sql",
       "insert_into_table": null

@@ -9,10 +9,21 @@ LIMIT
   1;
 
 -- name: ListAuthors :many
+-- additional comments!
 SELECT
   *
 FROM
   authors
+ORDER BY
+  name;
+
+-- name: NewAuthorsSince :many
+SELECT
+  *
+FROM
+  authors
+WHERE
+  authors.created_at > ?
 ORDER BY
   name;
 
@@ -26,3 +37,9 @@ VALUES
 DELETE FROM authors
 WHERE
   id = ?;
+
+-- name: CountAuthors :many
+SELECT
+  count(*)
+FROM
+  authors;
