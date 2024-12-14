@@ -12,7 +12,13 @@ create table users (
   col_text text
 );
 
+create table authors (
+  id bigint not null auto_increment primary key,
+  name text not null,
+  bio text
+);
+
 insert into
   users
 values
-  (1, "danny", "danny not null");
+  (1, 13, "danny", "danny not null", "");
