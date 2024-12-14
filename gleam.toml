@@ -1,5 +1,5 @@
 name = "sqlc_gen_gleam"
-version = "1.0.0"
+version = "0.0.1"
 
 
 description = "A sqlc plugin for gleam that generates type-safe gleam code for your SQL statements."
