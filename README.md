@@ -14,7 +14,7 @@ which it then converts into gleam code.
 
 So in a simplified manner, the pipeline looks like this:
 ```mermaid
-graph TD
+graph LR
     SQL[SQL Queries] -- sqlc-gen-json --> JSON[JSON Schema]
     JSON -- sql-gen-gleam --> Gleam[Gleam Code]
 ```
