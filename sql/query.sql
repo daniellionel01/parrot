@@ -23,7 +23,7 @@ SELECT
 FROM
   authors
 WHERE
-  authors.created_at > ?
+  authors.created_at > sqlc.arg (after)
 ORDER BY
   name;
 

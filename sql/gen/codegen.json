@@ -526,12 +526,12 @@
         {
           "number": 1,
           "column": {
-            "name": "created_at",
+            "name": "after",
             "not_null": true,
             "is_array": false,
             "comment": "",
             "length": 19,
-            "is_named_param": false,
+            "is_named_param": true,
             "is_func_call": false,
             "scope": "",
             "table": {
