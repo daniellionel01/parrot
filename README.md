@@ -76,7 +76,7 @@ $ gleam test  # Run the tests
 
 # Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
-- Thank you to `sqlc`([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))
+- Thank you to `sqlc` ([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))
 
 # License
 [Apache License, Version 2.0](./LICENSE)
