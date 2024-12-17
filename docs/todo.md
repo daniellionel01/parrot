@@ -14,6 +14,12 @@
   - [ ] sqlite: https://github.com/lpil/sqlight
 - [ ] auto-discover driver in dependencies
 
+- [ ] for unsupported drivers add option to add empty functions for parsing
+  - [ ] add `todo` to ensure implementation
+  - [ ] make sure we dont accidentally clear them!
+
+- [ ] reuse types if they have the same schema (f.e. select *)
+
 - [ ] auto discover sqlc.yaml/json
   - [ ] how do we handle multiple?
   - [ ] we could do all of them?
