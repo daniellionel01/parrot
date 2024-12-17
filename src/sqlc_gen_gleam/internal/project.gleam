@@ -4,9 +4,24 @@
 
 import filepath
 import simplifile
+import sqlc_gen_gleam/internal/lib
+import tom
+
+pub fn version() -> Result(String, Nil) {
+  let configuration_path = filepath.join(root(), "gleam.toml")
+
+  use configuration <- lib.try_nil(simplifile.read(configuration_path))
+  use toml <- lib.try_nil(tom.parse(configuration))
+  use name <- lib.try_nil(tom.get_string(toml, ["version"]))
+  Ok(name)
+}
 
 pub fn root() -> String {
   find_root(".")
+}
+
+pub fn src() -> String {
+  filepath.join(root(), "src")
 }
 
 fn find_root(path: String) -> String {

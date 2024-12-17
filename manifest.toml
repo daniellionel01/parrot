@@ -24,3 +24,4 @@ gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 hexdocs_offline = { version = ">= 1.0.5 and < 2.0.0" }
 simplifile = { version = ">= 2.2.0 and < 3.0.0" }
+tom = { version = ">= 1.1.0 and < 2.0.0" }
