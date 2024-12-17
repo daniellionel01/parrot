@@ -1,5 +1,7 @@
 # todo
 
+- [ ] how do we handle datetime? Int? String? Extra Library?
+
 - [ ] consider using https://jsontypedef.com/ ?
 
 - [ ] catalog -> schemas -> enums

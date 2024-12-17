@@ -21,7 +21,7 @@ graph LR
 
 ## An Example
 
-Let's take this SQL query as an example:
+Let's take the following SQL queries as an example:
 ```sql
 -- name: GetAuthor :one
 SELECT
@@ -32,10 +32,75 @@ WHERE
   id = ?
 LIMIT
   1;
+
+-- name: ListAuthors :many
+SELECT
+  *
+FROM
+  authors
+ORDER BY
+  name;
 ```
 
 The `--name: GetAuthor :one` comment is part of sqlc and will be used to generate the
 name and return type of the wrapper.
+
+Given this query, this plugin will generate the following gleam code:
+
+```gleam
+//// file: src/gen/sqlc_mysql.gleam
+
+import gleam/option.{type Option}
+
+pub type GetAuthor {
+  GetAuthor(
+    id: Int,
+    created_at: Int,
+    name: String,
+    bio: Option(String)
+  )
+}
+pub fn get_author_sql(id: Int) {
+  let sql = "
+  SELECT
+    *
+  FROM
+    authors
+  WHERE
+    id = ?
+  LIMIT
+    1;
+  "
+
+  #(sql, #(id))
+}
+
+pub type ListAuthorRow {
+  ListAuthorRow(
+    id: Int,
+    created_at: Int,
+    name: String,
+    bio: Option(String)
+  )
+}
+pub type ListAuthors = List(ListAuthorRow)
+pub fn list_authors_sql(id: Int) {
+  let sql = "
+  SELECT
+    *
+  FROM
+    authors
+  ORDER BY
+    name;
+  "
+
+  #(sql, Nil)
+}
+```
+
+Every SQL query wrapper follows the schema of #(SQL, Params). So the first element is
+the raw SQL that can be executed by your database driver and the second element is a
+tuple of all of the parameters that you need for this query.
 
 # Usage
 

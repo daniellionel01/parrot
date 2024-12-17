@@ -9,7 +9,6 @@ LIMIT
   1;
 
 -- name: ListAuthors :many
--- additional comments!
 SELECT
   *
 FROM
