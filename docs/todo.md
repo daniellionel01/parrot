@@ -12,7 +12,6 @@
   - [ ] sqlite: https://github.com/lpil/sqlight
 - [ ] auto-discover driver in dependencies
 
-
 - [ ] auto discover sqlc.yaml/json
   - [ ] how do we handle multiple?
   - [ ] we could do all of them?
