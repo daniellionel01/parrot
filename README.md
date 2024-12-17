@@ -19,6 +19,24 @@ graph LR
     JSON -- sql-gen-gleam --> Gleam[Gleam Code]
 ```
 
+## An Example
+
+Let's take this SQL query as an example:
+```sql
+-- name: GetAuthor :one
+SELECT
+  *
+FROM
+  authors
+WHERE
+  id = ?
+LIMIT
+  1;
+```
+
+The `--name: GetAuthor :one` comment is part of sqlc and will be used to generate the
+name and return type of the wrapper.
+
 # Usage
 
 1. Install
