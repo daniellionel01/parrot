@@ -6,6 +6,13 @@
 - [ ] catalog -> schemas -> composite_types
 - [ ] catalog -> schemas -> tables -> columns -> embed_table
 
+- [ ] add supported drivers
+  - [ ] mysql: https://github.com/VioletBuse/gmysql
+  - [ ] postgresql: https://github.com/lpil/pog
+  - [ ] sqlite: https://github.com/lpil/sqlight
+- [ ] auto-discover driver in dependencies
+
+
 - [ ] auto discover sqlc.yaml/json
   - [ ] how do we handle multiple?
   - [ ] we could do all of them?

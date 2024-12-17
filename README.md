@@ -74,6 +74,16 @@ $ gleam run   # Run the project
 $ gleam test  # Run the tests
 ```
 
+# FAQ
+
+## What flavour of SQL does squirrel support?
+
+This plugin supports everything that sqlc supports. As the time of this writing that
+would be MySQL, PostgreSQL and SQlite.
+
+You can read more on language & SQL support here:
+https://docs.sqlc.dev/en/stable/reference/language-support.html
+
 # Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
 - Thank you to `sqlc` ([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))
