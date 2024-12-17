@@ -45,7 +45,7 @@ ORDER BY
 The `--name: GetAuthor :one` comment is part of sqlc and will be used to generate the
 name and return type of the wrapper.
 
-Given this query, this plugin will generate the following gleam code:
+Given the queries above, the following code will be generated:
 
 ```gleam
 //// file: src/gen/sqlc_mysql.gleam
