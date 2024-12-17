@@ -102,6 +102,17 @@ Every SQL query wrapper follows the schema of #(SQL, Params). So the first eleme
 the raw SQL that can be executed by your database driver and the second element is a
 tuple of all of the parameters that you need for this query.
 
+If you're using one of the supported drivers, we can also generate the query execution
+parsing of the return type for you. If you are using a custom driver, you will have to
+do that yourself using the [gleam/dynamic](https://hexdocs.pm/gleam_stdlib/gleam/dynamic.html)
+package.
+
+# Supported Drivers
+
+- MySQL: https://github.com/VioletBuse/gmysql
+- PostgreSQL: https://github.com/lpil/pog
+- SQlite: https://github.com/lpil/sqlight
+
 # Usage
 
 1. Install
