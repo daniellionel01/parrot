@@ -44,17 +44,15 @@ pub fn run(config: Config) {
 
   use dyn_json <- lib.try_nil(json.decode(from: json_string, using: d.dynamic))
 
-  let parsed = sqlc.decode_sqlc(dyn_json)
-  let _ = io.debug(parsed)
+  let assert Ok(parsed) = sqlc.decode_sqlc(dyn_json)
+
+  let module_contents = generate.generate_gleam_module(config, parsed)
 
   let _ =
     get_module_directory(config)
     |> simplifile.create_directory_all()
   let _ =
-    simplifile.write(
-      to: get_module_path(config),
-      contents: generate.comment_dont_edit(),
-    )
+    simplifile.write(to: get_module_path(config), contents: module_contents)
     |> io.debug
 
   Ok(Nil)

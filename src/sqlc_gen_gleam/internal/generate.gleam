@@ -1,6 +1,12 @@
 import gleam/string
+import sqlc_gen_gleam/config.{type Config}
 import sqlc_gen_gleam/internal/lib
 import sqlc_gen_gleam/internal/project
+import sqlc_gen_gleam/internal/sqlc.{type SQLC}
+
+pub fn generate_gleam_module(config: Config, sqlc: SQLC) {
+  comment_dont_edit()
+}
 
 pub fn comment_dont_edit() {
   let assert Ok(version) = project.version()

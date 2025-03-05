@@ -1,3 +1,0 @@
-# Notes
-
-## the gleam wrapper
