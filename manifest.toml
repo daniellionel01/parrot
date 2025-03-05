@@ -3,12 +3,12 @@
 
 packages = [
   { name = "decode", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "decode", source = "hex", outer_checksum = "9FFAD3F60600C6777072C3836B9FD965961D7C76C5D6007918AE0F82C1B21BE3" },
-  { name = "erlexec", version = "2.0.7", build_tools = ["rebar3"], requirements = [], otp_app = "erlexec", source = "hex", outer_checksum = "AF2DD940BB8E32F5AA40A65CB455DCAA18F5334FD3507E9BFD14A021E9630897" },
+  { name = "erlexec", version = "2.0.8", build_tools = ["rebar3"], requirements = [], otp_app = "erlexec", source = "hex", outer_checksum = "CDC02CCF88D8845F8887FA18A19BC9349CFCD3C9B4FD98A45F738AC710B57BC4" },
   { name = "filepath", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "filepath", source = "hex", outer_checksum = "67A6D15FB39EEB69DD31F8C145BB5A421790581BD6AA14B33D64D5A55DBD6587" },
-  { name = "gleam_erlang", version = "0.33.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_erlang", source = "hex", outer_checksum = "A1D26B80F01901B59AABEE3475DD4C18D27D58FA5C897D922FCB9B099749C064" },
+  { name = "gleam_erlang", version = "0.34.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_erlang", source = "hex", outer_checksum = "0C38F2A128BAA0CEF17C3000BD2097EB80634E239CE31A86400C4416A5D0FDCC" },
   { name = "gleam_json", version = "2.3.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_json", source = "hex", outer_checksum = "C55C5C2B318533A8072D221C5E06E5A75711C129E420DD1CE463342106012E5D" },
-  { name = "gleam_stdlib", version = "0.52.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "50703862DF26453B277688FFCDBE9DD4AC45B3BD9742C0B370DB62BC1629A07D" },
-  { name = "gleeunit", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "F7A7228925D3EE7D0813C922E062BFD6D7E9310F0BEE585D3A42F3307E3CFD13" },
+  { name = "gleam_stdlib", version = "0.55.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "32D8F4AE03771516950047813A9E359249BD9FBA5C33463FDB7B953D6F8E896B" },
+  { name = "gleeunit", version = "1.3.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "0E6C83834BA65EDCAAF4FE4FB94AC697D9262D83E6F58A750D63C9F6C8A9D9FF" },
   { name = "glexec", version = "1.0.3", build_tools = ["gleam"], requirements = ["erlexec", "gleam_erlang", "gleam_stdlib"], otp_app = "glexec", source = "hex", outer_checksum = "84565B798262A8B42B1B25C0ACA3C8749BB71A04C6CBE1A16DBB84C23D2A01AA" },
   { name = "hexdocs_offline", version = "1.0.5", build_tools = ["gleam"], requirements = ["gleam_stdlib", "glexec", "nakai", "simplifile", "tom"], otp_app = "hexdocs_offline", source = "hex", outer_checksum = "6CF1B599A5EBEC91A43307F744778FA769621AB3AEBBDB46B0A53F4F49F641D0" },
   { name = "nakai", version = "1.1.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "nakai", source = "hex", outer_checksum = "58D863966CFCAFCE60CE67C609B2C803551F76FEED8F3BAF6CD03F3C4B16C954" },
