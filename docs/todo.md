@@ -1,5 +1,7 @@
 # todo
 
+- [ ] remove "sqlc generate" step by executing it in gleam
+
 - [ ] how do we handle datetime? Int? String? Extra Library?
 
 - [ ] consider using https://jsontypedef.com/ ?
