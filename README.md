@@ -170,7 +170,7 @@ $ gleam test  # Run the tests
 
 # FAQ
 
-### What flavour of SQL does squirrel support?
+### What flavour of SQL does sqlc-gen-gleam support?
 This plugin supports everything that sqlc supports. As the time of this writing that
 would be MySQL, PostgreSQL and SQlite.
 
