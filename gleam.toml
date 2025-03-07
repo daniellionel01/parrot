@@ -2,7 +2,7 @@ name = "sqlc_gen_gleam"
 version = "0.0.1"
 
 
-description = "A sqlc plugin for gleam that generates type-safe gleam code for your SQL statements."
+description = "A library that generates type-safe gleam code for your SQL statements by utilizing sqlc."
 licences = ["Apache-2.0"]
 
 repository = { type = "github", user = "daniellionel01", repo = "sqlc-gen-gleam" }
