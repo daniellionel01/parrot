@@ -30,3 +30,9 @@
 
 - [ ] add "auto generated" comments in head of files similar to...
   - ... https://github.com/sqlc-dev/sqlc/blob/main/examples/batch/postgresql/query.sql.go
+
+- [ ] support javascript target
+
+- [ ] add example repositories
+
+- [ ] use llm to generate various complicated queries that are automatically run and tested
