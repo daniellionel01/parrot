@@ -1,6 +1,13 @@
 # todo
 
+- [ ] map all types to gleam
+- [ ] config: error instead of dynamic type for unknown columns
+
+- [ ] add decoders for all query result types
+
 - [ ] remove "sqlc generate" step by executing it in gleam
+- [ ] remove need for sqlc all together by creating the sqlc.yaml on demand and add emitting option in config
+- [ ] dynamically download sqlc (https://docs.sqlc.dev/en/stable/overview/install.html)
 
 - [ ] how do we handle datetime? Int? String? Extra Library?
 
@@ -36,3 +43,5 @@
 - [ ] add example repositories
 
 - [ ] use llm to generate various complicated queries that are automatically run and tested
+
+- [ ] think about usage in larger codebases and scaling

@@ -2,3 +2,95 @@
 //// versions:
 ////   sqlc_gen_gleam v0.0.1
 ////
+
+import gleam/option.{type Option}
+
+pub type GetAuthor {
+  GetAuthor(
+    id: Int,
+    created_at: String,
+    name: String,
+    bio: Option(String)
+  )
+}
+
+pub fn get_author(id: Int){
+  let sql = "SELECT
+  id, created_at, name, bio
+FROM
+  authors
+WHERE
+  id = ?
+LIMIT
+  1"
+  #(sql, id)
+}
+
+pub type ListAuthors {
+  ListAuthors(
+    id: Int,
+    created_at: String,
+    name: String,
+    bio: Option(String)
+  )
+}
+
+pub fn list_authors(){
+  let sql = "SELECT
+  id, created_at, name, bio
+FROM
+  authors
+ORDER BY
+  name"
+  #(sql, Nil)
+}
+
+pub type NewAuthorsSince {
+  NewAuthorsSince(
+    id: Int,
+    created_at: String,
+    name: String,
+    bio: Option(String)
+  )
+}
+
+pub fn new_authors_since(after: String){
+  let sql = "SELECT
+  id, created_at, name, bio
+FROM
+  authors
+WHERE
+  authors.created_at > ?1
+ORDER BY
+  name"
+  #(sql, after)
+}
+
+pub fn create_author(name: String, bio: String){
+  let sql = "INSERT INTO
+  authors (name, bio)
+VALUES
+  (?, ?)"
+  #(sql, name, bio)
+}
+
+pub fn delete_author(id: Int){
+  let sql = "DELETE FROM authors
+WHERE
+  id = ?"
+  #(sql, id)
+}
+
+pub type CountAuthors {
+  CountAuthors(
+    count: Int
+  )
+}
+
+pub fn count_authors(){
+  let sql = "SELECT
+  count(*)
+FROM
+  authors"
+  #(sql, Nil)
+}
