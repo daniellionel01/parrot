@@ -406,9 +406,7 @@
         }
       ],
       "params": [],
-      "comments": [
-        " additional comments!"
-      ],
+      "comments": [],
       "filename": "query.sql",
       "insert_into_table": null
     },
@@ -704,7 +702,7 @@
       "insert_into_table": null
     }
   ],
-  "sqlc_version": "v1.27.0",
+  "sqlc_version": "v1.28.0",
   "plugin_options": "eyJmaWxlbmFtZSI6ImNvZGVnZW4uanNvbiIsImluZGVudCI6IiAgIn0=",
   "global_options": ""
 }

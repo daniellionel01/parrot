@@ -13,7 +13,7 @@ pub fn try_nil(
   result.try(result.replace_error(result, Nil), do)
 }
 
-/// Thank you https://github.com/MystPi/dedent/blob/main/src/dedent.gleam!
+/// Thank you https://github.com/MystPi/dedent/blob/main/src/dedent.gleam
 pub fn dedent(text: String) -> String {
   let lines =
     text
