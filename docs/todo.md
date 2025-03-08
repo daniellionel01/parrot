@@ -1,9 +1,16 @@
 # todo
 
+- [ ] integration tests
+  - [ ] sqlite
+  - [ ] mysql
+  - [ ] postgresql
+
+- [ ] create schema from existing database?
+
 - [ ] map all types to gleam
 - [ ] config: error instead of dynamic type for unknown columns
 
-- [ ] add decoders for all query result types
+- [ ] add decoders for all query result types (toggle in config)
 
 - [ ] remove "sqlc generate" step by executing it in gleam
 - [ ] remove need for sqlc all together by creating the sqlc.yaml on demand and add emitting option in config
@@ -21,6 +28,7 @@
   - [ ] mysql: https://github.com/VioletBuse/gmysql
   - [ ] postgresql: https://github.com/lpil/pog
   - [ ] sqlite: https://github.com/lpil/sqlight
+- [ ] throw error if driver is not installed
 - [ ] auto-discover driver in dependencies
 
 - [ ] for unsupported drivers add option to add empty functions for parsing

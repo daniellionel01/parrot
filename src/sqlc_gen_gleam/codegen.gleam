@@ -82,9 +82,11 @@ pub fn gen_query_function(query: sqlc.Query) {
   let def_return_params = case query.params {
     [] -> "Nil"
     args ->
-      args
+      "#("
+      <> args
       |> list.map(fn(arg) { arg.column.name })
       |> string.join(", ")
+      <> ")"
   }
 
   let def_fn = "pub fn " <> fn_name <> "(" <> def_fn_args <> ")"

@@ -23,7 +23,7 @@ WHERE
   id = ?
 LIMIT
   1"
-  #(sql, id)
+  #(sql, #(id))
 }
 
 pub type ListAuthors {
@@ -63,7 +63,7 @@ WHERE
   authors.created_at > ?1
 ORDER BY
   name"
-  #(sql, after)
+  #(sql, #(after))
 }
 
 pub fn create_author(name: String, bio: String){
@@ -71,14 +71,14 @@ pub fn create_author(name: String, bio: String){
   authors (name, bio)
 VALUES
   (?, ?)"
-  #(sql, name, bio)
+  #(sql, #(name, bio))
 }
 
 pub fn delete_author(id: Int){
   let sql = "DELETE FROM authors
 WHERE
   id = ?"
-  #(sql, id)
+  #(sql, #(id))
 }
 
 pub type CountAuthors {
