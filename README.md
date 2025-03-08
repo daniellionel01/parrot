@@ -180,6 +180,16 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
 
+# Development
+
+## Tests
+
+You can run a suite of integration tests via the module [./test/integration_test.gleam](./test/integration_test.gleam).
+You can run this module with this script:
+```sh
+$ ./scripts/integration-test.sh
+```
+
 # Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
 - Thank you to `sqlc` ([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))

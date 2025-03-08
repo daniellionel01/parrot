@@ -3,7 +3,7 @@ import gleeunit/should
 import sqlc_gen_gleam/codegen.{codegen_from_config}
 import sqlc_gen_gleam/config.{Config}
 
-pub fn integration_test_() {
+pub fn main() {
   let _ =
     Config(
       json_file_path: "sql/sqlite/gen/codegen.json",
