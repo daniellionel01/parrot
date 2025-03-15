@@ -22,7 +22,7 @@ const project_toml = "name = \"integration_test_project\"
 version = \"1.0.0\"
 
 [dependencies]
-squirrel = { path = \"../..\" }
+sqlc_gen_gleam = { path = \"../..\" }
 "
 
 fn scaffold_project() {

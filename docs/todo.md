@@ -1,5 +1,10 @@
 # todo
 
+- [ ] add decoders for all query result types (toggle in config)
+
+- [ ] catch error when running codegen
+  - [ ] missing dependency: decode
+
 - [ ] integration tests
   - [ ] sqlite
   - [ ] mysql
@@ -9,8 +14,6 @@
 
 - [ ] map all types to gleam
 - [ ] config: error instead of dynamic type for unknown columns
-
-- [ ] add decoders for all query result types (toggle in config)
 
 - [ ] remove "sqlc generate" step by executing it in gleam
 - [ ] remove need for sqlc all together by creating the sqlc.yaml on demand and add emitting option in config

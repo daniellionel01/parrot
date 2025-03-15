@@ -37,7 +37,7 @@ fn gen_query(query: sqlc.Query) {
     _ -> gen_query_type(query) <> "\n\n"
   }
 
-  type_str <> gen_query_function(query)
+  type_str <> gen_query_function(query) <> gen_query_decoder(query)
 }
 
 pub fn sqlc_type_to_gleam(sqltype: String) {
@@ -97,13 +97,67 @@ pub fn gen_query_function(query: sqlc.Query) {
   |> string.join("\n")
 }
 
+pub fn gen_query_decoder(query: sqlc.Query) {
+  case list.length(query.columns) {
+    0 -> ""
+    _ -> {
+      let type_name = string_case.pascal_case(query.name)
+      let fn_name = string_case.snake_case(query.name) <> "_decoder"
+
+      let decoder_fields =
+        query.columns
+        |> list.map(fn(col) {
+          let decoder_type = case string.lowercase(col.type_ref.name) {
+            "integer" | "bigint" -> "decode.int"
+            "text" -> "decode.string"
+            // Add other type mappings as needed
+            _ -> panic as { "unknown decoder mapping: " <> col.type_ref.name }
+          }
+
+          let decoder = case col.not_null {
+            True -> decoder_type
+            False -> "decode.optional(" <> decoder_type <> ")"
+          }
+
+          "  use "
+          <> col.name
+          <> " <- decode.field(\""
+          <> col.name
+          <> "\", "
+          <> decoder
+          <> ")"
+        })
+        |> string.join("\n")
+
+      let constructor_args =
+        query.columns
+        |> list.map(fn(col) { col.name <> ": " })
+        |> string.join(", ")
+
+      let success_line =
+        "  decode.success(" <> type_name <> "(" <> constructor_args <> "))"
+
+      "\n\npub fn "
+      <> fn_name
+      <> "() -> decode.Decoder("
+      <> type_name
+      <> ") {\n"
+      <> decoder_fields
+      <> "\n"
+      <> success_line
+      <> "\n}"
+    }
+  }
+}
+
 pub fn gen_gleam_module(schema: SQLC) {
   let queries =
     schema.queries
     |> list.map(gen_query)
     |> string.join("\n\n")
 
-  let imports = "import gleam/option.{type Option}"
+  let imports =
+    "import gleam/option.{type Option}" <> "\n" <> "import gleam/dynamic/decode"
 
   comment_dont_edit() <> "\n\n" <> imports <> "\n\n" <> queries
 }
