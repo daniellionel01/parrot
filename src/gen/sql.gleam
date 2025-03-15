@@ -5,11 +5,23 @@
 
 import gleam/option.{type Option}
 import gleam/dynamic/decode
+import gleam/time/timestamp.{type Timestamp}
+
+// Custom decoders
+fn datetime_decoder() -> decode.Decoder(Timestamp) {
+  decode.string
+  |> decode.then(fn(datetime_str) {
+    case timestamp.parse_rfc3339(datetime_str) {
+      Ok(ts) -> decode.success(ts)
+      Error(_) -> decode.failure(timestamp.from_unix_seconds(0), "Invalid datetime format")
+    }
+  })
+}
 
 pub type GetAuthor {
   GetAuthor(
     id: Int,
-    created_at: String,
+    created_at: Timestamp,
     name: String,
     bio: Option(String)
   )
@@ -21,7 +33,7 @@ pub fn get_author(id: Int){
 FROM
   authors
 WHERE
-  id = ?
+  id = $1
 LIMIT
   1"
   #(sql, #(id))
@@ -29,7 +41,7 @@ LIMIT
 
 pub fn get_author_decoder() -> decode.Decoder(GetAuthor) {
   use id <- decode.field("id", decode.int)
-  use created_at <- decode.field("created_at", decode.string)
+  use created_at <- decode.field("created_at", datetime_decoder())
   use name <- decode.field("name", decode.string)
   use bio <- decode.field("bio", decode.optional(decode.string))
   decode.success(GetAuthor(id: , created_at: , name: , bio: ))
@@ -38,7 +50,7 @@ pub fn get_author_decoder() -> decode.Decoder(GetAuthor) {
 pub type ListAuthors {
   ListAuthors(
     id: Int,
-    created_at: String,
+    created_at: Timestamp,
     name: String,
     bio: Option(String)
   )
@@ -56,7 +68,7 @@ ORDER BY
 
 pub fn list_authors_decoder() -> decode.Decoder(ListAuthors) {
   use id <- decode.field("id", decode.int)
-  use created_at <- decode.field("created_at", decode.string)
+  use created_at <- decode.field("created_at", datetime_decoder())
   use name <- decode.field("name", decode.string)
   use bio <- decode.field("bio", decode.optional(decode.string))
   decode.success(ListAuthors(id: , created_at: , name: , bio: ))
@@ -65,19 +77,19 @@ pub fn list_authors_decoder() -> decode.Decoder(ListAuthors) {
 pub type NewAuthorsSince {
   NewAuthorsSince(
     id: Int,
-    created_at: String,
+    created_at: Timestamp,
     name: String,
     bio: Option(String)
   )
 }
 
-pub fn new_authors_since(after: String){
+pub fn new_authors_since(after: Timestamp){
   let sql = "SELECT
   id, created_at, name, bio
 FROM
   authors
 WHERE
-  authors.created_at > ?1
+  authors.created_at > $1
 ORDER BY
   name"
   #(sql, #(after))
@@ -85,7 +97,7 @@ ORDER BY
 
 pub fn new_authors_since_decoder() -> decode.Decoder(NewAuthorsSince) {
   use id <- decode.field("id", decode.int)
-  use created_at <- decode.field("created_at", decode.string)
+  use created_at <- decode.field("created_at", datetime_decoder())
   use name <- decode.field("name", decode.string)
   use bio <- decode.field("bio", decode.optional(decode.string))
   decode.success(NewAuthorsSince(id: , created_at: , name: , bio: ))
@@ -95,14 +107,14 @@ pub fn create_author(name: String, bio: String){
   let sql = "INSERT INTO
   authors (name, bio)
 VALUES
-  (?, ?)"
+  ($1, $2)"
   #(sql, #(name, bio))
 }
 
 pub fn delete_author(id: Int){
   let sql = "DELETE FROM authors
 WHERE
-  id = ?"
+  id = $1"
   #(sql, #(id))
 }
 

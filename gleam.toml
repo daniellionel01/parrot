@@ -19,6 +19,7 @@ hexdocs_offline = ">= 1.0.5 and < 2.0.0"
 tom = ">= 1.1.0 and < 2.0.0"
 shellout = ">= 1.6.0 and < 2.0.0"
 exception = ">= 2.0.0 and < 3.0.0"
+gleam_time = ">= 1.0.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

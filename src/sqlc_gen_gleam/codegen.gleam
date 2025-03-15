@@ -42,9 +42,9 @@ fn gen_query(query: sqlc.Query) {
 
 pub fn sqlc_type_to_gleam(sqltype: String) {
   case string.lowercase(sqltype) {
-    "integer" -> "Int"
-    "bigint" -> "Int"
+    "integer" | "bigint" | "bigserial" -> "Int"
     "text" -> "String"
+    "datetime" -> "Timestamp"
     _ -> panic as { "unknown type mapping: " <> sqltype }
   }
 }
@@ -108,9 +108,9 @@ pub fn gen_query_decoder(query: sqlc.Query) {
         query.columns
         |> list.map(fn(col) {
           let decoder_type = case string.lowercase(col.type_ref.name) {
-            "integer" | "bigint" -> "decode.int"
+            "integer" | "bigint" | "bigserial" -> "decode.int"
             "text" -> "decode.string"
-            // Add other type mappings as needed
+            "datetime" -> "datetime_decoder()"
             _ -> panic as { "unknown decoder mapping: " <> col.type_ref.name }
           }
 
@@ -150,6 +150,18 @@ pub fn gen_query_decoder(query: sqlc.Query) {
   }
 }
 
+fn datetime_decoder_function() -> String {
+  "fn datetime_decoder() -> decode.Decoder(Timestamp) {\n"
+  <> "  decode.string\n"
+  <> "  |> decode.then(fn(datetime_str) {\n"
+  <> "    case timestamp.parse_rfc3339(datetime_str) {\n"
+  <> "      Ok(ts) -> decode.success(ts)\n"
+  <> "      Error(_) -> decode.failure(timestamp.from_unix_seconds(0), \"Invalid datetime format\")\n"
+  <> "    }\n"
+  <> "  })\n"
+  <> "}"
+}
+
 pub fn gen_gleam_module(schema: SQLC) {
   let queries =
     schema.queries
@@ -157,9 +169,20 @@ pub fn gen_gleam_module(schema: SQLC) {
     |> string.join("\n\n")
 
   let imports =
-    "import gleam/option.{type Option}" <> "\n" <> "import gleam/dynamic/decode"
+    "import gleam/option.{type Option}"
+    <> "\n"
+    <> "import gleam/dynamic/decode"
+    <> "\n"
+    <> "import gleam/time/timestamp.{type Timestamp}"
 
-  comment_dont_edit() <> "\n\n" <> imports <> "\n\n" <> queries
+  comment_dont_edit()
+  <> "\n\n"
+  <> imports
+  <> "\n\n"
+  <> "// Custom decoders\n"
+  <> datetime_decoder_function()
+  <> "\n\n"
+  <> queries
 }
 
 pub fn comment_dont_edit() {

@@ -1,9 +1,12 @@
 # todo
 
-- [ ] add decoders for all query result types (toggle in config)
+- [x] add decoders for all query result types (toggle in config)
 
 - [ ] catch error when running codegen
   - [ ] missing dependency: decode
+  - [ ] missing dependency: gleam_time
+
+- [ ] uninstall gleam_time from main repository
 
 - [ ] integration tests
   - [ ] sqlite

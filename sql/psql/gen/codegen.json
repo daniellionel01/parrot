@@ -144,7 +144,26 @@
             "comment": ""
           }
         ],
-        "enums": [],
+        "enums": [
+          {
+            "name": "mood",
+            "vals": [
+              "happy",
+              "sad",
+              "neutral"
+            ],
+            "comment": ""
+          },
+          {
+            "name": "status",
+            "vals": [
+              "pending",
+              "active",
+              "archived"
+            ],
+            "comment": ""
+          }
+        ],
         "composite_types": []
       },
       {

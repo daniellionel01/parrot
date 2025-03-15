@@ -80,7 +80,7 @@
                 "type": {
                   "catalog": "",
                   "schema": "",
-                  "name": "TEXT"
+                  "name": "DATETIME"
                 },
                 "is_sqlc_slice": false,
                 "embed_table": null,
@@ -199,7 +199,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "TEXT"
+            "name": "DATETIME"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -344,7 +344,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "TEXT"
+            "name": "DATETIME"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -461,7 +461,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "TEXT"
+            "name": "DATETIME"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -543,7 +543,7 @@
             "type": {
               "catalog": "",
               "schema": "",
-              "name": "TEXT"
+              "name": "DATETIME"
             },
             "is_sqlc_slice": false,
             "embed_table": null,
