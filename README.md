@@ -1,7 +1,7 @@
 # SQL -> Gleam (sqlc-gen-gleam)
 
-[![Package Version](https://img.shields.io/hexpm/v/sqlc_gen_gleam)](https://hex.pm/packages/sqlc_gen_gleam)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/sqlc_gen_gleam/)
+[![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 
 # Project Status
 
@@ -117,7 +117,7 @@ package.
 
 1. Install
 ```sh
-$ gleam add sqlc_gen_gleam@1
+$ gleam add parrot@1
 ```
 
 2. Setup sqlc
@@ -135,10 +135,10 @@ Here are some links to help you start out:
 $ sqlc generate
 
 # then we use this library to turn it into gleam code
-$ gleam run -m sqlc_gen_gleam
+$ gleam run -m parrot
 ```
 
-Further documentation can be found at <https://hexdocs.pm/sqlc_gen_gleam>.
+Further documentation can be found at <https://hexdocs.pm/parrot>.
 
 # Development
 

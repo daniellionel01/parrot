@@ -1,6 +1,6 @@
 import gleam/option
-import sqlc_gen_gleam/codegen
-import sqlc_gen_gleam/config
+import parrot/codegen
+import parrot/config
 
 pub fn main() {
   let config =

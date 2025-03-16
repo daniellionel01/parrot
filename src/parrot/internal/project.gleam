@@ -3,8 +3,8 @@
 ////
 
 import filepath
+import parrot/internal/lib
 import simplifile
-import sqlc_gen_gleam/internal/lib
 import tom
 
 pub fn version() -> Result(String, Nil) {

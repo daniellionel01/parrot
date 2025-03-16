@@ -1,7 +1,7 @@
 import filepath
 import gleam/option.{type Option}
+import parrot/internal/project
 import simplifile
-import sqlc_gen_gleam/internal/project
 
 pub type Driver {
   /// https://github.com/lpil/sqlight
