@@ -1,4 +1,4 @@
-# SQL -> Gleam (sqlc-gen-gleam)
+# 🦜 Parrot / type-safe SQL in gleam
 
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
