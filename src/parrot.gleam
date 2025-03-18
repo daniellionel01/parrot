@@ -7,7 +7,7 @@ pub fn main() {
     config.Config(
       driver: option.None,
       gleam_module_out_path: "gen/sql.gleam",
-      json_file_path: "sql/psql/gen/codegen.json",
+      json_file_path: "sql/mysql/gen/codegen.json",
     )
   codegen.codegen_from_config(config)
 }

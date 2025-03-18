@@ -16,7 +16,7 @@ So in a simplified manner, the pipeline looks like this:
 ```mermaid
 graph LR
     SQL[SQL Queries] -- sqlc-gen-json --> JSON[JSON Schema]
-    JSON -- sql-gen-gleam --> Gleam[Gleam Code]
+    JSON -- parrot --> Gleam[Gleam Code]
 ```
 
 ## An Example
@@ -51,50 +51,74 @@ Given the queries above, the following code will be generated:
 //// file: src/gen/sqlc_mysql.gleam
 
 import gleam/option.{type Option}
+import gleam/dynamic/decode
+import gleam/time/timestamp.{type Timestamp}
+
+// Custom decoders
+fn datetime_decoder() -> decode.Decoder(Timestamp) {
+  decode.string
+  |> decode.then(fn(datetime_str) {
+    case timestamp.parse_rfc3339(datetime_str) {
+      Ok(ts) -> decode.success(ts)
+      Error(_) -> decode.failure(timestamp.from_unix_seconds(0), "Invalid datetime format")
+    }
+  })
+}
 
 pub type GetAuthor {
   GetAuthor(
     id: Int,
-    created_at: Int,
+    created_at: Timestamp,
     name: String,
     bio: Option(String)
   )
 }
-pub fn get_author_sql(id: Int) {
-  let sql = "
-  SELECT
-    *
-  FROM
-    authors
-  WHERE
-    id = ?
-  LIMIT
-    1;
-  "
 
+pub fn get_author(id: Int){
+  let sql = "SELECT
+  id, created_at, name, bio
+FROM
+  authors
+WHERE
+  id = ?
+LIMIT
+  1"
   #(sql, #(id))
 }
 
-pub type ListAuthorRow {
-  ListAuthorRow(
+pub fn get_author_decoder() -> decode.Decoder(GetAuthor) {
+  use id <- decode.field("id", decode.int)
+  use created_at <- decode.field("created_at", datetime_decoder())
+  use name <- decode.field("name", decode.string)
+  use bio <- decode.field("bio", decode.optional(decode.string))
+  decode.success(GetAuthor(id: , created_at: , name: , bio: ))
+}
+
+pub type ListAuthors {
+  ListAuthors(
     id: Int,
-    created_at: Int,
+    created_at: Timestamp,
     name: String,
     bio: Option(String)
   )
 }
-pub type ListAuthors = List(ListAuthorRow)
-pub fn list_authors_sql(id: Int) {
-  let sql = "
-  SELECT
-    *
-  FROM
-    authors
-  ORDER BY
-    name;
-  "
 
+pub fn list_authors(){
+  let sql = "SELECT
+  id, created_at, name, bio
+FROM
+  authors
+ORDER BY
+  name"
   #(sql, Nil)
+}
+
+pub fn list_authors_decoder() -> decode.Decoder(ListAuthors) {
+  use id <- decode.field("id", decode.int)
+  use created_at <- decode.field("created_at", datetime_decoder())
+  use name <- decode.field("name", decode.string)
+  use bio <- decode.field("bio", decode.optional(decode.string))
+  decode.success(ListAuthors(id: , created_at: , name: , bio: ))
 }
 ```
 
@@ -144,7 +168,7 @@ Further documentation can be found at <https://hexdocs.pm/parrot>.
 
 ## 1. Database
 
-There are scripts to spawn MySQL or PostgreSQL docker container:
+There are scripts to spawn a MySQL or PostgreSQL docker container:
 -  [MySQL Script](./scripts/mysql/docker.sh)
 -  [PostgreSQL Script](./scripts/psql/docker.sh)
 
@@ -170,7 +194,7 @@ $ gleam test  # Run the tests
 
 # FAQ
 
-### What flavour of SQL does sqlc-gen-gleam support?
+### What flavour of SQL does parrot support?
 This plugin supports everything that sqlc supports. As the time of this writing that
 would be MySQL, PostgreSQL and SQlite.
 
@@ -179,16 +203,6 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
-
-# Development
-
-## Tests
-
-You can run a suite of integration tests via the module [./test/integration_test.gleam](./test/integration_test.gleam).
-You can run this module with this script:
-```sh
-$ ./scripts/integration-test.sh
-```
 
 # Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
