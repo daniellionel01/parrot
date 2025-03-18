@@ -48,7 +48,7 @@ name and return type of the wrapper.
 Given the queries above, the following code will be generated:
 
 ```gleam
-//// file: src/gen/sqlc_mysql.gleam
+//// file: src/gen/parrot.gleam
 
 import gleam/option.{type Option}
 import gleam/dynamic/decode
