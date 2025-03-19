@@ -190,6 +190,39 @@
       "comments": [],
       "filename": "query.sql",
       "insert_into_table": null
+    },
+    {
+      "text": "select\n  count(*)\nfrom\n  cats",
+      "name": "CountCats",
+      "cmd": ":one",
+      "columns": [
+        {
+          "name": "count",
+          "not_null": true,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": true,
+          "scope": "",
+          "table": null,
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "integer"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "",
+          "unsigned": false,
+          "array_dims": 0
+        }
+      ],
+      "params": [],
+      "comments": [],
+      "filename": "query.sql",
+      "insert_into_table": null
     }
   ],
   "sqlc_version": "v1.28.0",

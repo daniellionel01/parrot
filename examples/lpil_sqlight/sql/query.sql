@@ -5,4 +5,10 @@ select
 from
   cats
 where
-  age < ?
+  age < ?;
+
+-- name: CountCats :one
+select
+  count(*)
+from
+  cats;

@@ -1,3 +1,4 @@
+import gleam/float
 import gleam/list
 import lpil_sqlight/sql
 import parrot/sql as parrot
@@ -28,11 +29,19 @@ pub fn main() {
   let assert Ok(Nil) = sqlight.exec(sql, conn)
 
   let #(raw_sql, args) = sql.get_cats_by_age(7)
+  let _ =
+    echo sqlight.query(
+      raw_sql,
+      on: conn,
+      with: params_to_sqlight(args),
+      expecting: sql.get_cats_by_age_decoder(),
+    )
 
+  let #(raw_sql, _) = sql.count_cats()
   echo sqlight.query(
     raw_sql,
     on: conn,
-    with: params_to_sqlight(args),
-    expecting: sql.get_cats_by_age_decoder(),
+    with: [],
+    expecting: sql.count_cats_decoder(),
   )
 }

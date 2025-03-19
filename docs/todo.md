@@ -7,13 +7,13 @@
 - [x] return param wrapped list instead of tuple
 
 - [ ] only import timestamp if necessary
-
 - [ ] fix parrot version (not accurate taking local gleam.toml)
 
-- [ ] add plugins support
+- [ ] additional config
   - [ ] custom data types and custom functions based on schema
   - [ ] custom functions
   - [ ] custom imports
+  - [ ] footer code
   - [ ] for gmysql
   - [ ] explain in readme
 
@@ -24,10 +24,10 @@
   - [ ] link in readme
 
 - [ ] catch error when running codegen
-  - [ ] missing dependency: decode
   - [ ] missing dependency: gleam_time
 
-- [ ] uninstall gleam_time from main repository
+- [ ] test more advanced queries, schemas & sqlc features
+  - [ ] https://docs.sqlc.dev/en/latest/howto/named_parameters.html
 
 - [ ] integration tests
   - [ ] sqlite
