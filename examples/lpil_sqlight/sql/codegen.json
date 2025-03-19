@@ -37,6 +37,32 @@
             },
             "columns": [
               {
+                "name": "created_at",
+                "not_null": false,
+                "is_array": false,
+                "comment": "",
+                "length": -1,
+                "is_named_param": false,
+                "is_func_call": false,
+                "scope": "",
+                "table": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "cats"
+                },
+                "table_alias": "",
+                "type": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "text"
+                },
+                "is_sqlc_slice": false,
+                "embed_table": null,
+                "original_name": "",
+                "unsigned": false,
+                "array_dims": 0
+              },
+              {
                 "name": "name",
                 "not_null": false,
                 "is_array": false,
@@ -99,10 +125,36 @@
   },
   "queries": [
     {
-      "text": "select\n  name,\n  age\nfrom\n  cats\nwhere\n  age \u003c ?",
+      "text": "select\n  created_at,\n  name,\n  age\nfrom\n  cats\nwhere\n  age \u003c ?",
       "name": "GetCatsByAge",
       "cmd": ":many",
       "columns": [
+        {
+          "name": "created_at",
+          "not_null": false,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "cats"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "text"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "created_at",
+          "unsigned": false,
+          "array_dims": 0
+        },
         {
           "name": "name",
           "not_null": false,

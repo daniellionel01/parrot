@@ -1,5 +1,6 @@
 -- name: GetCatsByAge :many
 select
+  created_at,
   name,
   age
 from

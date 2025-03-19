@@ -1,1 +1,1 @@
-create table cats (name text, age int);
+create table cats (created_at text, name text, age int);

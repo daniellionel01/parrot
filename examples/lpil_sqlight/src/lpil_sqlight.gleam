@@ -1,4 +1,4 @@
-import gleam/float
+import gleam/dynamic/decode
 import gleam/list
 import lpil_sqlight/sql
 import parrot/sql as parrot
@@ -21,12 +21,20 @@ pub fn main() {
 
   let assert Ok(schema) = simplifile.read("sql/schema.sql")
   let sql = schema <> "
-  insert into cats (name, age) values
-  ('Nubi', 4),
-  ('Biffy', 10),
-  ('Ginny', 6);
+  insert into cats (created_at, name, age) values
+  ('2024-03-15T14:30:00Z', 'Nubi', 4),
+  ('2024-03-15T14:30:00Z', 'Biffy', 10),
+  ('2024-03-15T14:30:00Z', 'Ginny', 6);
   "
   let assert Ok(Nil) = sqlight.exec(sql, conn)
+
+  let _ =
+    echo sqlight.query(
+      "select datetime (created_at, 'localtime') from cats",
+      on: conn,
+      with: [],
+      expecting: decode.dynamic,
+    )
 
   let #(raw_sql, args) = sql.get_cats_by_age(7)
   let _ =

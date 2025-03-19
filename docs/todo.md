@@ -9,6 +9,13 @@
 - [ ] only import timestamp if necessary
 - [ ] fix parrot version (not accurate taking local gleam.toml)
 
+- [ ] handle "any" sqlc type
+
+- [ ] types
+  - [ ] https://github.com/sqlc-dev/sqlc-gen-python/blob/main/internal/postgresql_type.go
+  - [ ] https://github.com/sqlc-dev/sqlc-gen-kotlin/blob/main/internal/core/mysql_type.go
+  - [ ] https://github.com/sqlc-dev/sqlc-gen-kotlin/blob/main/internal/core/postgresql_type.go
+
 - [ ] additional config
   - [ ] custom data types and custom functions based on schema
   - [ ] custom functions
@@ -28,6 +35,7 @@
 
 - [ ] test more advanced queries, schemas & sqlc features
   - [ ] https://docs.sqlc.dev/en/latest/howto/named_parameters.html
+  - [ ] sql functions such as datetime (sqlite) or strf
 
 - [ ] integration tests
   - [ ] sqlite
@@ -52,10 +60,6 @@
 - [ ] catalog -> schemas -> composite_types
 - [ ] catalog -> schemas -> tables -> columns -> embed_table
 
-- [ ] for unsupported drivers add option to add empty functions for parsing
-  - [ ] add `todo` to ensure implementation
-  - [ ] make sure we dont accidentally clear them!
-
 - [ ] reuse types if they have the same schema (f.e. select *)
 
 - [ ] auto discover sqlc.yaml/json
@@ -72,5 +76,7 @@
 - [ ] add example repositories
 
 - [ ] use llm to generate various complicated queries that are automatically run and tested
+
+- [ ] more advanced handling of joins
 
 - [ ] think about usage in larger codebases and scaling
