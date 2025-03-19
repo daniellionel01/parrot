@@ -1,0 +1,198 @@
+{
+  "settings": {
+    "version": "2",
+    "engine": "sqlite",
+    "schema": [
+      "schema.sql"
+    ],
+    "queries": [
+      "query.sql"
+    ],
+    "codegen": {
+      "out": ".",
+      "plugin": "jsonb",
+      "options": "eyJmaWxlbmFtZSI6ImNvZGVnZW4uanNvbiIsImluZGVudCI6IiAgIn0=",
+      "env": [],
+      "process": null,
+      "wasm": {
+        "url": "https://github.com/daniellionel01/sqlc-gen-json/releases/download/v1.0.0/sqlc-gen-json.wasm",
+        "sha256": "5d48e462aa8db371be5c9ce89a7494ad8e3baf5112e78386091313afd6930061"
+      }
+    }
+  },
+  "catalog": {
+    "comment": "",
+    "default_schema": "main",
+    "name": "",
+    "schemas": [
+      {
+        "comment": "",
+        "name": "main",
+        "tables": [
+          {
+            "rel": {
+              "catalog": "",
+              "schema": "",
+              "name": "cats"
+            },
+            "columns": [
+              {
+                "name": "name",
+                "not_null": false,
+                "is_array": false,
+                "comment": "",
+                "length": -1,
+                "is_named_param": false,
+                "is_func_call": false,
+                "scope": "",
+                "table": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "cats"
+                },
+                "table_alias": "",
+                "type": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "text"
+                },
+                "is_sqlc_slice": false,
+                "embed_table": null,
+                "original_name": "",
+                "unsigned": false,
+                "array_dims": 0
+              },
+              {
+                "name": "age",
+                "not_null": false,
+                "is_array": false,
+                "comment": "",
+                "length": -1,
+                "is_named_param": false,
+                "is_func_call": false,
+                "scope": "",
+                "table": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "cats"
+                },
+                "table_alias": "",
+                "type": {
+                  "catalog": "",
+                  "schema": "",
+                  "name": "int"
+                },
+                "is_sqlc_slice": false,
+                "embed_table": null,
+                "original_name": "",
+                "unsigned": false,
+                "array_dims": 0
+              }
+            ],
+            "comment": ""
+          }
+        ],
+        "enums": [],
+        "composite_types": []
+      }
+    ]
+  },
+  "queries": [
+    {
+      "text": "select\n  name,\n  age\nfrom\n  cats\nwhere\n  age \u003c ?",
+      "name": "GetCatsByAge",
+      "cmd": ":many",
+      "columns": [
+        {
+          "name": "name",
+          "not_null": false,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "cats"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "text"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "name",
+          "unsigned": false,
+          "array_dims": 0
+        },
+        {
+          "name": "age",
+          "not_null": false,
+          "is_array": false,
+          "comment": "",
+          "length": -1,
+          "is_named_param": false,
+          "is_func_call": false,
+          "scope": "",
+          "table": {
+            "catalog": "",
+            "schema": "",
+            "name": "cats"
+          },
+          "table_alias": "",
+          "type": {
+            "catalog": "",
+            "schema": "",
+            "name": "int"
+          },
+          "is_sqlc_slice": false,
+          "embed_table": null,
+          "original_name": "age",
+          "unsigned": false,
+          "array_dims": 0
+        }
+      ],
+      "params": [
+        {
+          "number": 1,
+          "column": {
+            "name": "age",
+            "not_null": false,
+            "is_array": false,
+            "comment": "",
+            "length": -1,
+            "is_named_param": false,
+            "is_func_call": false,
+            "scope": "",
+            "table": {
+              "catalog": "",
+              "schema": "",
+              "name": "cats"
+            },
+            "table_alias": "",
+            "type": {
+              "catalog": "",
+              "schema": "",
+              "name": "int"
+            },
+            "is_sqlc_slice": false,
+            "embed_table": null,
+            "original_name": "age",
+            "unsigned": false,
+            "array_dims": 0
+          }
+        }
+      ],
+      "comments": [],
+      "filename": "query.sql",
+      "insert_into_table": null
+    }
+  ],
+  "sqlc_version": "v1.28.0",
+  "plugin_options": "eyJmaWxlbmFtZSI6ImNvZGVnZW4uanNvbiIsImluZGVudCI6IiAgIn0=",
+  "global_options": ""
+}

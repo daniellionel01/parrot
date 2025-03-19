@@ -5,5 +5,7 @@ This is an example project showing off the usage of [parrot](https://github.com/
 ## Development
 
 ```sh
-gleam run   # Run the project
+sqlc generate --file sql/sqlc.yaml # Generate the codegen.json
+gleam run -m lpil_sqlight/parrot   # Generate type-safe sql
+gleam run                          # Run the project
 ```
