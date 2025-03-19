@@ -62,6 +62,14 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
 pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
   case string.lowercase(sqltype) {
     "int" | "integer" | "bigint" | "bigserial" -> GleamInt
+    "float"
+    | "decimal"
+    | "real"
+    | "numeric"
+    | "double precision"
+    | "smallserial"
+    | "serial"
+    | "bigserial" -> GleamFloat
     "text" -> GleamString
     "datetime" -> GleamTimestamp
     _ -> panic as { "unknown type mapping: " <> sqltype }
@@ -138,11 +146,13 @@ pub fn gen_query_decoder(query: sqlc.Query) {
       let decoder_fields =
         query.columns
         |> list.index_map(fn(col, index) {
-          let decoder_type = case string.lowercase(col.type_ref.name) {
-            "int" | "integer" | "bigint" | "bigserial" -> "decode.int"
-            "text" -> "decode.string"
-            "datetime" -> "sql.datetime_decoder()"
-            _ -> panic as { "unknown decoder mapping: " <> col.type_ref.name }
+          let col_type = sqlc_type_to_gleam(col.type_ref.name)
+          let decoder_type = case col_type {
+            GleamInt -> "decode.int"
+            GleamString -> "decode.string"
+            GleamBool -> "decode.bool"
+            GleamFloat -> "decode.float"
+            GleamTimestamp -> "sql.datetime_decoder()"
           }
 
           let decoder = case col.not_null {
