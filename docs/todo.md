@@ -2,8 +2,13 @@
 
 - [x] add decoders for all query result types (toggle in config)
 - [x] how do we handle datetime? Int? String? Extra Library?
+- [ ] fix decoder to be based on tuples
 
 - [ ] add config: tuple vs list
+
+- [ ] only import timestamp if necessary
+
+- [ ] fix parrot version (not accurate taking local gleam.toml)
 
 - [ ] add plugins support
   - [ ] custom data types and custom functions based on schema

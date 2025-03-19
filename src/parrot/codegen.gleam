@@ -42,7 +42,7 @@ fn gen_query(query: sqlc.Query) {
 
 pub fn sqlc_type_to_gleam(sqltype: String) {
   case string.lowercase(sqltype) {
-    "integer" | "bigint" | "bigserial" -> "Int"
+    "int" | "integer" | "bigint" | "bigserial" -> "Int"
     "text" -> "String"
     "datetime" -> "Timestamp"
     _ -> panic as { "unknown type mapping: " <> sqltype }
@@ -108,7 +108,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
         query.columns
         |> list.map(fn(col) {
           let decoder_type = case string.lowercase(col.type_ref.name) {
-            "integer" | "bigint" | "bigserial" -> "decode.int"
+            "int" | "integer" | "bigint" | "bigserial" -> "decode.int"
             "text" -> "decode.string"
             "datetime" -> "datetime_decoder()"
             _ -> panic as { "unknown decoder mapping: " <> col.type_ref.name }
