@@ -3,12 +3,20 @@
 - [x] add decoders for all query result types (toggle in config)
 - [x] how do we handle datetime? Int? String? Extra Library?
 
+- [ ] add config: tuple vs list
+
+- [ ] add plugins support
+  - [ ] custom data types and custom functions based on schema
+  - [ ] custom functions
+  - [ ] custom imports
+  - [ ] for gmysql
+  - [ ] explain in readme
+
 - [ ] add examples for drivers
   - [ ] mysql: https://github.com/VioletBuse/gmysql
   - [ ] postgresql: https://github.com/lpil/pog
   - [ ] sqlite: https://github.com/lpil/sqlight
-
-- add config: tuple vs list
+  - [ ] link in readme
 
 - [ ] catch error when running codegen
   - [ ] missing dependency: decode
