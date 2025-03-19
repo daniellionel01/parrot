@@ -41,11 +41,29 @@ fn gen_query(query: sqlc.Query) {
   type_str <> gen_query_function(query) <> gen_query_decoder(query)
 }
 
-pub fn sqlc_type_to_gleam(sqltype: String) {
+pub type GleamType {
+  GleamString
+  GleamInt
+  GleamFloat
+  GleamBool
+  GleamTimestamp
+}
+
+pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
+  case gleamtype {
+    GleamBool -> "Bool"
+    GleamFloat -> "Float"
+    GleamInt -> "Int"
+    GleamString -> "String"
+    GleamTimestamp -> "Timestamp"
+  }
+}
+
+pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
   case string.lowercase(sqltype) {
-    "int" | "integer" | "bigint" | "bigserial" -> "Int"
-    "text" -> "String"
-    "datetime" -> "Timestamp"
+    "int" | "integer" | "bigint" | "bigserial" -> GleamInt
+    "text" -> GleamString
+    "datetime" -> GleamTimestamp
     _ -> panic as { "unknown type mapping: " <> sqltype }
   }
 }
@@ -56,7 +74,8 @@ pub fn gen_query_type(query: sqlc.Query) {
   let args =
     query.columns
     |> list.map(fn(col) {
-      let col_type = sqlc_type_to_gleam(col.type_ref.name)
+      let gleam_type = sqlc_type_to_gleam(col.type_ref.name)
+      let col_type = gleam_type_to_string(gleam_type)
       let col_type = case col.not_null {
         True -> col_type
         False -> "Option(" <> col_type <> ")"
@@ -76,7 +95,8 @@ pub fn gen_query_function(query: sqlc.Query) {
   let def_fn_args =
     query.params
     |> list.map(fn(p) {
-      p.column.name <> ": " <> sqlc_type_to_gleam(p.column.type_ref.name)
+      let gleam_type = sqlc_type_to_gleam(p.column.type_ref.name)
+      p.column.name <> ": " <> gleam_type_to_string(gleam_type)
     })
     |> string.join(", ")
 
@@ -88,11 +108,11 @@ pub fn gen_query_function(query: sqlc.Query) {
       |> list.map(fn(arg) {
         let arg_type = sqlc_type_to_gleam(arg.column.type_ref.name)
         let param = case arg_type {
-          "Int" -> "sql.ParamInt"
-          "String" -> "sql.ParamString"
-          "Float" -> "sql.ParamFloat"
-          "Bool" -> "sql.ParamBool"
-          _ -> panic as { "unknown param type: " <> arg_type }
+          GleamInt -> "sql.ParamInt"
+          GleamString -> "sql.ParamString"
+          GleamFloat -> "sql.ParamFloat"
+          GleamBool -> "sql.ParamBool"
+          _ -> panic as { "unknown param type: " <> string.inspect(arg_type) }
         }
         param <> "(" <> arg.column.name <> ")"
       })
@@ -171,6 +191,8 @@ pub fn gen_gleam_module(schema: SQLC) {
     "import gleam/option.{type Option}"
     <> "\n"
     <> "import gleam/dynamic/decode"
+    <> "\n"
+    <> "import gleam/time/timestamp.{type Timestamp}"
     <> "\n"
     <> "import parrot/sql"
 

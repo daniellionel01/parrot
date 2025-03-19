@@ -5,6 +5,7 @@
 
 import gleam/option.{type Option}
 import gleam/dynamic/decode
+import gleam/time/timestamp.{type Timestamp}
 import parrot/sql
 
 pub type GetCatsByAge {
