@@ -23,7 +23,7 @@ where
 }
 
 pub fn get_cats_by_age_decoder() -> decode.Decoder(GetCatsByAge) {
-  use name <- decode.field("name", decode.optional(decode.string))
-  use age <- decode.field("age", decode.optional(decode.int))
+  use name <- decode.field(0, decode.optional(decode.string))
+  use age <- decode.field(1, decode.optional(decode.int))
   decode.success(GetCatsByAge(name:, age:))
 }

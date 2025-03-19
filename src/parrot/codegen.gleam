@@ -1,4 +1,5 @@
 import gleam/dynamic/decode as d
+import gleam/int
 import gleam/io
 import gleam/json
 import gleam/list
@@ -106,7 +107,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
 
       let decoder_fields =
         query.columns
-        |> list.map(fn(col) {
+        |> list.index_map(fn(col, index) {
           let decoder_type = case string.lowercase(col.type_ref.name) {
             "int" | "integer" | "bigint" | "bigserial" -> "decode.int"
             "text" -> "decode.string"
@@ -121,9 +122,9 @@ pub fn gen_query_decoder(query: sqlc.Query) {
 
           "  use "
           <> col.name
-          <> " <- decode.field(\""
-          <> col.name
-          <> "\", "
+          <> " <- decode.field("
+          <> int.to_string(index)
+          <> ", "
           <> decoder
           <> ")"
         })

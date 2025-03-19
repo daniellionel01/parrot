@@ -2,7 +2,7 @@
 
 - [x] add decoders for all query result types (toggle in config)
 - [x] how do we handle datetime? Int? String? Extra Library?
-- [ ] fix decoder to be based on tuples
+- [x] fix decoder to be based on tuples
 
 - [ ] add config: tuple vs list
 
