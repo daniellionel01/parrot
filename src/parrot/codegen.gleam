@@ -83,11 +83,21 @@ pub fn gen_query_function(query: sqlc.Query) {
   let def_return_params = case query.params {
     [] -> "Nil"
     args ->
-      "#("
+      "["
       <> args
-      |> list.map(fn(arg) { arg.column.name })
+      |> list.map(fn(arg) {
+        let arg_type = sqlc_type_to_gleam(arg.column.type_ref.name)
+        let param = case arg_type {
+          "Int" -> "sql.ParamInt"
+          "String" -> "sql.ParamString"
+          "Float" -> "sql.ParamFloat"
+          "Bool" -> "sql.ParamBool"
+          _ -> panic as { "unknown param type: " <> arg_type }
+        }
+        param <> "(" <> arg.column.name <> ")"
+      })
       |> string.join(", ")
-      <> ")"
+      <> "]"
   }
 
   let def_fn = "pub fn " <> fn_name <> "(" <> def_fn_args <> ")"
@@ -111,7 +121,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
           let decoder_type = case string.lowercase(col.type_ref.name) {
             "int" | "integer" | "bigint" | "bigserial" -> "decode.int"
             "text" -> "decode.string"
-            "datetime" -> "datetime_decoder()"
+            "datetime" -> "sql.datetime_decoder()"
             _ -> panic as { "unknown decoder mapping: " <> col.type_ref.name }
           }
 
@@ -151,18 +161,6 @@ pub fn gen_query_decoder(query: sqlc.Query) {
   }
 }
 
-fn datetime_decoder_function() -> String {
-  "fn datetime_decoder() -> decode.Decoder(Timestamp) {\n"
-  <> "  decode.string\n"
-  <> "  |> decode.then(fn(datetime_str) {\n"
-  <> "    case timestamp.parse_rfc3339(datetime_str) {\n"
-  <> "      Ok(ts) -> decode.success(ts)\n"
-  <> "      Error(_) -> decode.failure(timestamp.from_unix_seconds(0), \"Invalid datetime format\")\n"
-  <> "    }\n"
-  <> "  })\n"
-  <> "}"
-}
-
 pub fn gen_gleam_module(schema: SQLC) {
   let queries =
     schema.queries
@@ -174,16 +172,9 @@ pub fn gen_gleam_module(schema: SQLC) {
     <> "\n"
     <> "import gleam/dynamic/decode"
     <> "\n"
-    <> "import gleam/time/timestamp.{type Timestamp}"
+    <> "import parrot/sql"
 
-  comment_dont_edit()
-  <> "\n\n"
-  <> imports
-  <> "\n\n"
-  <> "// Custom decoders\n"
-  <> datetime_decoder_function()
-  <> "\n\n"
-  <> queries
+  comment_dont_edit() <> "\n\n" <> imports <> "\n\n" <> queries
 }
 
 pub fn comment_dont_edit() {

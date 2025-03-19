@@ -1,7 +1,19 @@
-import gleam/dynamic/decode
+import gleam/list
 import lpil_sqlight/sql
+import parrot/sql as parrot
 import simplifile
 import sqlight
+
+pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
+  list.map(args, fn(arg) {
+    case arg {
+      parrot.ParamInt(a) -> sqlight.int(a)
+      parrot.ParamBool(a) -> sqlight.bool(a)
+      parrot.ParamFloat(a) -> sqlight.float(a)
+      parrot.ParamString(a) -> sqlight.text(a)
+    }
+  })
+}
 
 pub fn main() {
   use conn <- sqlight.with_connection(":memory:")
@@ -15,23 +27,12 @@ pub fn main() {
   "
   let assert Ok(Nil) = sqlight.exec(sql, conn)
 
-  // let cat_decoder = {
-  //   use name <- decode.field(0, decode.string)
-  //   use age <- decode.field(1, decode.int)
-  //   decode.success(#(name, age))
-  // }
-  let cat_decoder = sql.get_cats_by_age_decoder()
-
-  let sql =
-    "
-  select name, age from cats
-  where age < ?
-  "
+  let #(raw_sql, args) = sql.get_cats_by_age(7)
 
   echo sqlight.query(
-    sql,
+    raw_sql,
     on: conn,
-    with: [sqlight.int(7)],
-    expecting: cat_decoder,
+    with: params_to_sqlight(args),
+    expecting: sql.get_cats_by_age_decoder(),
   )
 }

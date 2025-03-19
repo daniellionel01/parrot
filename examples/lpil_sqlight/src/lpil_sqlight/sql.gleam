@@ -3,27 +3,30 @@
 ////   parrot v1.0.0
 ////
 
-import gleam/dynamic/decode
 import gleam/option.{type Option}
+import gleam/dynamic/decode
+import parrot/sql
 
 pub type GetCatsByAge {
-  GetCatsByAge(name: Option(String), age: Option(Int))
+  GetCatsByAge(
+    name: Option(String),
+    age: Option(Int)
+  )
 }
 
-pub fn get_cats_by_age(age: Int) {
-  let sql =
-    "select
+pub fn get_cats_by_age(age: Int){
+  let sql = "select
   name,
   age
 from
   cats
 where
   age < ?"
-  #(sql, #(age))
+  #(sql, [sql.ParamInt(age)])
 }
 
 pub fn get_cats_by_age_decoder() -> decode.Decoder(GetCatsByAge) {
   use name <- decode.field(0, decode.optional(decode.string))
   use age <- decode.field(1, decode.optional(decode.int))
-  decode.success(GetCatsByAge(name:, age:))
+  decode.success(GetCatsByAge(name: , age: ))
 }

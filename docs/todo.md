@@ -4,7 +4,7 @@
 - [x] how do we handle datetime? Int? String? Extra Library?
 - [x] fix decoder to be based on tuples
 
-- [ ] add config: tuple vs list
+- [x] return param wrapped list instead of tuple
 
 - [ ] only import timestamp if necessary
 
