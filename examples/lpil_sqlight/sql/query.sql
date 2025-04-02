@@ -1,6 +1,6 @@
 -- name: GetCatsByAge :many
 select
-  created_at,
+  cast(datetime (created_at, 'localtime') as text) as timestamp,
   name,
   age
 from

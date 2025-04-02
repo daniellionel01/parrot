@@ -125,24 +125,20 @@
   },
   "queries": [
     {
-      "text": "select\n  created_at,\n  name,\n  age\nfrom\n  cats\nwhere\n  age \u003c ?",
+      "text": "select\n  cast(datetime (created_at, 'localtime') as text) as timestamp,\n  name,\n  age\nfrom\n  cats\nwhere\n  age \u003c ?",
       "name": "GetCatsByAge",
       "cmd": ":many",
       "columns": [
         {
-          "name": "created_at",
-          "not_null": false,
+          "name": "timestamp",
+          "not_null": true,
           "is_array": false,
           "comment": "",
           "length": -1,
           "is_named_param": false,
           "is_func_call": false,
           "scope": "",
-          "table": {
-            "catalog": "",
-            "schema": "",
-            "name": "cats"
-          },
+          "table": null,
           "table_alias": "",
           "type": {
             "catalog": "",
@@ -151,7 +147,7 @@
           },
           "is_sqlc_slice": false,
           "embed_table": null,
-          "original_name": "created_at",
+          "original_name": "",
           "unsigned": false,
           "array_dims": 0
         },

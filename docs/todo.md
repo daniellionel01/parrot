@@ -10,6 +10,8 @@
 - [ ] fix parrot version (not accurate taking local gleam.toml)
 
 - [ ] handle "any" sqlc type
+  - [ ] suggest user to cast type
+  - [ ] second pass with example data to infer type
 
 - [ ] types
   - [ ] https://github.com/sqlc-dev/sqlc-gen-python/blob/main/internal/postgresql_type.go

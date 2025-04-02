@@ -10,7 +10,7 @@ import parrot/sql
 
 pub type GetCatsByAge {
   GetCatsByAge(
-    created_at: Option(String),
+    timestamp: String,
     name: Option(String),
     age: Option(Int)
   )
@@ -18,7 +18,7 @@ pub type GetCatsByAge {
 
 pub fn get_cats_by_age(age: Int){
   let sql = "select
-  created_at,
+  cast(datetime (created_at, 'localtime') as text) as timestamp,
   name,
   age
 from
@@ -29,10 +29,10 @@ where
 }
 
 pub fn get_cats_by_age_decoder() -> decode.Decoder(GetCatsByAge) {
-  use created_at <- decode.field(0, decode.optional(decode.string))
+  use timestamp <- decode.field(0, decode.string)
   use name <- decode.field(1, decode.optional(decode.string))
   use age <- decode.field(2, decode.optional(decode.int))
-  decode.success(GetCatsByAge(created_at: , name: , age: ))
+  decode.success(GetCatsByAge(timestamp: , name: , age: ))
 }
 
 pub type CountCats {

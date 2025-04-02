@@ -131,11 +131,9 @@ parsing of the return type for you. If you are using a custom driver, you will h
 do that yourself using the [gleam/dynamic](https://hexdocs.pm/gleam_stdlib/gleam/dynamic.html)
 package.
 
-# Supported Drivers
+# Edge Cases
 
-- MySQL: https://github.com/VioletBuse/gmysql
-- PostgreSQL: https://github.com/lpil/pog
-- SQlite: https://github.com/lpil/sqlight
+## "any" types
 
 # Usage
 
