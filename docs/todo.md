@@ -7,7 +7,6 @@
 - [x] return param wrapped list instead of tuple
 
 - [ ] only import timestamp if necessary
-- [ ] fix parrot version (not accurate taking local gleam.toml)
 
 - [ ] handle "any" sqlc type
   - [ ] suggest user to cast type
