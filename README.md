@@ -83,7 +83,7 @@ WHERE
   id = ?
 LIMIT
   1"
-  #(sql, #(id))
+  #(sql, [sql.ParamInt(age)])
 }
 
 pub fn get_author_decoder() -> decode.Decoder(GetAuthor) {
@@ -125,6 +125,25 @@ pub fn list_authors_decoder() -> decode.Decoder(ListAuthors) {
 Every SQL query wrapper follows the schema of #(SQL, Params). So the first element is
 the raw SQL that can be executed by your database driver and the second element is a
 tuple of all of the parameters that you need for this query.
+
+The query parameters are wrapped in a custom type that you can use to map them to your
+database driver's types. Here is an example for [lpil/sqlight](https://github.com/lpil/sqlight):
+```gleam
+import gleam/list
+import parrot/sql as parrot
+import sqlight
+
+pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
+  list.map(args, fn(arg) {
+    case arg {
+      parrot.ParamInt(a) -> sqlight.int(a)
+      parrot.ParamBool(a) -> sqlight.bool(a)
+      parrot.ParamFloat(a) -> sqlight.float(a)
+      parrot.ParamString(a) -> sqlight.text(a)
+    }
+  })
+}
+```
 
 # Edge Cases
 
