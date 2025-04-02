@@ -133,6 +133,9 @@ import gleam/list
 import parrot/sql as parrot
 import sqlight
 
+/// Generated sql module by parrot
+import project_root/sql
+
 pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
   list.map(args, fn(arg) {
     case arg {
@@ -142,6 +145,17 @@ pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
       parrot.ParamString(a) -> sqlight.text(a)
     }
   })
+}
+
+pub fn main() {
+  let #(raw_sql, args) = sql.get_cats_by_age(7)
+  let _ =
+    echo sqlight.query(
+      raw_sql,
+      on: conn,
+      with: params_to_sqlight(args),
+      expecting: sql.get_cats_by_age_decoder(),
+    )
 }
 ```
 
