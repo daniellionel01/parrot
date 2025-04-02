@@ -148,6 +148,8 @@ pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
 }
 
 pub fn main() {
+  // ... setup database ...
+
   let #(raw_sql, args) = sql.get_cats_by_age(7)
   let _ =
     echo sqlight.query(
