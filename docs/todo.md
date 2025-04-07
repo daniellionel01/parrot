@@ -17,22 +17,11 @@
   - [ ] https://github.com/sqlc-dev/sqlc-gen-kotlin/blob/main/internal/core/mysql_type.go
   - [ ] https://github.com/sqlc-dev/sqlc-gen-kotlin/blob/main/internal/core/postgresql_type.go
 
-- [ ] additional config
-  - [ ] custom data types and custom functions based on schema
-  - [ ] custom functions
-  - [ ] custom imports
-  - [ ] footer code
-  - [ ] for gmysql
-  - [ ] explain in readme
-
 - [ ] add examples for drivers
   - [ ] mysql: https://github.com/VioletBuse/gmysql
   - [ ] postgresql: https://github.com/lpil/pog
   - [ ] sqlite: https://github.com/lpil/sqlight
   - [ ] link in readme
-
-- [ ] catch error when running codegen
-  - [ ] missing dependency: gleam_time
 
 - [ ] test more advanced queries, schemas & sqlc features
   - [ ] https://docs.sqlc.dev/en/latest/howto/named_parameters.html
@@ -44,6 +33,7 @@
   - [ ] postgresql
 
 - [ ] create schema from existing database?
+  - [ ] drizzle-kit generate (https://github.com/drizzle-team/drizzle-orm/blob/main/drizzle-kit/src/cli/commands/introspect.ts)
   - [ ] pg_dump (https://github.com/sqlc-dev/sqlc/discussions/1551#discussioncomment-2677299)
   - [ ] mysqldump (https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html)
   - [ ] sqlite (https://www.geeksforgeeks.org/how-to-export-database-and-table-schemas-in-sqlite/)
