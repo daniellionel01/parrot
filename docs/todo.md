@@ -44,6 +44,7 @@
 - [ ] remove "sqlc generate" step by executing it in gleam
 - [ ] remove need for sqlc all together by creating the sqlc.yaml on demand and add emitting option in config
 - [ ] dynamically download sqlc (https://docs.sqlc.dev/en/stable/overview/install.html)
+  - [ ] copy from https://github.com/lustre-labs/lustre esbuild binary
 
 - [ ] consider using https://jsontypedef.com/ ?
 
