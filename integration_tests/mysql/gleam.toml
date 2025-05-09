@@ -1,0 +1,10 @@
+name = "integration_test_mysql"
+version = "1.0.0"
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+parrot = { path = "../.." }
+shork = ">= 1.2.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"

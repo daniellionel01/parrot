@@ -3,5 +3,6 @@
 /build
 erl_crash.dump
 
-# postgresql
-data
+# docker volumes
+pg_data
+mysql_data

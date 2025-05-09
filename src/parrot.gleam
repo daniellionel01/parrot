@@ -4,10 +4,13 @@ import gleam/bool
 import gleam/dict.{type Dict}
 import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/int
 import gleam/io
 import gleam/list
+import gleam/option
 import gleam/result
 import gleam/string
+import gleam/uri
 import parrot/codegen
 import parrot/config
 import parrot/internal/project
@@ -99,14 +102,22 @@ pub fn cmd_gen(engine: Engine, db: String) {
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
 
   let assert Ok(schema_sql) = case engine {
-    MySQL -> todo
+    MySQL -> {
+      use schema <- result.try(
+        fetch_schema_mysql(db) |> result.map_error(fn(_) { Error("") }),
+      )
+      Ok(schema)
+    }
     PostgreSQL -> {
+      todo as "check if pg_dump is installed"
+      todo as "check db connection is ok"
       use schema <- result.try(
         fetch_schema_postgresql(db) |> result.map_error(fn(_) { Error("") }),
       )
       Ok(schema)
     }
     SQlite -> {
+      todo as "check db connection is ok"
       use schema <- result.try(
         fetch_schema_sqlite(db) |> result.map_error(fn(_) { Error("") }),
       )
@@ -129,6 +140,44 @@ pub fn cmd_gen(engine: Engine, db: String) {
       json_file_path: queries_file,
     )
   Ok(codegen.codegen_from_config(config))
+}
+
+pub fn fetch_schema_mysql(db: String) {
+  let assert Ok(conn) = uri.parse(db)
+
+  let #(user, pass) = case conn.userinfo {
+    option.None -> panic as "missing mysql user"
+    option.Some(userinfo) -> {
+      case string.split(userinfo, ":") {
+        [user] -> #(user, "")
+        [user, pass] -> #(user, pass)
+        _ -> panic as "could not parse mysql credentials"
+      }
+    }
+  }
+  let port = case conn.port {
+    option.None -> "3306"
+    option.Some(port) -> int.to_string(port)
+  }
+  let host = case conn.host {
+    option.None -> "localhost"
+    option.Some(host) -> host
+  }
+  let db = string.replace(conn.path, "/", "")
+
+  let assert Ok(out) =
+    shellout.command(
+      run: "mysqldump",
+      with: ["--no-data", "-u", user, "-p" <> pass, "-h", host, "-P", port, db],
+      in: ".",
+      opt: [],
+    )
+
+  out
+  |> string.split("\n")
+  |> list.filter(fn(line) { string.contains(line, "mysqldump:") == False })
+  |> string.join("\n")
+  |> Ok
 }
 
 pub fn fetch_schema_postgresql(db: String) {
