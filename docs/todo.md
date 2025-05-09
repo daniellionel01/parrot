@@ -43,10 +43,9 @@
   - [ ] mysql
   - [ ] postgresql
 
-- [ ] create schema from existing database?
-  - [ ] drizzle-kit generate (https://github.com/drizzle-team/drizzle-orm/blob/main/drizzle-kit/src/cli/commands/introspect.ts)
+- [x] create schema from existing database?
   - [x] pg_dump (https://github.com/sqlc-dev/sqlc/discussions/1551#discussioncomment-2677299)
-  - [ ] mysqldump (https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html)
+  - [x] mysqldump (https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html)
   - [x] sqlite (https://www.geeksforgeeks.org/how-to-export-database-and-table-schemas-in-sqlite/)
 
 - [ ] map all types to gleam
