@@ -2,6 +2,7 @@
 # You typically do not need to edit this file
 
 packages = [
+  { name = "argv", version = "1.0.2", build_tools = ["gleam"], requirements = [], otp_app = "argv", source = "hex", outer_checksum = "BA1FF0929525DEBA1CE67256E5ADF77A7CDDFE729E3E3F57A5BDCAA031DED09D" },
   { name = "decode", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "decode", source = "hex", outer_checksum = "9FFAD3F60600C6777072C3836B9FD965961D7C76C5D6007918AE0F82C1B21BE3" },
   { name = "erlexec", version = "2.2.0", build_tools = ["rebar3"], requirements = [], otp_app = "erlexec", source = "hex", outer_checksum = "19E4E1C170DE5594DA1C67A8A9A0DEFAE0BC407E138A70B14FEA031FE9E67347" },
   { name = "exception", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "exception", source = "hex", outer_checksum = "F5580D584F16A20B7FCDCABF9E9BE9A2C1F6AC4F9176FA6DD0B63E3B20D450AA" },
@@ -20,6 +21,7 @@ packages = [
 ]
 
 [requirements]
+argv = { version = ">= 1.0.2 and < 2.0.0" }
 decode = { version = ">= 1.0.0 and < 2.0.0" }
 exception = { version = ">= 2.0.0 and < 3.0.0" }
 filepath = { version = ">= 1.1.0 and < 2.0.0" }

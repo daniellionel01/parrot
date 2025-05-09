@@ -2,6 +2,7 @@ import gleam/dynamic/decode as d
 import gleam/int
 import gleam/json
 import gleam/list
+import gleam/option
 import gleam/string
 import parrot/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
@@ -67,10 +68,27 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     | "smallserial"
     | "serial"
     | "bigserial" -> GleamFloat
-    "text" -> GleamString
+    "text" | "varchar" -> GleamString
     "datetime" -> GleamTimestamp
     _ -> panic as { "unknown type mapping: " <> sqltype }
   }
+}
+
+pub fn gen_column_name(query: sqlc.Query, col: sqlc.TableColumn) -> String {
+  let occ =
+    query.columns
+    |> list.count(fn(col2) { col.name == col2.name })
+  let result = case occ {
+    0 -> panic as "could not find column name"
+    1 -> col.name
+    _ -> {
+      case col.table {
+        option.None -> col.name
+        option.Some(t) -> t.name <> "_" <> col.name
+      }
+    }
+  }
+  string_case.snake_case(result)
 }
 
 pub fn gen_query_type(query: sqlc.Query) {
@@ -85,7 +103,8 @@ pub fn gen_query_type(query: sqlc.Query) {
         True -> col_type
         False -> "Option(" <> col_type <> ")"
       }
-      col.name <> ": " <> col_type
+      let col_name = gen_column_name(query, col)
+      col_name <> ": " <> col_type
     })
     |> list.map(fn(str) { "    " <> str })
     |> string.join(",\n")
@@ -117,7 +136,7 @@ pub fn gen_query_function(query: sqlc.Query) {
           GleamString -> "sql.ParamString"
           GleamFloat -> "sql.ParamFloat"
           GleamBool -> "sql.ParamBool"
-          _ -> panic as { "unknown param type: " <> string.inspect(arg_type) }
+          GleamTimestamp -> "sql.ParamTimestamp"
         }
         param <> "(" <> arg.column.name <> ")"
       })
@@ -156,9 +175,10 @@ pub fn gen_query_decoder(query: sqlc.Query) {
             True -> decoder_type
             False -> "decode.optional(" <> decoder_type <> ")"
           }
+          let col_name = gen_column_name(query, col)
 
           "  use "
-          <> col.name
+          <> col_name
           <> " <- decode.field("
           <> int.to_string(index)
           <> ", "
@@ -169,7 +189,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
 
       let constructor_args =
         query.columns
-        |> list.map(fn(col) { col.name <> ": " })
+        |> list.map(fn(col) { gen_column_name(query, col) <> ": " })
         |> string.join(", ")
 
       let success_line =

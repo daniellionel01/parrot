@@ -6,6 +6,7 @@ pub type Param {
   ParamString(String)
   ParamFloat(Float)
   ParamBool(Bool)
+  ParamTimestamp(Timestamp)
 }
 
 pub fn datetime_decoder() -> decode.Decoder(Timestamp) {

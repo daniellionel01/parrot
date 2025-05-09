@@ -4,3 +4,12 @@ CREATE TABLE authors (
   name text NOT NULL,
   bio text
 );
+
+CREATE TABLE posts (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  author_id BIGINT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  body TEXT,
+  FOREIGN KEY (author_id) REFERENCES authors (id)
+);

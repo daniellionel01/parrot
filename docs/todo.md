@@ -6,7 +6,18 @@
 
 - [x] return param wrapped list instead of tuple
 
+- [ ] bug fix: joins
+
 - [ ] only import timestamp if necessary
+
+- [ ] remove config -> just use defaults
+  - [ ] put .parrot directory in build directory (similar to lustre)
+  - [ ] use all *.sql files (similar to squirrel)
+  - [ ] auto determine type of db
+  - [ ] auto fetch schema
+  - [ ] auto create sqlc config
+  - [ ] auto download sqlc
+  - [ ] cli option to specify output module or keep things separated
 
 - [ ] handle "any" sqlc type
   - [ ] suggest user to cast type
