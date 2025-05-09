@@ -11,13 +11,12 @@
 - [ ] only import timestamp if necessary
 
 - [ ] remove config -> just use defaults
-  - [ ] put .parrot directory in build directory (similar to lustre)
-  - [ ] use all *.sql files (similar to squirrel)
-  - [ ] auto determine type of db
-  - [ ] auto fetch schema
-  - [ ] auto create sqlc config
-  - [ ] auto download sqlc
-  - [ ] cli option to specify output module or keep things separated
+  - [x] put .parrot directory in build directory (similar to lustre)
+  - [x] use all *.sql files (similar to squirrel)
+  - [x] auto fetch schema
+  - [x] auto create sqlc config
+  - [ ] warning when sqlc is not installed (link installation page)
+  - [ ] auto determine type of db (look for DATABASE_URL or .db, .sqlite files)
 
 - [ ] handle "any" sqlc type
   - [ ] suggest user to cast type
@@ -38,7 +37,7 @@
   - [ ] https://docs.sqlc.dev/en/latest/howto/named_parameters.html
   - [ ] sql functions such as datetime (sqlite) or strf
 
-- [ ] integration tests
+- [ ] automated integration tests
   - [ ] sqlite
   - [ ] mysql
   - [ ] postgresql
@@ -51,29 +50,14 @@
 - [ ] map all types to gleam
 - [ ] config: error instead of dynamic type for unknown columns
 
-- [ ] remove "sqlc generate" step by executing it in gleam
-- [ ] remove need for sqlc all together by creating the sqlc.yaml on demand and add emitting option in config
+- [x] remove "sqlc generate" step by executing it in gleam
+- [x] remove need for sqlc all together by creating the sqlc.yaml on demand and add emitting option in config
 - [ ] dynamically download sqlc (https://docs.sqlc.dev/en/stable/overview/install.html)
   - [ ] copy from https://github.com/lustre-labs/lustre esbuild binary
-
-- [ ] consider using https://jsontypedef.com/ ?
 
 - [ ] catalog -> schemas -> enums
 - [ ] catalog -> schemas -> composite_types
 - [ ] catalog -> schemas -> tables -> columns -> embed_table
-
-- [ ] reuse types if they have the same schema (f.e. select *)
-
-- [ ] auto discover sqlc.yaml/json
-  - [ ] how do we handle multiple?
-  - [ ] we could do all of them?
-    - [ ] one module for each sqlc.yaml/json
-    - [ ] name -> parent directory of sqlc config? or from catalog schema name?
-
-- [ ] add "auto generated" comments in head of files similar to...
-  - ... https://github.com/sqlc-dev/sqlc/blob/main/examples/batch/postgresql/query.sql.go
-
-- [ ] support javascript target
 
 - [ ] add example repositories
   - [ ] postgresql
@@ -81,7 +65,5 @@
   - [ ] mysql
 
 - [ ] use llm to generate various complicated queries that are automatically run and tested
-
-- [ ] more advanced handling of joins
 
 - [ ] think about usage in larger codebases and scaling

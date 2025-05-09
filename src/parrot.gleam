@@ -23,6 +23,30 @@ const usage = "Usage:
   gleam run -m parrot gen [sqlite | mysql | postgresql] [database]
 "
 
+pub type ParrotError {
+  UnknownEngine(String)
+
+  SqlitDBNotFound(String)
+  MySqlDBNotFound(String)
+  PostgreSqlDBNotFound(String)
+
+  NoQueriesFound
+  MysqldumpError
+  PgdumpError
+}
+
+pub fn err_to_string(error: ParrotError) {
+  case error {
+    MySqlDBNotFound(_) -> "mysql db not found"
+    PostgreSqlDBNotFound(_) -> "postgresql db not found"
+    SqlitDBNotFound(_) -> "sqlite db not found"
+    MysqldumpError -> "there was an error with mysqldump"
+    PgdumpError -> "there was an error pg_dump"
+    NoQueriesFound -> "no queries were found to codegen"
+    UnknownEngine(engine) -> "unknown engine: " <> engine
+  }
+}
+
 pub type Engine {
   SQlite
   MySQL
@@ -34,12 +58,12 @@ fn engine_decoder() -> decode.Decoder(Engine) {
   case variant {
     "sqlite" -> decode.success(SQlite)
     "mysql" -> decode.success(MySQL)
-    "postgresql" -> decode.success(PostgreSQL)
+    "psql" -> decode.success(PostgreSQL)
     _ -> decode.failure(SQlite, "Driver")
   }
 }
 
-pub fn engine_to_string(engine: Engine) {
+pub fn engine_to_sqlc_string(engine: Engine) {
   case engine {
     MySQL -> "mysql"
     PostgreSQL -> "postgresql"
@@ -47,21 +71,54 @@ pub fn engine_to_string(engine: Engine) {
   }
 }
 
+pub fn is_sqlite(bits: BitArray) {
+  case bits {
+    <<
+      0x53,
+      0x51,
+      0x4C,
+      0x69,
+      0x74,
+      0x65,
+      0x20,
+      0x66,
+      0x6F,
+      0x72,
+      0x6D,
+      0x61,
+      0x74,
+      0x20,
+      0x33,
+      0x00,
+      _:bits,
+    >> -> True
+    _ -> False
+  }
+}
+
 pub fn main() -> Result(Nil, String) {
   case argv.load().arguments {
     ["gen", engine_arg, db] -> {
       let engine = decode.run(dynamic.from(engine_arg), engine_decoder())
-      let _ = case engine {
+      let result = case engine {
         Error(_) -> {
-          io.println_error("Could not determine engine: " <> engine_arg)
-          Ok(Nil)
+          Error(UnknownEngine(engine_arg))
         }
         Ok(engine) -> {
-          let _ = cmd_gen(engine, db)
+          cmd_gen(engine, db)
+        }
+      }
+
+      case result {
+        Error(err) -> {
+          io.println("Error! " <> err_to_string(err))
+          Ok(Nil)
+        }
+        Ok(_) -> {
+          io.println("SQL successfully generated!")
           Ok(Nil)
         }
       }
-      Ok(Nil)
     }
     ["help"] -> {
       io.println(usage)
@@ -74,7 +131,7 @@ pub fn main() -> Result(Nil, String) {
   }
 }
 
-pub fn cmd_gen(engine: Engine, db: String) {
+pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
   let files = walk(project.src())
   let queries =
     files
@@ -101,26 +158,17 @@ pub fn cmd_gen(engine: Engine, db: String) {
   let sqlc_yaml = gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
 
-  let assert Ok(schema_sql) = case engine {
+  use schema_sql <- result.try(case engine {
     MySQL -> {
-      use schema <- result.try(
-        fetch_schema_mysql(db) |> result.map_error(fn(_) { Error("") }),
-      )
+      use schema <- result.try(fetch_schema_mysql(db))
       Ok(schema)
     }
     PostgreSQL -> {
-      todo as "check if pg_dump is installed"
-      todo as "check db connection is ok"
-      use schema <- result.try(
-        fetch_schema_postgresql(db) |> result.map_error(fn(_) { Error("") }),
-      )
+      use schema <- result.try(fetch_schema_postgresql(db))
       Ok(schema)
     }
     SQlite -> {
-      todo as "check db connection is ok"
-      use schema <- result.try(
-        fetch_schema_sqlite(db) |> result.map_error(fn(_) { Error("") }),
-      )
+      use schema <- result.try(fetch_schema_sqlite(db))
       let sql =
         schema
         |> list.map(string.trim)
@@ -128,7 +176,7 @@ pub fn cmd_gen(engine: Engine, db: String) {
         |> string.join("\n")
       Ok(sql)
     }
-  }
+  })
   let _ = simplifile.write(schema_file, schema_sql)
 
   let _ =
@@ -139,22 +187,30 @@ pub fn cmd_gen(engine: Engine, db: String) {
       gleam_module_out_path: "parrots/sql.gleam",
       json_file_path: queries_file,
     )
-  Ok(codegen.codegen_from_config(config))
+  let _ = codegen.codegen_from_config(config)
+
+  // todo as "map potential errors from codegen"
+  // todo as "verify codegen worked fine"
+
+  Ok(Nil)
 }
 
-pub fn fetch_schema_mysql(db: String) {
+pub fn fetch_schema_mysql(db: String) -> Result(String, ParrotError) {
   let assert Ok(conn) = uri.parse(db)
 
-  let #(user, pass) = case conn.userinfo {
-    option.None -> panic as "missing mysql user"
+  let creds = case conn.userinfo {
+    option.None -> option.None
     option.Some(userinfo) -> {
       case string.split(userinfo, ":") {
-        [user] -> #(user, "")
-        [user, pass] -> #(user, pass)
-        _ -> panic as "could not parse mysql credentials"
+        [user] -> option.Some(#(user, ""))
+        [user, pass] -> option.Some(#(user, pass))
+        _ -> option.None
       }
     }
   }
+
+  use #(user, pass) <- result.try(option.to_result(creds, MySqlDBNotFound("")))
+
   let port = case conn.port {
     option.None -> "3306"
     option.Some(port) -> int.to_string(port)
@@ -165,13 +221,15 @@ pub fn fetch_schema_mysql(db: String) {
   }
   let db = string.replace(conn.path, "/", "")
 
-  let assert Ok(out) =
+  use out <- result.try(
     shellout.command(
       run: "mysqldump",
       with: ["--no-data", "-u", user, "-p" <> pass, "-h", host, "-P", port, db],
       in: ".",
       opt: [],
     )
+    |> result.replace_error(MysqldumpError),
+  )
 
   out
   |> string.split("\n")
@@ -180,7 +238,7 @@ pub fn fetch_schema_mysql(db: String) {
   |> Ok
 }
 
-pub fn fetch_schema_postgresql(db: String) {
+pub fn fetch_schema_postgresql(db: String) -> Result(String, ParrotError) {
   shellout.command(
     run: "pg_dump",
     with: [
@@ -195,9 +253,10 @@ pub fn fetch_schema_postgresql(db: String) {
     in: ".",
     opt: [],
   )
+  |> result.replace_error(PgdumpError)
 }
 
-pub fn fetch_schema_sqlite(db: String) {
+pub fn fetch_schema_sqlite(db: String) -> Result(List(String), ParrotError) {
   use conn <- sqlight.with_connection(db)
 
   let schema_decoder = {
@@ -222,7 +281,12 @@ SELECT sql
       END,
       name;
   "
-  sqlight.query(sql, on: conn, with: [], expecting: schema_decoder)
+
+  use result <- result.try(
+    sqlight.query(sql, on: conn, with: [], expecting: schema_decoder)
+    |> result.replace_error(SqlitDBNotFound("")),
+  )
+  Ok(result)
 }
 
 pub fn gen_sqlc_yaml(engine: Engine, queries: List(String)) {
@@ -236,7 +300,7 @@ plugins:
 sql:
   - schema: schema.sql
     queries: [" <> string.join(queries, ", ") <> "]
-    engine: " <> engine_to_string(engine) <> "
+    engine: " <> engine_to_sqlc_string(engine) <> "
     codegen:
       - out: .
         plugin: jsonb
