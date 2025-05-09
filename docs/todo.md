@@ -47,7 +47,7 @@
   - [ ] drizzle-kit generate (https://github.com/drizzle-team/drizzle-orm/blob/main/drizzle-kit/src/cli/commands/introspect.ts)
   - [ ] pg_dump (https://github.com/sqlc-dev/sqlc/discussions/1551#discussioncomment-2677299)
   - [ ] mysqldump (https://dev.mysql.com/doc/refman/8.4/en/mysqldump.html)
-  - [ ] sqlite (https://www.geeksforgeeks.org/how-to-export-database-and-table-schemas-in-sqlite/)
+  - [x] sqlite (https://www.geeksforgeeks.org/how-to-export-database-and-table-schemas-in-sqlite/)
 
 - [ ] map all types to gleam
 - [ ] config: error instead of dynamic type for unknown columns

@@ -17,7 +17,7 @@ import sqlight
 
 const usage = "Usage:
   gleam run -m parrot help
-  gleam run -m parrot gen [sqlite | mysql | postgresql]
+  gleam run -m parrot gen [sqlite | mysql | postgresql] [database]
 "
 
 pub type Engine {
@@ -46,11 +46,7 @@ pub fn engine_to_string(engine: Engine) {
 
 pub fn main() -> Result(Nil, String) {
   case argv.load().arguments {
-    ["gen", "sqlite", db] -> {
-      let _ = cmd_gen(SQlite, db)
-      Ok(Nil)
-    }
-    ["gen", engine_arg] -> {
+    ["gen", engine_arg, db] -> {
       let engine = decode.run(dynamic.from(engine_arg), engine_decoder())
       let _ = case engine {
         Error(_) -> {
@@ -58,7 +54,7 @@ pub fn main() -> Result(Nil, String) {
           Ok(Nil)
         }
         Ok(engine) -> {
-          let _ = cmd_gen(engine, todo)
+          let _ = cmd_gen(engine, db)
           Ok(Nil)
         }
       }
@@ -102,12 +98,26 @@ pub fn cmd_gen(engine: Engine, db: String) {
   let sqlc_yaml = gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
 
-  use schema <- result.try(fetch_schema_sqlite(db))
-  let schema_sql =
-    schema
-    |> list.map(string.trim)
-    |> list.map(fn(sql) { sql <> ";" })
-    |> string.join("\n")
+  let assert Ok(schema_sql) = case engine {
+    MySQL -> todo
+    PostgreSQL -> {
+      use schema <- result.try(
+        fetch_schema_postgresql(db) |> result.map_error(fn(_) { Error("") }),
+      )
+      Ok(schema)
+    }
+    SQlite -> {
+      use schema <- result.try(
+        fetch_schema_sqlite(db) |> result.map_error(fn(_) { Error("") }),
+      )
+      let sql =
+        schema
+        |> list.map(string.trim)
+        |> list.map(fn(sql) { sql <> ";" })
+        |> string.join("\n")
+      Ok(sql)
+    }
+  }
   let _ = simplifile.write(schema_file, schema_sql)
 
   let _ =
@@ -119,6 +129,23 @@ pub fn cmd_gen(engine: Engine, db: String) {
       json_file_path: queries_file,
     )
   Ok(codegen.codegen_from_config(config))
+}
+
+pub fn fetch_schema_postgresql(db: String) {
+  shellout.command(
+    run: "pg_dump",
+    with: [
+      "--no-privileges",
+      "--no-acl",
+      "--no-owner",
+      "--schema-only",
+      "--no-comments",
+      "--encoding=utf8",
+      db,
+    ],
+    in: ".",
+    opt: [],
+  )
 }
 
 pub fn fetch_schema_sqlite(db: String) {

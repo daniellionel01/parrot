@@ -2,6 +2,3 @@
 *.ez
 /build
 erl_crash.dump
-
-# postgresql
-data

@@ -58,8 +58,12 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
 }
 
 pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
+  let sqltype = case sqltype {
+    "pg_catalog." <> x -> x
+    x -> x
+  }
   case string.lowercase(sqltype) {
-    "int" | "integer" | "bigint" | "bigserial" -> GleamInt
+    "int" <> _ | "integer" | "bigint" | "bigserial" -> GleamInt
     "float"
     | "decimal"
     | "real"
@@ -69,7 +73,7 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     | "serial"
     | "bigserial" -> GleamFloat
     "text" | "varchar" -> GleamString
-    "datetime" -> GleamTimestamp
+    "datetime" | "timestamp" -> GleamTimestamp
     _ -> panic as { "unknown type mapping: " <> sqltype }
   }
 }
