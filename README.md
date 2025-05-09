@@ -150,13 +150,13 @@ pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
 pub fn main() {
   // ... setup database ...
 
-  let #(raw_sql, args) = sql.get_cats_by_age(7)
+  let #(raw_sql, args) = sql.get_author(7)
   let _ =
     echo sqlight.query(
       raw_sql,
       on: conn,
       with: params_to_sqlight(args),
-      expecting: sql.get_cats_by_age_decoder(),
+      expecting: sql.get_author_decoder(),
     )
 }
 ```
