@@ -1,7 +1,7 @@
 {
   "settings": {
     "version": "2",
-    "engine": "mysql",
+    "engine": "sqlite",
     "schema": [
       "schema.sql"
     ],
@@ -22,12 +22,12 @@
   },
   "catalog": {
     "comment": "",
-    "default_schema": "public",
+    "default_schema": "main",
     "name": "",
     "schemas": [
       {
         "comment": "",
-        "name": "public",
+        "name": "main",
         "tables": [
           {
             "rel": {
@@ -54,7 +54,7 @@
                 "type": {
                   "catalog": "",
                   "schema": "",
-                  "name": "bigint"
+                  "name": "INTEGER"
                 },
                 "is_sqlc_slice": false,
                 "embed_table": null,
@@ -67,7 +67,7 @@
                 "not_null": true,
                 "is_array": false,
                 "comment": "",
-                "length": 19,
+                "length": -1,
                 "is_named_param": false,
                 "is_func_call": false,
                 "scope": "",
@@ -80,7 +80,7 @@
                 "type": {
                   "catalog": "",
                   "schema": "",
-                  "name": "datetime"
+                  "name": "DATETIME"
                 },
                 "is_sqlc_slice": false,
                 "embed_table": null,
@@ -106,7 +106,7 @@
                 "type": {
                   "catalog": "",
                   "schema": "",
-                  "name": "text"
+                  "name": "TEXT"
                 },
                 "is_sqlc_slice": false,
                 "embed_table": null,
@@ -132,7 +132,7 @@
                 "type": {
                   "catalog": "",
                   "schema": "",
-                  "name": "text"
+                  "name": "TEXT"
                 },
                 "is_sqlc_slice": false,
                 "embed_table": null,
@@ -173,7 +173,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "bigint"
+            "name": "INTEGER"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -186,7 +186,7 @@
           "not_null": true,
           "is_array": false,
           "comment": "",
-          "length": 19,
+          "length": -1,
           "is_named_param": false,
           "is_func_call": false,
           "scope": "",
@@ -199,7 +199,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "datetime"
+            "name": "DATETIME"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -225,7 +225,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "text"
+            "name": "TEXT"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -251,7 +251,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "text"
+            "name": "TEXT"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -281,7 +281,7 @@
             "type": {
               "catalog": "",
               "schema": "",
-              "name": "bigint"
+              "name": "INTEGER"
             },
             "is_sqlc_slice": false,
             "embed_table": null,
@@ -318,7 +318,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "bigint"
+            "name": "INTEGER"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -331,7 +331,7 @@
           "not_null": true,
           "is_array": false,
           "comment": "",
-          "length": 19,
+          "length": -1,
           "is_named_param": false,
           "is_func_call": false,
           "scope": "",
@@ -344,7 +344,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "datetime"
+            "name": "DATETIME"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -370,7 +370,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "text"
+            "name": "TEXT"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -396,7 +396,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "text"
+            "name": "TEXT"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -406,12 +406,14 @@
         }
       ],
       "params": [],
-      "comments": [],
+      "comments": [
+        " additional comments!"
+      ],
       "filename": "query.sql",
       "insert_into_table": null
     },
     {
-      "text": "SELECT\n  id, created_at, name, bio\nFROM\n  authors\nWHERE\n  authors.created_at \u003e ?\nORDER BY\n  name",
+      "text": "SELECT\n  id, created_at, name, bio\nFROM\n  authors\nWHERE\n  authors.created_at \u003e ?1\nORDER BY\n  name",
       "name": "NewAuthorsSince",
       "cmd": ":many",
       "columns": [
@@ -433,7 +435,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "bigint"
+            "name": "INTEGER"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -446,7 +448,7 @@
           "not_null": true,
           "is_array": false,
           "comment": "",
-          "length": 19,
+          "length": -1,
           "is_named_param": false,
           "is_func_call": false,
           "scope": "",
@@ -459,7 +461,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "datetime"
+            "name": "DATETIME"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -485,7 +487,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "text"
+            "name": "TEXT"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -511,7 +513,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "text"
+            "name": "TEXT"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -528,7 +530,7 @@
             "not_null": true,
             "is_array": false,
             "comment": "",
-            "length": 19,
+            "length": -1,
             "is_named_param": true,
             "is_func_call": false,
             "scope": "",
@@ -541,7 +543,7 @@
             "type": {
               "catalog": "",
               "schema": "",
-              "name": "datetime"
+              "name": "DATETIME"
             },
             "is_sqlc_slice": false,
             "embed_table": null,
@@ -574,14 +576,14 @@
             "scope": "",
             "table": {
               "catalog": "",
-              "schema": "public",
+              "schema": "main",
               "name": "authors"
             },
             "table_alias": "",
             "type": {
               "catalog": "",
               "schema": "",
-              "name": "text"
+              "name": "TEXT"
             },
             "is_sqlc_slice": false,
             "embed_table": null,
@@ -603,14 +605,14 @@
             "scope": "",
             "table": {
               "catalog": "",
-              "schema": "public",
+              "schema": "main",
               "name": "authors"
             },
             "table_alias": "",
             "type": {
               "catalog": "",
               "schema": "",
-              "name": "text"
+              "name": "TEXT"
             },
             "is_sqlc_slice": false,
             "embed_table": null,
@@ -654,7 +656,7 @@
             "type": {
               "catalog": "",
               "schema": "",
-              "name": "bigint"
+              "name": "INTEGER"
             },
             "is_sqlc_slice": false,
             "embed_table": null,
@@ -687,7 +689,7 @@
           "type": {
             "catalog": "",
             "schema": "",
-            "name": "bigint"
+            "name": "integer"
           },
           "is_sqlc_slice": false,
           "embed_table": null,
@@ -702,7 +704,7 @@
       "insert_into_table": null
     }
   ],
-  "sqlc_version": "v1.28.0",
+  "sqlc_version": "v1.29.0",
   "plugin_options": "eyJmaWxlbmFtZSI6ImNvZGVnZW4uanNvbiIsImluZGVudCI6IiAgIn0=",
   "global_options": ""
 }

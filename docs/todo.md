@@ -66,6 +66,9 @@
 - [ ] support javascript target
 
 - [ ] add example repositories
+  - [ ] postgresql
+  - [ ] sqlite
+  - [ ] mysql
 
 - [ ] use llm to generate various complicated queries that are automatically run and tested
 
