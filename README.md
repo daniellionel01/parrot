@@ -122,7 +122,7 @@ pub fn list_authors_decoder() -> decode.Decoder(ListAuthors) {
 }
 ```
 
-Every SQL query wrapper follows the schema of #(SQL, Params). So the first element is
+Every SQL statement wrapper follows the schema of `#(String, List(Params))`. The first element is
 the raw SQL that can be executed by your database driver and the second element is a
 tuple of all of the parameters that you need for this query.
 
