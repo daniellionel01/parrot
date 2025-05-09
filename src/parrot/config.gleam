@@ -1,26 +1,11 @@
 import filepath
-import gleam/option.{type Option}
 import parrot/internal/project
 import simplifile
-
-pub type Driver {
-  /// https://github.com/lpil/sqlight
-  LpilSqlight
-  /// https://github.com/lpil/pog
-  LpilPog
-  /// https://github.com/VioletBuse/gmysql
-  Gmysql
-}
 
 pub type Config {
   /// json_file_path: relative to project root directory
   /// gleam_module_out_path: relative to project src directory
-  /// driver: support for existing database libraries (mysql, postgresql, sqlite)
-  Config(
-    json_file_path: String,
-    gleam_module_out_path: String,
-    driver: Option(Driver),
-  )
+  Config(json_file_path: String, gleam_module_out_path: String)
 }
 
 pub fn get_json_file(config: Config) {
