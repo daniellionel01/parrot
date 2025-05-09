@@ -167,12 +167,16 @@ pub fn main() {
 
 # Usage
 
+For parrot to work you need to make sure you have [sqlc](https://sqlc.dev/) installed ([guide](https://docs.sqlc.dev/en/latest/overview/install.html)) installed.
+- If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have mysql installed)
+- If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes per default if you have postgresql installed)
+
 1. Install
 ```sh
 $ gleam add parrot@1
 ```
 
-2. Setup sqlc
+2. Download sqlc
 
 Now setup your `sqlc.yaml`, `schema.sql` and `query.sql` like in any other sqlc project.
 
