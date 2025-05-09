@@ -173,7 +173,7 @@ For parrot to work you need to make sure you have [sqlc](https://sqlc.dev/) inst
 
 1. Install
 ```sh
-$ gleam add parrot@1
+$ gleam add parrot
 ```
 
 2. Download sqlc
