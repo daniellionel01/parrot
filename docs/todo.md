@@ -6,7 +6,7 @@
 
 - [x] return param wrapped list instead of tuple
 
-- [ ] bug fix: joins
+- [x] bug fix: joins
 
 - [ ] only import timestamp if necessary
 
