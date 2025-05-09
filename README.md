@@ -42,7 +42,7 @@ ORDER BY
   name;
 ```
 
-The `--name: GetAuthor :one` comment is part of sqlc and will be used to generate the
+The `--name: GetAuthor :one` comment is part of [sqlc](https://sqlc.dev/) and will be used to generate the
 name and return type of the wrapper.
 
 Given the queries above, the following code will be generated:
@@ -182,7 +182,7 @@ $ gleam add parrot
 - Each *.sql file can contain as many SQL queries as you want.
 - All of the queries will compile into a single `src/parrots/sql.gleam` module.
 
-Here are some links to help you start out, if you are unfamiliar with the sqlc annotation syntax:
+Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
 - [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html)
 - [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html)
 - [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html)
@@ -218,7 +218,7 @@ $ gleam test  # Run the tests
 # FAQ
 
 ### What flavour of SQL does parrot support?
-This plugin supports everything that sqlc supports. As the time of this writing that
+This plugin supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
 would be MySQL, PostgreSQL and SQlite.
 
 You can read more on language & SQL support here:
