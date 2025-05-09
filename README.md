@@ -197,14 +197,14 @@ Further documentation can be found at <https://hexdocs.pm/parrot>.
 ## Database
 
 There are scripts to spawn a MySQL or PostgreSQL docker container:
--  [MySQL Script](./scripts/mysql/docker.sh)
--  [PostgreSQL Script](./scripts/psql/docker.sh)
+-  [MySQL Script](./bin/mysql/docker.sh)
+-  [PostgreSQL Script](./bin/psql/docker.sh)
 
 For example:
 ```sh
-$ ./scripts/mysql/docker.sh
+$ ./bin/mysql/docker.sh
 # or
-$ ./scripts/psql/docker.sh
+$ ./bin/psql/docker.sh
 ```
 
 ## Running the project and tests
