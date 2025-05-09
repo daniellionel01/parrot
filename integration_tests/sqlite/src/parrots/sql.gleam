@@ -77,7 +77,7 @@ pub fn new_authors_since(after: Timestamp){
 FROM
   authors
 WHERE
-  authors.created_at > ?
+  authors.created_at > ?1
 ORDER BY
   name"
   #(sql, [sql.ParamTimestamp(after)])
@@ -129,6 +129,7 @@ pub type AuthorPosts {
   AuthorPosts(
     posts_id: Int,
     posts_created_at: Timestamp,
+    updated_at: Timestamp,
     author_id: Int,
     title: String,
     body: Option(String),
@@ -141,7 +142,7 @@ pub type AuthorPosts {
 
 pub fn author_posts(id: Int){
   let sql = "SELECT
-  posts.id, posts.created_at, author_id, title, body, authors.id, authors.created_at, name, bio
+  posts.id, posts.created_at, updated_at, author_id, title, body, authors.id, authors.created_at, name, bio
 FROM
   posts
   INNER JOIN authors on authors.id = posts.author_id
@@ -153,12 +154,13 @@ WHERE
 pub fn author_posts_decoder() -> decode.Decoder(AuthorPosts) {
   use posts_id <- decode.field(0, decode.int)
   use posts_created_at <- decode.field(1, sql.datetime_decoder())
-  use author_id <- decode.field(2, decode.int)
-  use title <- decode.field(3, decode.string)
-  use body <- decode.field(4, decode.optional(decode.string))
-  use authors_id <- decode.field(5, decode.int)
-  use authors_created_at <- decode.field(6, sql.datetime_decoder())
-  use name <- decode.field(7, decode.string)
-  use bio <- decode.field(8, decode.optional(decode.string))
-  decode.success(AuthorPosts(posts_id: , posts_created_at: , author_id: , title: , body: , authors_id: , authors_created_at: , name: , bio: ))
+  use updated_at <- decode.field(2, sql.datetime_decoder())
+  use author_id <- decode.field(3, decode.int)
+  use title <- decode.field(4, decode.string)
+  use body <- decode.field(5, decode.optional(decode.string))
+  use authors_id <- decode.field(6, decode.int)
+  use authors_created_at <- decode.field(7, sql.datetime_decoder())
+  use name <- decode.field(8, decode.string)
+  use bio <- decode.field(9, decode.optional(decode.string))
+  decode.success(AuthorPosts(posts_id: , posts_created_at: , updated_at: , author_id: , title: , body: , authors_id: , authors_created_at: , name: , bio: ))
 }

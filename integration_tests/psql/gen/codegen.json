@@ -6,7 +6,7 @@
       "schema.sql"
     ],
     "queries": [
-      "query.sql"
+      "sql/query.sql"
     ],
     "codegen": {
       "out": "gen",

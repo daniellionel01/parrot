@@ -16,6 +16,7 @@ packages = [
   { name = "glexec", version = "1.0.3", build_tools = ["gleam"], requirements = ["erlexec", "gleam_erlang", "gleam_stdlib"], otp_app = "glexec", source = "hex", outer_checksum = "84565B798262A8B42B1B25C0ACA3C8749BB71A04C6CBE1A16DBB84C23D2A01AA" },
   { name = "hexdocs_offline", version = "1.0.5", build_tools = ["gleam"], requirements = ["gleam_stdlib", "glexec", "nakai", "simplifile", "tom"], otp_app = "hexdocs_offline", source = "hex", outer_checksum = "6CF1B599A5EBEC91A43307F744778FA769621AB3AEBBDB46B0A53F4F49F641D0" },
   { name = "nakai", version = "1.1.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "nakai", source = "hex", outer_checksum = "58D863966CFCAFCE60CE67C609B2C803551F76FEED8F3BAF6CD03F3C4B16C954" },
+  { name = "parrot", version = "0.0.1", build_tools = ["gleam"], requirements = ["argv", "decode", "exception", "filepath", "gleam_json", "gleam_stdlib", "gleam_time", "hexdocs_offline", "shellout", "simplifile", "sqlight", "tom"], source = "local", path = "../.." },
   { name = "shellout", version = "1.7.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "shellout", source = "hex", outer_checksum = "1BDC03438FEB97A6AF3E396F4ABEB32BECF20DF2452EC9A8C0ACEB7BDDF70B14" },
   { name = "simplifile", version = "2.2.1", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "C88E0EE2D509F6D86EB55161D631657675AA7684DAB83822F7E59EB93D9A60E3" },
   { name = "sqlight", version = "1.0.1", build_tools = ["gleam"], requirements = ["esqlite", "gleam_stdlib"], otp_app = "sqlight", source = "hex", outer_checksum = "5435662352757841F9395C933404A223F39F73C73C4EC5E4418A7CB8AE85CDE6" },
@@ -23,16 +24,7 @@ packages = [
 ]
 
 [requirements]
-argv = { version = ">= 1.0.2 and < 2.0.0" }
-decode = { version = ">= 1.0.0 and < 2.0.0" }
-exception = { version = ">= 2.0.0 and < 3.0.0" }
-filepath = { version = ">= 1.1.0 and < 2.0.0" }
-gleam_json = { version = ">= 2.1.0 and < 3.0.0" }
-gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
-gleam_time = { version = ">= 1.0.0 and < 2.0.0" }
+gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
-hexdocs_offline = { version = ">= 1.0.5 and < 2.0.0" }
-shellout = { version = ">= 1.7.0 and < 2.0.0" }
-simplifile = { version = ">= 2.2.0 and < 3.0.0" }
+parrot = { path = "../.." }
 sqlight = { version = ">= 1.0.1 and < 2.0.0" }
-tom = { version = ">= 1.1.0 and < 2.0.0" }
