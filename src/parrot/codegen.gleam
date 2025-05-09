@@ -1,11 +1,10 @@
 import gleam/dynamic/decode as d
 import gleam/int
-import gleam/io
 import gleam/json
 import gleam/list
 import gleam/string
 import parrot/config.{
-  type Config, Config, get_json_file, get_module_directory, get_module_path,
+  type Config, get_json_file, get_module_directory, get_module_path,
 }
 import parrot/internal/lib
 import parrot/internal/sqlc.{type SQLC}
@@ -26,7 +25,7 @@ pub fn codegen_from_config(config: Config) {
     |> simplifile.create_directory_all()
   let _ =
     simplifile.write(to: get_module_path(config), contents: module_contents)
-    |> io.debug
+    |> echo
 
   Ok(Nil)
 }
