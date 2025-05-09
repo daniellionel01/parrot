@@ -25,7 +25,6 @@ pub fn codegen_from_config(config: Config) {
     |> simplifile.create_directory_all()
   let _ =
     simplifile.write(to: get_module_path(config), contents: module_contents)
-    |> echo
 
   Ok(Nil)
 }
