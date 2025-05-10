@@ -6,6 +6,7 @@ gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 parrot = { path = "../.." }
 sqlight = ">= 1.0.1 and < 2.0.0"
 simplifile = ">= 2.2.0 and < 3.0.0"
+gleam_time = ">= 1.2.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

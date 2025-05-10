@@ -130,11 +130,14 @@ The query parameters are wrapped in a custom type that you can use to map them t
 database driver's types. Here is an example for [lpil/sqlight](https://github.com/lpil/sqlight):
 ```gleam
 import gleam/list
+import gleam/time/calendar
+import gleam/time/timestamp
+import lpil_sqlight/sql
 import parrot/sql as parrot
 import sqlight
 
 /// Generated sql module by parrot
-import project_root/sql
+import parrots/sql
 
 pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
   list.map(args, fn(arg) {
@@ -143,6 +146,11 @@ pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
       parrot.ParamBool(a) -> sqlight.bool(a)
       parrot.ParamFloat(a) -> sqlight.float(a)
       parrot.ParamString(a) -> sqlight.text(a)
+      parrot.ParamTimestamp(ts) -> {
+        ts
+        |> timestamp.to_rfc3339(calendar.utc_offset)
+        |> sqlight.text
+      }
     }
   })
 }

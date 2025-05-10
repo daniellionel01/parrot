@@ -1,5 +1,7 @@
 import gleam/dynamic/decode
 import gleam/list
+import gleam/time/calendar
+import gleam/time/timestamp
 import lpil_sqlight/sql
 import parrot/sql as parrot
 import simplifile
@@ -12,6 +14,11 @@ pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
       parrot.ParamBool(a) -> sqlight.bool(a)
       parrot.ParamFloat(a) -> sqlight.float(a)
       parrot.ParamString(a) -> sqlight.text(a)
+      parrot.ParamTimestamp(ts) -> {
+        ts
+        |> timestamp.to_rfc3339(calendar.utc_offset)
+        |> sqlight.text
+      }
     }
   })
 }

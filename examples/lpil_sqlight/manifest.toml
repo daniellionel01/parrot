@@ -2,6 +2,8 @@
 # You typically do not need to edit this file
 
 packages = [
+  { name = "argv", version = "1.0.2", build_tools = ["gleam"], requirements = [], otp_app = "argv", source = "hex", outer_checksum = "BA1FF0929525DEBA1CE67256E5ADF77A7CDDFE729E3E3F57A5BDCAA031DED09D" },
+  { name = "backoff", version = "1.1.6", build_tools = ["rebar3"], requirements = [], otp_app = "backoff", source = "hex", outer_checksum = "CF0CFFF8995FB20562F822E5CC47D8CCF664C5ECDC26A684CBE85C225F9D7C39" },
   { name = "decode", version = "1.1.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "decode", source = "hex", outer_checksum = "9FFAD3F60600C6777072C3836B9FD965961D7C76C5D6007918AE0F82C1B21BE3" },
   { name = "erlexec", version = "2.2.0", build_tools = ["rebar3"], requirements = [], otp_app = "erlexec", source = "hex", outer_checksum = "19E4E1C170DE5594DA1C67A8A9A0DEFAE0BC407E138A70B14FEA031FE9E67347" },
   { name = "esqlite", version = "0.8.9", build_tools = ["rebar3"], requirements = [], otp_app = "esqlite", source = "hex", outer_checksum = "465AE9AE28AE4192EA54C829FDC90C320447D439A9B2E10946621672FC6A6F8C" },
@@ -14,9 +16,15 @@ packages = [
   { name = "gleeunit", version = "1.3.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "A7DD6C07B7DA49A6E28796058AA89E651D233B357D5607006D70619CD89DAAAB" },
   { name = "glexec", version = "1.0.3", build_tools = ["gleam"], requirements = ["erlexec", "gleam_erlang", "gleam_stdlib"], otp_app = "glexec", source = "hex", outer_checksum = "84565B798262A8B42B1B25C0ACA3C8749BB71A04C6CBE1A16DBB84C23D2A01AA" },
   { name = "hexdocs_offline", version = "1.0.5", build_tools = ["gleam"], requirements = ["gleam_stdlib", "glexec", "nakai", "simplifile", "tom"], otp_app = "hexdocs_offline", source = "hex", outer_checksum = "6CF1B599A5EBEC91A43307F744778FA769621AB3AEBBDB46B0A53F4F49F641D0" },
+  { name = "mysql", version = "1.9.0", build_tools = ["make", "rebar3", "mix"], requirements = [], otp_app = "mysql", source = "hex", outer_checksum = "186D7E6DF9CAD33BD9F8F61856F45F2F1962F80B645F163DA744F66C626DA63E" },
   { name = "nakai", version = "1.1.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "nakai", source = "hex", outer_checksum = "58D863966CFCAFCE60CE67C609B2C803551F76FEED8F3BAF6CD03F3C4B16C954" },
-  { name = "parrot", version = "0.0.1", build_tools = ["gleam"], requirements = ["decode", "exception", "filepath", "gleam_json", "gleam_stdlib", "gleam_time", "hexdocs_offline", "shellout", "simplifile", "tom"], source = "local", path = "../.." },
+  { name = "opentelemetry_api", version = "1.4.0", build_tools = ["rebar3", "mix"], requirements = [], otp_app = "opentelemetry_api", source = "hex", outer_checksum = "3DFBBFAA2C2ED3121C5C483162836C4F9027DEF469C41578AF5EF32589FCFC58" },
+  { name = "parrot", version = "0.0.1", build_tools = ["gleam"], requirements = ["argv", "decode", "exception", "filepath", "gleam_json", "gleam_stdlib", "gleam_time", "hexdocs_offline", "pog", "shellout", "shork", "simplifile", "sqlight", "tom"], source = "local", path = "../.." },
+  { name = "pg_types", version = "0.4.0", build_tools = ["rebar3"], requirements = [], otp_app = "pg_types", source = "hex", outer_checksum = "B02EFA785CAECECF9702C681C80A9CA12A39F9161A846CE17B01FB20AEEED7EB" },
+  { name = "pgo", version = "0.14.0", build_tools = ["rebar3"], requirements = ["backoff", "opentelemetry_api", "pg_types"], otp_app = "pgo", source = "hex", outer_checksum = "71016C22599936E042DC0012EE4589D24C71427D266292F775EBF201D97DF9C9" },
+  { name = "pog", version = "3.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "pgo"], otp_app = "pog", source = "hex", outer_checksum = "63152DADEBAE3150C81E9612909974C3C38F3E35B41F252798069A2FD117308E" },
   { name = "shellout", version = "1.7.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "shellout", source = "hex", outer_checksum = "1BDC03438FEB97A6AF3E396F4ABEB32BECF20DF2452EC9A8C0ACEB7BDDF70B14" },
+  { name = "shork", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_stdlib", "mysql"], otp_app = "shork", source = "hex", outer_checksum = "2CF0E390799209D92B870F216AFF303ACD5250931AC4303D8A24277089E19773" },
   { name = "simplifile", version = "2.2.1", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "C88E0EE2D509F6D86EB55161D631657675AA7684DAB83822F7E59EB93D9A60E3" },
   { name = "sqlight", version = "1.0.1", build_tools = ["gleam"], requirements = ["esqlite", "gleam_stdlib"], otp_app = "sqlight", source = "hex", outer_checksum = "5435662352757841F9395C933404A223F39F73C73C4EC5E4418A7CB8AE85CDE6" },
   { name = "tom", version = "1.1.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "tom", source = "hex", outer_checksum = "0910EE688A713994515ACAF1F486A4F05752E585B9E3209D8F35A85B234C2719" },
@@ -24,6 +32,7 @@ packages = [
 
 [requirements]
 gleam_stdlib = { version = ">= 0.44.0 and < 2.0.0" }
+gleam_time = { version = ">= 1.2.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 parrot = { path = "../.." }
 simplifile = { version = ">= 2.2.0 and < 3.0.0" }
