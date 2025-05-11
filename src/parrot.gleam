@@ -13,6 +13,7 @@ import gleam/string
 import gleam/uri
 import parrot/codegen
 import parrot/config
+import parrot/internal/colored
 import parrot/internal/project
 import shellout
 import simplifile
@@ -154,8 +155,15 @@ pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
   })
   let _ = simplifile.write(schema_file, schema_sql)
 
-  let _ =
+  case
     shellout.command(run: "sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+  {
+    Error(#(_, err)) -> {
+      io.println(colored.red("could not call `sqlc generate`:\n" <> err))
+      panic
+    }
+    Ok(_) -> Nil
+  }
 
   let config =
     config.Config(

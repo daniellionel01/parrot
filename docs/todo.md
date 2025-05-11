@@ -10,6 +10,9 @@
 
 - [ ] only import timestamp if necessary
 
+- [ ] errors
+  - [ ] catch error when queries.json is not generated (as in `sqlc generate` fails)
+
 - [ ] remove config -> just use defaults
   - [x] put .parrot directory in build directory (similar to lustre)
   - [x] use all *.sql files (similar to squirrel)

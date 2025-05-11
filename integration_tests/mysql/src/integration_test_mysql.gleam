@@ -25,6 +25,8 @@ pub fn main() {
         title VARCHAR(255) NOT NULL,
         body TEXT,
 
+        point GEOMETRY NOT NULL,
+
         FOREIGN KEY (author_id) REFERENCES authors (id)
       );",
   ]
