@@ -1,5 +1,6 @@
 import gleam/dynamic/decode as d
 import gleam/int
+import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option
@@ -7,6 +8,7 @@ import gleam/string
 import parrot/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
 }
+import parrot/internal/colored
 import parrot/internal/lib
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_case
@@ -18,6 +20,22 @@ pub fn codegen_from_config(config: Config) {
   use dyn_json <- lib.try_nil(json.parse(from: json_string, using: d.dynamic))
 
   let assert Ok(parsed) = sqlc.decode_sqlc(dyn_json)
+
+  // we check for any dynamically mapped types to alert the user that
+  // they might have to contribute to this library to cover this case
+  list.each(parsed.queries, fn(query) {
+    list.each(query.columns, fn(col) {
+      case sqlc_type_to_gleam(col.type_ref.name) {
+        GleamDynamic -> {
+          io.println(colored.yellow(
+            "unknown column type: " <> col.type_ref.name,
+          ))
+        }
+        _ -> Nil
+      }
+    })
+  })
+  io.println("")
 
   let module_contents = gen_gleam_module(parsed)
 
@@ -45,6 +63,7 @@ pub type GleamType {
   GleamFloat
   GleamBool
   GleamTimestamp
+  GleamDynamic
 }
 
 pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
@@ -54,6 +73,7 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamInt -> "Int"
     GleamString -> "String"
     GleamTimestamp -> "Timestamp"
+    GleamDynamic -> "decode.Dynamic"
   }
 }
 
@@ -74,7 +94,7 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     | "bigserial" -> GleamFloat
     "text" | "varchar" -> GleamString
     "datetime" | "timestamp" -> GleamTimestamp
-    _ -> panic as { "unknown type mapping: " <> sqltype }
+    _ -> GleamDynamic
   }
 }
 
@@ -141,6 +161,7 @@ pub fn gen_query_function(query: sqlc.Query) {
           GleamFloat -> "sql.ParamFloat"
           GleamBool -> "sql.ParamBool"
           GleamTimestamp -> "sql.ParamTimestamp"
+          GleamDynamic -> "sql.ParamDynamic"
         }
         param <> "(" <> arg.column.name <> ")"
       })
@@ -173,6 +194,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
             GleamBool -> "decode.bool"
             GleamFloat -> "decode.float"
             GleamTimestamp -> "sql.datetime_decoder()"
+            GleamDynamic -> "decode.dynamic"
           }
 
           let decoder = case col.not_null {

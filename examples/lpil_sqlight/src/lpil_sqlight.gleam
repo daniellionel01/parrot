@@ -2,8 +2,8 @@ import gleam/dynamic/decode
 import gleam/list
 import gleam/time/calendar
 import gleam/time/timestamp
-import lpil_sqlight/sql
 import parrot/sql as parrot
+import parrots/sql
 import simplifile
 import sqlight
 

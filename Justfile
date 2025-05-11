@@ -5,7 +5,7 @@ integration_test_mysql:
 
 [working-directory: "integration_tests/psql"]
 integration_test_psql:
-  gleam run -m parrot gen psql "mysql://root:daniel@127.0.0.1:3309/parrot"
+  gleam run -m parrot gen psql "postgresql://daniel:parrot@127.0.0.1:5432/parrot"
 
 [working-directory: "integration_tests/sqlite"]
 integration_test_sqlite:

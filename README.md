@@ -3,11 +3,7 @@
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 
-# Project Status
-
-**this project is currently pre-alpha. it will be released under v1.0.0 once ready for usage.**
-
-# How it works
+## How it works
 
 This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellionel01/sqlc-gen-json),
 which it then converts into gleam code.
@@ -169,11 +165,11 @@ pub fn main() {
 }
 ```
 
-# Edge Cases
+## Edge Cases
 
-## "any" types
+### "any" types
 
-# Usage
+## Usage
 
 For parrot to work you need to make sure you have [sqlc](https://sqlc.dev/) installed ([guide](https://docs.sqlc.dev/en/latest/overview/install.html)) installed.
 - If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have mysql installed)
@@ -202,9 +198,9 @@ $ gleam run -m parrot gen mysql "mysql://user:password@127.0.0.1:3309/db"
 $ gleam run -m parrot gen psql "mysql://user:password@127.0.0.1:3309/db"
 ```
 
-# Development
+## Development
 
-## Database
+### Database
 
 There are scripts to spawn a MySQL or PostgreSQL docker container:
 -  [MySQL Script](./bin/mysql/docker.sh)
@@ -217,13 +213,13 @@ $ ./bin/mysql/docker.sh
 $ ./bin/psql/docker.sh
 ```
 
-## Running the project and tests
+### Running the project and tests
 ```sh
 $ gleam run   # Run the project
 $ gleam test  # Run the tests
 ```
 
-# FAQ
+## FAQ
 
 ### What flavour of SQL does parrot support?
 This plugin supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
@@ -235,10 +231,10 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
 
-# Acknowledgements
+## Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
 - Thank you to `sqlc` ([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))
 - Thank you to `dedent` ([GitHub](https://github.com/MystPi/dedent), [Hex](https://hexdocs.pm/dedent/))
 
-# License
+## License
 [Apache License, Version 2.0](./LICENSE)

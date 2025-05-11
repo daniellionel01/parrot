@@ -7,6 +7,7 @@ pub type Param {
   ParamFloat(Float)
   ParamBool(Bool)
   ParamTimestamp(Timestamp)
+  ParamDynamic(decode.Dynamic)
 }
 
 pub fn datetime_decoder() -> decode.Decoder(Timestamp) {

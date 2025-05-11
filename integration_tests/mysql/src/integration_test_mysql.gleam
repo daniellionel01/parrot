@@ -1,5 +1,4 @@
 import gleam/list
-import gleam/string
 import shork
 
 pub fn main() {
@@ -12,6 +11,7 @@ pub fn main() {
     |> shork.connect
 
   let sql = [
+    "DROP TABLE posts;", "DROP TABLE authors;",
     "CREATE TABLE authors (
         id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -24,6 +24,7 @@ pub fn main() {
         author_id BIGINT NOT NULL,
         title VARCHAR(255) NOT NULL,
         body TEXT,
+
         FOREIGN KEY (author_id) REFERENCES authors (id)
       );",
   ]

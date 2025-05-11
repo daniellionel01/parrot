@@ -164,9 +164,6 @@ pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
     )
   let _ = codegen.codegen_from_config(config)
 
-  // todo as "map potential errors from codegen"
-  // todo as "verify codegen worked fine"
-
   Ok(Nil)
 }
 
