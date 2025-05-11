@@ -5,7 +5,7 @@
 
 ## Project Status
 
-**this project is currently in alpha. it will be released under v1.0.0 once ready for usage.**
+this project is currently in **alpha**. it will be released under v1.0.0 once ready for usage.
 
 ## How it works
 
