@@ -1,3 +1,4 @@
+import gleam/bool
 import gleam/dynamic/decode as d
 import gleam/int
 import gleam/io
@@ -240,13 +241,37 @@ pub fn gen_gleam_module(schema: SQLC) {
     |> list.map(gen_query)
     |> string.join("\n\n")
 
+  let uses_timestamp =
+    list.any(schema.queries, fn(query) {
+      let col_ts =
+        list.any(query.columns, fn(col) {
+          case sqlc_type_to_gleam(col.type_ref.name) {
+            GleamTimestamp -> True
+            _ -> False
+          }
+        })
+      let param_ts =
+        list.any(query.params, fn(param) {
+          case sqlc_type_to_gleam(param.column.type_ref.name) {
+            GleamTimestamp -> True
+            _ -> False
+          }
+        })
+
+      bool.or(col_ts, param_ts)
+    })
+
+  let timestamp_import = case uses_timestamp {
+    False -> ""
+    True -> "import gleam/time/timestamp.{type Timestamp}\n"
+  }
+
   let imports =
     "import gleam/option.{type Option}"
     <> "\n"
     <> "import gleam/dynamic/decode"
     <> "\n"
-    <> "import gleam/time/timestamp.{type Timestamp}"
-    <> "\n"
+    <> timestamp_import
     <> "import parrot/sql"
 
   comment_dont_edit() <> "\n\n" <> imports <> "\n\n" <> queries

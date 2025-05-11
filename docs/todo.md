@@ -1,7 +1,12 @@
 # todo
 
 ## road to v1
-- [ ] only import timestamp if necessary
+- [x] only import timestamp if necessary
+
+- [ ] fully automated integrationt test suites
+  - [ ] sqlite
+  - [ ] mysql
+  - [ ] psql
 
 - [ ] errors
   - [ ] catch error when queries.json is not generated (as in `sqlc generate` fails)
@@ -18,11 +23,6 @@
   - [ ] https://github.com/sqlc-dev/sqlc-gen-python/blob/main/internal/postgresql_type.go
   - [ ] https://github.com/sqlc-dev/sqlc-gen-kotlin/blob/main/internal/core/mysql_type.go
   - [ ] https://github.com/sqlc-dev/sqlc-gen-kotlin/blob/main/internal/core/postgresql_type.go
-
-- [ ] fully automated integrationt test suites
-  - [ ] sqlite
-  - [ ] mysql
-  - [ ] psql
 
 - [ ] add examples for drivers
   - [ ] mysql: https://github.com/VioletBuse/gmysql
