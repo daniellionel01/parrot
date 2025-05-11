@@ -3,6 +3,10 @@
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 
+## Project Status
+
+**this project is currently in alpha. it will be released under v1.0.0 once ready for usage.**
+
 ## How it works
 
 This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellionel01/sqlc-gen-json),
