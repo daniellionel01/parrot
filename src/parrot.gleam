@@ -165,9 +165,10 @@ pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
     Ok(_) -> Nil
   }
 
+  let project_name = project.project_name()
   let config =
     config.Config(
-      gleam_module_out_path: "sql.gleam",
+      gleam_module_out_path: project_name <> "/sql.gleam",
       json_file_path: queries_file,
     )
   let _ = codegen.codegen_from_config(config)

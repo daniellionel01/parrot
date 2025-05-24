@@ -1,5 +1,5 @@
 name = "parrot"
-version = "0.0.6"
+version = "0.0.7"
 
 
 description = "🦜 type-safe SQL in gleam for sqlite, postgresql & mysql"
@@ -13,7 +13,7 @@ target = "erlang"
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 simplifile = ">= 2.2.0 and < 3.0.0"
 filepath = ">= 1.1.0 and < 2.0.0"
-tom = ">= 1.1.0 and < 2.0.0"
+tom = ">= 1.1.1 and < 2.0.0"
 shellout = ">= 1.7.0 and < 2.0.0"
 exception = ">= 2.0.0 and < 3.0.0"
 gleam_time = ">= 1.0.0 and < 2.0.0"

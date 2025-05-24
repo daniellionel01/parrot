@@ -1,10 +1,12 @@
 import gleeunit
 import gleeunit/should
+import parrot/internal/project
 
 pub fn main() {
   gleeunit.main()
 }
 
 pub fn parrot_test() {
-  1 |> should.equal(1)
+  project.project_name()
+  |> should.equal("parrot")
 }
