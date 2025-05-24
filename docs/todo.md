@@ -3,7 +3,7 @@
 ## road to v1
 - [x] only import timestamp if necessary
 
-- [ ] fully automated integrationt test suites
+- [ ] fully automated integration test suites
   - [ ] sqlite
   - [ ] mysql
   - [ ] psql
