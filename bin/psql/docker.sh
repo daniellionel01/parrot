@@ -9,5 +9,5 @@ docker run -d \
   -e POSTGRES_DB=parrot \
   -e PGDATA=/var/lib/postgresql/data/pgdata \
   -p 5432:5432 \
-  -v ./data:/var/lib/postgresql/data/pgdata \
+  -v /var/lib/db-parrot:/var/lib/postgresql/data/pgdata \
   postgres:17
