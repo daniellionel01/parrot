@@ -93,7 +93,7 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     | "smallserial"
     | "serial"
     | "bigserial" -> GleamFloat
-    "text" | "varchar" -> GleamString
+    "text" | "varchar" | "uuid" -> GleamString
     "datetime" | "timestamp" -> GleamTimestamp
     _ -> GleamDynamic
   }
