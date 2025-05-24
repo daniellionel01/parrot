@@ -10,6 +10,7 @@ import gleam/list
 import gleam/option
 import gleam/result
 import gleam/string
+import gleam/time/timestamp.{type Timestamp}
 import gleam/uri
 import parrot/codegen
 import parrot/config
@@ -329,4 +330,27 @@ pub fn walk(from: String) -> Dict(String, List(String)) {
       |> list.fold(from: dict.new(), with: dict.merge)
     }
   }
+}
+
+pub type Param {
+  ParamInt(Int)
+  ParamString(String)
+  ParamFloat(Float)
+  ParamBool(Bool)
+  ParamTimestamp(Timestamp)
+  ParamDynamic(decode.Dynamic)
+}
+
+pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
+  decode.string
+  |> decode.then(fn(datetime_str) {
+    case timestamp.parse_rfc3339(datetime_str) {
+      Ok(ts) -> decode.success(ts)
+      Error(_) ->
+        decode.failure(
+          timestamp.from_unix_seconds(0),
+          "Invalid datetime format",
+        )
+    }
+  })
 }

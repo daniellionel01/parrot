@@ -157,12 +157,12 @@ pub fn gen_query_function(query: sqlc.Query) {
       |> list.map(fn(arg) {
         let arg_type = sqlc_type_to_gleam(arg.column.type_ref.name)
         let param = case arg_type {
-          GleamInt -> "sql.ParamInt"
-          GleamString -> "sql.ParamString"
-          GleamFloat -> "sql.ParamFloat"
-          GleamBool -> "sql.ParamBool"
-          GleamTimestamp -> "sql.ParamTimestamp"
-          GleamDynamic -> "sql.ParamDynamic"
+          GleamInt -> "parrot.ParamInt"
+          GleamString -> "parrot.ParamString"
+          GleamFloat -> "parrot.ParamFloat"
+          GleamBool -> "parrot.ParamBool"
+          GleamTimestamp -> "parrot.ParamTimestamp"
+          GleamDynamic -> "parrot.ParamDynamic"
         }
         param <> "(" <> arg.column.name <> ")"
       })
@@ -194,7 +194,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
             GleamString -> "decode.string"
             GleamBool -> "decode.bool"
             GleamFloat -> "decode.float"
-            GleamTimestamp -> "sql.datetime_decoder()"
+            GleamTimestamp -> "parrot.datetime_decoder()"
             GleamDynamic -> "decode.dynamic"
           }
 
@@ -272,7 +272,7 @@ pub fn gen_gleam_module(schema: SQLC) {
     <> "import gleam/dynamic/decode"
     <> "\n"
     <> timestamp_import
-    <> "import parrot/sql"
+    <> "import parrot"
 
   comment_dont_edit() <> "\n\n" <> imports <> "\n\n" <> queries
 }
