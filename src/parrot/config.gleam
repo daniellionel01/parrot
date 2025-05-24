@@ -3,9 +3,12 @@ import parrot/internal/project
 import simplifile
 
 pub type Config {
-  /// json_file_path: relative to project root directory
-  /// gleam_module_out_path: relative to project src directory
-  Config(json_file_path: String, gleam_module_out_path: String)
+  Config(
+    /// relative to project root directory
+    json_file_path: String,
+    /// relative to project src directory
+    gleam_module_out_path: String,
+  )
 }
 
 pub fn get_json_file(config: Config) {
