@@ -75,7 +75,7 @@ pub fn engine_to_sqlc_string(engine: Engine) {
 pub fn main() -> Result(Nil, String) {
   case argv.load().arguments {
     ["gen", engine_arg, db] -> {
-      let engine = decode.run(dynamic.from(engine_arg), engine_decoder())
+      let engine = decode.run(dynamic.string(engine_arg), engine_decoder())
       let result = case engine {
         Error(_) -> {
           Error(UnknownEngine(engine_arg))
