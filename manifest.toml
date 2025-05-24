@@ -30,7 +30,7 @@ exception = { version = ">= 2.0.0 and < 3.0.0" }
 filepath = { version = ">= 1.1.0 and < 2.0.0" }
 gleam_json = { version = ">= 3.0.1 and < 4.0.0" }
 gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
-gleam_time = { version = ">= 1.0.0 and < 2.0.0" }
+gleam_time = { version = ">= 1.2.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 pog = { version = ">= 3.2.0 and < 4.0.0" }
 shellout = { version = ">= 1.7.0 and < 2.0.0" }
