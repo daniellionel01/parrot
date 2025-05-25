@@ -337,6 +337,7 @@ pub type Param {
   ParamString(String)
   ParamFloat(Float)
   ParamBool(Bool)
+  ParamBitArray(BitArray)
   ParamTimestamp(Timestamp)
   ParamDynamic(decode.Dynamic)
 }

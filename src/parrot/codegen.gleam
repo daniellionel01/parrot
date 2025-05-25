@@ -64,6 +64,7 @@ pub type GleamType {
   GleamFloat
   GleamBool
   GleamTimestamp
+  GleamBitArray
   GleamDynamic
 }
 
@@ -74,6 +75,7 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamInt -> "Int"
     GleamString -> "String"
     GleamTimestamp -> "Timestamp"
+    GleamBitArray -> "BitArray"
     GleamDynamic -> "decode.Dynamic"
   }
 }
@@ -93,7 +95,8 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     | "smallserial"
     | "serial"
     | "bigserial" -> GleamFloat
-    "text" | "varchar" | "uuid" -> GleamString
+    "text" | "varchar" -> GleamString
+    "uuid" -> GleamBitArray
     "datetime" | "timestamp" -> GleamTimestamp
     _ -> GleamDynamic
   }
@@ -162,6 +165,7 @@ pub fn gen_query_function(query: sqlc.Query) {
           GleamFloat -> "parrot.ParamFloat"
           GleamBool -> "parrot.ParamBool"
           GleamTimestamp -> "parrot.ParamTimestamp"
+          GleamBitArray -> "parrot.ParamBitArray"
           GleamDynamic -> "parrot.ParamDynamic"
         }
         param <> "(" <> arg.column.name <> ")"
@@ -195,6 +199,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
             GleamBool -> "decode.bool"
             GleamFloat -> "decode.float"
             GleamTimestamp -> "parrot.datetime_decoder()"
+            GleamBitArray -> "decode.bit_array"
             GleamDynamic -> "decode.dynamic"
           }
 
