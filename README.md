@@ -184,7 +184,7 @@ $ gleam add parrot
 
 - Parrot will look for all *.sql files in any sql directory under your project's src directory.
 - Each *.sql file can contain as many SQL queries as you want.
-- All of the queries will compile into a single `src/parrot/sql.gleam` module.
+- All of the queries will compile into a single `src/[project name]/sql.gleam` module.
 
 Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
 - [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html)
