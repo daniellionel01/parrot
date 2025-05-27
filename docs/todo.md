@@ -8,6 +8,8 @@
   - [ ] mysql
   - [ ] psql
 
+- [ ] provide better timestap decoders or even config for parrot
+
 - [ ] errors
   - [ ] catch error when queries.json is not generated (as in `sqlc generate` fails)
 
