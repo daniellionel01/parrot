@@ -222,7 +222,7 @@ $ gleam test  # Run the tests
 ## FAQ
 
 ### What flavour of SQL does parrot support?
-This plugin supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
+This library supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
 would be MySQL, PostgreSQL and SQlite.
 
 You can read more on language & SQL support here:
