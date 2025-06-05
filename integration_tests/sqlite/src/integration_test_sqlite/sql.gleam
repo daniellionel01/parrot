@@ -4,7 +4,7 @@
 import gleam/option.{type Option}
 import gleam/dynamic/decode
 import gleam/time/timestamp.{type Timestamp}
-import parrot/sql
+import parrot
 
 pub type GetAuthor {
   GetAuthor(
@@ -24,12 +24,12 @@ WHERE
   id = ?
 LIMIT
   1"
-  #(sql, [sql.ParamInt(id)])
+  #(sql, [parrot.ParamInt(id)])
 }
 
 pub fn get_author_decoder() -> decode.Decoder(GetAuthor) {
   use id <- decode.field(0, decode.int)
-  use created_at <- decode.field(1, sql.datetime_decoder())
+  use created_at <- decode.field(1, parrot.datetime_decoder())
   use name <- decode.field(2, decode.string)
   use bio <- decode.field(3, decode.optional(decode.string))
   decode.success(GetAuthor(id: , created_at: , name: , bio: ))
@@ -56,7 +56,7 @@ ORDER BY
 
 pub fn list_authors_decoder() -> decode.Decoder(ListAuthors) {
   use id <- decode.field(0, decode.int)
-  use created_at <- decode.field(1, sql.datetime_decoder())
+  use created_at <- decode.field(1, parrot.datetime_decoder())
   use name <- decode.field(2, decode.string)
   use bio <- decode.field(3, decode.optional(decode.string))
   decode.success(ListAuthors(id: , created_at: , name: , bio: ))
@@ -80,12 +80,12 @@ WHERE
   authors.created_at > ?1
 ORDER BY
   name"
-  #(sql, [sql.ParamTimestamp(after)])
+  #(sql, [parrot.ParamTimestamp(after)])
 }
 
 pub fn new_authors_since_decoder() -> decode.Decoder(NewAuthorsSince) {
   use id <- decode.field(0, decode.int)
-  use created_at <- decode.field(1, sql.datetime_decoder())
+  use created_at <- decode.field(1, parrot.datetime_decoder())
   use name <- decode.field(2, decode.string)
   use bio <- decode.field(3, decode.optional(decode.string))
   decode.success(NewAuthorsSince(id: , created_at: , name: , bio: ))
@@ -96,14 +96,14 @@ pub fn create_author(name: String, bio: String){
   authors (name, bio)
 VALUES
   (?, ?)"
-  #(sql, [sql.ParamString(name), sql.ParamString(bio)])
+  #(sql, [parrot.ParamString(name), parrot.ParamString(bio)])
 }
 
 pub fn delete_author(id: Int){
   let sql = "DELETE FROM authors
 WHERE
   id = ?"
-  #(sql, [sql.ParamInt(id)])
+  #(sql, [parrot.ParamInt(id)])
 }
 
 pub type CountAuthors {
@@ -148,18 +148,18 @@ FROM
   INNER JOIN authors on authors.id = posts.author_id
 WHERE
   authors.id = ?"
-  #(sql, [sql.ParamInt(id)])
+  #(sql, [parrot.ParamInt(id)])
 }
 
 pub fn author_posts_decoder() -> decode.Decoder(AuthorPosts) {
   use posts_id <- decode.field(0, decode.int)
-  use posts_created_at <- decode.field(1, sql.datetime_decoder())
-  use updated_at <- decode.field(2, sql.datetime_decoder())
+  use posts_created_at <- decode.field(1, parrot.datetime_decoder())
+  use updated_at <- decode.field(2, parrot.datetime_decoder())
   use author_id <- decode.field(3, decode.int)
   use title <- decode.field(4, decode.string)
   use body <- decode.field(5, decode.optional(decode.string))
   use authors_id <- decode.field(6, decode.int)
-  use authors_created_at <- decode.field(7, sql.datetime_decoder())
+  use authors_created_at <- decode.field(7, parrot.datetime_decoder())
   use name <- decode.field(8, decode.string)
   use bio <- decode.field(9, decode.optional(decode.string))
   decode.success(AuthorPosts(posts_id: , posts_created_at: , updated_at: , author_id: , title: , body: , authors_id: , authors_created_at: , name: , bio: ))

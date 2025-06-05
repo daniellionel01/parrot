@@ -280,7 +280,7 @@ plugins:
   - name: jsonb
     wasm:
       url: https://github.com/daniellionel01/sqlc-gen-json/releases/download/v1.0.0/sqlc-gen-json.wasm
-      sha256: 5d48e462aa8db371be5c9ce89a7494ad8e3baf5112e78386091313afd6930061
+      sha256: ffbd8cfaecc971d8cdf145591eac28731ffb50b7348131868ce66cc0e3192b7e
 sql:
   - schema: schema.sql
     queries: [" <> string.join(queries, ", ") <> "]
