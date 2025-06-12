@@ -204,20 +204,21 @@ $ gleam run -m parrot gen psql "mysql://user:password@127.0.0.1:3309/db"
 ### Database
 
 There are scripts to spawn a MySQL or PostgreSQL docker container:
--  [MySQL Script](./bin/mysql/docker.sh)
--  [PostgreSQL Script](./bin/psql/docker.sh)
+-  [MySQL Script](./bin/mysql.sh)
+-  [PostgreSQL Script](./bin/psql.sh)
 
 For example:
 ```sh
-$ ./bin/mysql/docker.sh
+$ ./bin/mysql.sh
 # or
-$ ./bin/psql/docker.sh
+$ ./bin/psql.sh
 ```
 
-### Running the project and tests
+### Integration Test Suite
 ```sh
-$ gleam run   # Run the project
-$ gleam test  # Run the tests
+$ just test-sqlite
+$ just test-mysql
+$ just test-psql
 ```
 
 ## FAQ
