@@ -2,6 +2,7 @@
 
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
+![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
 ## Project Status
 
