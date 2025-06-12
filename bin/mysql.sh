@@ -2,7 +2,8 @@
 
 # mysql://root:daniel@127.0.0.1:3309/parrot
 docker run \
-  --rm --name mysql-parrot -d \
+  --rm -d \
+  --name parrot-mysql \
   -e="MYSQL_ROOT_PASSWORD=daniel" \
   -e="MYSQL_DATABASE=parrot" \
   -p 3309:3306 \
