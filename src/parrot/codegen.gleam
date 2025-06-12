@@ -141,7 +141,11 @@ pub fn gen_query_function(query: sqlc.Query) {
     query.params
     |> list.map(fn(p) {
       let gleam_type = sqlc_type_to_gleam(p.column.type_ref.name)
-      p.column.name <> ": " <> gleam_type_to_string(gleam_type)
+      p.column.name
+      <> " "
+      <> p.column.name
+      <> ": "
+      <> gleam_type_to_string(gleam_type)
     })
     |> string.join(", ")
 
