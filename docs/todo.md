@@ -8,27 +8,17 @@
   - [ ] sqlight
   - [ ] pog
 
-- [ ] any as error?
-  - [ ] provide decoder as fallback
+- [ ] dx
+  - [ ] add spinner progress indicators
 
-- [ ] timestamps as ints?
-  - [ ] determine precision from database (sec, msec, nsec, ...)
-
-- [ ] named sqlc parameters
+- [ ] functionality
+  - [ ] download sqlc automatically (put in ./build/.parrot)
+  - [ ] named sqlc parameters
 
 - [ ] fully automated integration test suites
   - [ ] sqlite
   - [ ] mysql
   - [ ] psql
-
-- [ ] errors
-  - [ ] catch error when queries.json is not generated (as in `sqlc generate` fails)
-
-- [ ] road to v1
-  - [ ] warning when sqlc is not installed (link installation page)
-  - [ ] auto determine type of db (look for DATABASE_URL or .db, .sqlite files)
-
-- [ ] handle "any" sqlc type -> suggest user to cast type
 
 - [ ] extend types
   - [ ] https://github.com/sqlc-dev/sqlc-gen-python/blob/main/internal/postgresql_type.go

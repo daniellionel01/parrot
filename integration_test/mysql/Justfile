@@ -1,0 +1,9 @@
+
+export DATABASE_URL := "mysql://root:daniel@127.0.0.1:3309/parrot"
+
+set export
+
+test:
+  ../../bin/mysql.sh
+  ./priv/reset.sh
+  gleam run -m parrot
