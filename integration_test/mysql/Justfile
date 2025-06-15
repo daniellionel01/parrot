@@ -1,9 +1,9 @@
 
 export DATABASE_URL := "mysql://root:daniel@127.0.0.1:3309/parrot"
 
-set export
-
-test:
+@test:
+  rm -f src/integration_test_mysql/sql.gleam
   ../../bin/mysql.sh
   ./priv/reset.sh
   gleam run -m parrot
+  gleam check 2>&1 | grep -q "Compiled in" && echo "✅ PASSED" || (echo "❌ FAILED" && exit 1)
