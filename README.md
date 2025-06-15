@@ -45,9 +45,9 @@ Here are some links to help you start out, if you are unfamiliar with the [sqlc]
 
 2. Generate Gleam code
 ```sh
-$ gleam run -m parrot gen sqlite file.db
-$ gleam run -m parrot gen mysql "mysql://user:password@127.0.0.1:3309/db"
-$ gleam run -m parrot gen psql "mysql://user:password@127.0.0.1:3309/db"
+$ gleam run -m parrot --sqlite sqlite file.db
+$ DATABASE_URL="mysql://user:password@127.0.0.1:3309/db" gleam run -m parrot
+$ DATABASE_URL="mysql://user:password@127.0.0.1:3309/db" gleam run -m parrot
 ```
 
 ## How it works
