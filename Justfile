@@ -2,6 +2,11 @@
 default:
   @just --choose
 
+@integration_test:
+  just test-sqlite
+  just test-mysql
+  just test-psql
+
 [working-directory: "integration_test/mysql"]
 @test-mysql:
   gleam run -m parrot gen mysql "mysql://root:daniel@127.0.0.1:3309/parrot"

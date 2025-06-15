@@ -28,9 +28,7 @@
   - [ ] warning when sqlc is not installed (link installation page)
   - [ ] auto determine type of db (look for DATABASE_URL or .db, .sqlite files)
 
-- [ ] handle "any" sqlc type
-  - [ ] suggest user to cast type
-  - [ ] second pass with example data to infer type
+- [ ] handle "any" sqlc type -> suggest user to cast type
 
 - [ ] extend types
   - [ ] https://github.com/sqlc-dev/sqlc-gen-python/blob/main/internal/postgresql_type.go
