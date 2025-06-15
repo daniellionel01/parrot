@@ -8,6 +8,8 @@ import gleam/list
 import gleam/result
 import simplifile
 
+const colorless = "\u{001b}[0m"
+
 pub fn try_nil(
   result: Result(a, b),
   then do: fn(a) -> Result(c, Nil),
@@ -51,4 +53,16 @@ pub fn walk(from: String) -> Dict(String, List(String)) {
       |> list.fold(from: dict.new(), with: dict.merge)
     }
   }
+}
+
+pub fn green(text: String) {
+  "\u{001b}[32m" <> text <> colorless
+}
+
+pub fn red(text: String) {
+  "\u{001b}[31m" <> text <> colorless
+}
+
+pub fn yellow(text: String) {
+  "\u{001b}[33m" <> text <> colorless
 }

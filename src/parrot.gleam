@@ -8,7 +8,6 @@ import gleam/result
 import gleam/string
 import parrot/internal/cli
 import parrot/internal/codegen
-import parrot/internal/colored
 import parrot/internal/config
 import parrot/internal/db
 import parrot/internal/errors
@@ -40,7 +39,7 @@ pub fn main() {
   }
 
   case cmd {
-    Error(e) -> io.println(colored.red("Error: " <> e))
+    Error(e) -> io.println(lib.red("Error: " <> e))
     Ok(cmd) ->
       case cmd {
         cli.Usage -> io.println(cli.usage)
@@ -48,8 +47,8 @@ pub fn main() {
           let result = cmd_gen(engine, db)
           case result {
             Error(e) ->
-              io.println(colored.red("Error: " <> errors.err_to_string(e)))
-            Ok(_) -> io.println(colored.green("SQL successfully generated!"))
+              io.println(lib.red("Error: " <> errors.err_to_string(e)))
+            Ok(_) -> io.println(lib.green("SQL successfully generated!"))
           }
         }
       }

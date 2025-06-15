@@ -6,7 +6,6 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/string
-import parrot/internal/colored
 import parrot/internal/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
 }
@@ -28,9 +27,7 @@ pub fn codegen_from_config(config: Config) {
     list.each(query.columns, fn(col) {
       case sqlc_type_to_gleam(col.type_ref.name) {
         GleamDynamic -> {
-          io.println(colored.yellow(
-            "unknown column type: " <> col.type_ref.name,
-          ))
+          io.println(lib.yellow("unknown column type: " <> col.type_ref.name))
         }
         _ -> Nil
       }
