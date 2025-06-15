@@ -6,10 +6,10 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/string
-import parrot/config.{
+import parrot/internal/colored
+import parrot/internal/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
 }
-import parrot/internal/colored
 import parrot/internal/lib
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_case
@@ -100,7 +100,7 @@ pub fn gen_column_name(query: sqlc.Query, col: sqlc.TableColumn) -> String {
     query.columns
     |> list.count(fn(col2) { col.name == col2.name })
   let result = case occ {
-    0 -> panic as "could not find column name"
+    0 -> panic as { "could not find column name: " <> col.name }
     1 -> col.name
     _ -> {
       case col.table {

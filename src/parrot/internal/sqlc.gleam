@@ -4,6 +4,8 @@
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/option.{type Option}
+import gleam/string
+import parrot/internal/cli
 
 pub type TypeRef {
   TypeRef(catalog: String, schema: String, name: String)
@@ -213,4 +215,35 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
   }
 
   decode.run(data, decoder)
+}
+
+pub fn gen_sqlc_yaml(engine: cli.Engine, queries: List(String)) {
+  let result = "
+version: \"2\"
+plugins:
+  - name: jsonb
+    wasm:
+      url: https://github.com/daniellionel01/sqlc-gen-json/releases/download/v1.0.0/sqlc-gen-json.wasm
+      sha256: ffbd8cfaecc971d8cdf145591eac28731ffb50b7348131868ce66cc0e3192b7e
+sql:
+  - schema: schema.sql
+    queries: [" <> string.join(queries, ", ") <> "]
+    engine: " <> engine_to_sqlc_string(engine) <> "
+    codegen:
+      - out: .
+        plugin: jsonb
+        options:
+          indent: \"  \"
+          filename: queries.json
+  "
+
+  string.trim(result)
+}
+
+fn engine_to_sqlc_string(engine: cli.Engine) {
+  case engine {
+    cli.MySQL -> "mysql"
+    cli.PostgreSQL -> "postgresql"
+    cli.SQlite -> "sqlite"
+  }
 }

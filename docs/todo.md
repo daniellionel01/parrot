@@ -1,14 +1,25 @@
 # todo
 
 ## road to v1
-- [x] only import timestamp if necessary
+
+- [x] `-e` to override environment variable name
+
+- [ ] add premade driver utilities
+  - [ ] sqlight
+  - [ ] pog
+
+- [ ] any as error?
+  - [ ] provide decoder as fallback
+
+- [ ] timestamps as ints?
+  - [ ] determine precision from database (sec, msec, nsec, ...)
+
+- [ ] named sqlc parameters
 
 - [ ] fully automated integration test suites
   - [ ] sqlite
   - [ ] mysql
   - [ ] psql
-
-- [ ] provide better timestap decoders or even config for parrot
 
 - [ ] errors
   - [ ] catch error when queries.json is not generated (as in `sqlc generate` fails)

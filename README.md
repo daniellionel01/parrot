@@ -8,6 +8,48 @@
 
 this project is currently in **alpha**. it will be released under v1.0.0 once ready for usage.
 
+## Usage
+
+
+```sh
+$ gleam add parrot
+```
+
+```sh
+# automatically detect database & default en
+$ gleam run -m parrot
+
+# specify sqlite file
+$ gleam run -m parrot --sqlite <file_path>
+`````
+
+For parrot to work you need to make sure you have [sqlc](https://sqlc.dev/) installed ([guide](https://docs.sqlc.dev/en/latest/overview/install.html)).
+- If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have mysql installed)
+- If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes per default if you have postgresql installed)
+
+1. Install
+```sh
+$ gleam add parrot
+```
+
+2. Define your queries
+
+- Parrot will look for all *.sql files in any sql directory under your project's src directory.
+- Each *.sql file can contain as many SQL queries as you want.
+- All of the queries will compile into a single `src/[project name]/sql.gleam` module.
+
+Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
+- [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html)
+- [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html)
+- [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html)
+
+2. Generate Gleam code
+```sh
+$ gleam run -m parrot gen sqlite file.db
+$ gleam run -m parrot gen mysql "mysql://user:password@127.0.0.1:3309/db"
+$ gleam run -m parrot gen psql "mysql://user:password@127.0.0.1:3309/db"
+```
+
 ## How it works
 
 This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellionel01/sqlc-gen-json),
@@ -168,35 +210,6 @@ pub fn main() {
       expecting: sql.get_author_decoder(),
     )
 }
-```
-
-## Usage
-
-For parrot to work you need to make sure you have [sqlc](https://sqlc.dev/) installed ([guide](https://docs.sqlc.dev/en/latest/overview/install.html)).
-- If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have mysql installed)
-- If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes per default if you have postgresql installed)
-
-1. Install
-```sh
-$ gleam add parrot
-```
-
-2. Define your queries
-
-- Parrot will look for all *.sql files in any sql directory under your project's src directory.
-- Each *.sql file can contain as many SQL queries as you want.
-- All of the queries will compile into a single `src/[project name]/sql.gleam` module.
-
-Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
-- [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html)
-- [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html)
-- [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html)
-
-2. Generate Gleam code
-```sh
-$ gleam run -m parrot gen sqlite file.db
-$ gleam run -m parrot gen mysql "mysql://user:password@127.0.0.1:3309/db"
-$ gleam run -m parrot gen psql "mysql://user:password@127.0.0.1:3309/db"
 ```
 
 ## Development

@@ -1,117 +1,63 @@
 import argv
 import filepath
-import gleam/bool
-import gleam/dict.{type Dict}
-import gleam/dynamic
-import gleam/dynamic/decode
-import gleam/float
-import gleam/int
+import given
+import gleam/dict
 import gleam/io
 import gleam/list
-import gleam/option
 import gleam/result
 import gleam/string
-import gleam/time/calendar.{type Date, type TimeOfDay, Date}
-import gleam/time/timestamp.{type Timestamp}
-import gleam/uri
-import parrot/codegen
-import parrot/config
+import parrot/internal/cli
+import parrot/internal/codegen
 import parrot/internal/colored
+import parrot/internal/config
+import parrot/internal/db
+import parrot/internal/errors
+import parrot/internal/lib
 import parrot/internal/project
+import parrot/internal/sqlc
 import shellout
 import simplifile
-import sqlight
 
-const usage = "Usage:
-  gleam run -m parrot help
-  gleam run -m parrot gen [sqlite | mysql | postgresql] [database]
-"
-
-pub type ParrotError {
-  UnknownEngine(String)
-
-  SqlitDBNotFound(String)
-  MySqlDBNotFound(String)
-  PostgreSqlDBNotFound(String)
-
-  NoQueriesFound
-  MysqldumpError
-  PgdumpError
-}
-
-pub fn err_to_string(error: ParrotError) {
-  case error {
-    MySqlDBNotFound(_) -> "mysql db not found"
-    PostgreSqlDBNotFound(_) -> "postgresql db not found"
-    SqlitDBNotFound(_) -> "sqlite db not found"
-    MysqldumpError -> "there was an error with mysqldump"
-    PgdumpError -> "there was an error pg_dump"
-    NoQueriesFound -> "no queries were found to codegen"
-    UnknownEngine(engine) -> "unknown engine: " <> engine
+pub fn main() {
+  let cmd: Result(cli.Command, String) = case argv.load().arguments {
+    [] -> {
+      cli.parse_env("DATABASE_URL")
+      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+    }
+    ["--env-var", env] -> {
+      cli.parse_env(env)
+      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+    }
+    ["-e", env] -> {
+      cli.parse_env(env)
+      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+    }
+    ["--sqlite", file_path] -> {
+      Ok(cli.Generate(cli.SQlite, file_path))
+    }
+    ["help"] -> Ok(cli.Usage)
+    _ -> Ok(cli.Usage)
   }
-}
 
-pub type Engine {
-  SQlite
-  MySQL
-  PostgreSQL
-}
-
-fn engine_decoder() -> decode.Decoder(Engine) {
-  use variant <- decode.then(decode.string)
-  case variant {
-    "sqlite" -> decode.success(SQlite)
-    "mysql" -> decode.success(MySQL)
-    "psql" -> decode.success(PostgreSQL)
-    _ -> decode.failure(SQlite, "Driver")
-  }
-}
-
-pub fn engine_to_sqlc_string(engine: Engine) {
-  case engine {
-    MySQL -> "mysql"
-    PostgreSQL -> "postgresql"
-    SQlite -> "sqlite"
-  }
-}
-
-pub fn main() -> Result(Nil, String) {
-  case argv.load().arguments {
-    ["gen", engine_arg, db] -> {
-      let engine = decode.run(dynamic.string(engine_arg), engine_decoder())
-      let result = case engine {
-        Error(_) -> {
-          Error(UnknownEngine(engine_arg))
-        }
-        Ok(engine) -> {
-          cmd_gen(engine, db)
+  case cmd {
+    Error(e) -> io.println(colored.red("Error: " <> e))
+    Ok(cmd) ->
+      case cmd {
+        cli.Usage -> io.println(cli.usage)
+        cli.Generate(engine:, db:) -> {
+          let result = cmd_gen(engine, db)
+          case result {
+            Error(e) ->
+              io.println(colored.red("Error: " <> errors.err_to_string(e)))
+            Ok(_) -> io.println(colored.green("SQL successfully generated!"))
+          }
         }
       }
-
-      case result {
-        Error(err) -> {
-          io.println("Error! " <> err_to_string(err))
-          Ok(Nil)
-        }
-        Ok(_) -> {
-          io.println("SQL successfully generated!")
-          Ok(Nil)
-        }
-      }
-    }
-    ["help"] -> {
-      io.println(usage)
-      Ok(Nil)
-    }
-    _ -> {
-      io.println(usage)
-      Ok(Nil)
-    }
   }
 }
 
-pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
-  let files = walk(project.src())
+fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
+  let files = lib.walk(project.src())
   let queries =
     files
     |> dict.to_list
@@ -134,20 +80,20 @@ pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
 
   let _ = simplifile.create_directory_all(sqlc_dir)
 
-  let sqlc_yaml = gen_sqlc_yaml(engine, queries)
+  let sqlc_yaml = sqlc.gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
 
   use schema_sql <- result.try(case engine {
-    MySQL -> {
-      use schema <- result.try(fetch_schema_mysql(db))
+    cli.MySQL -> {
+      use schema <- result.try(db.fetch_schema_mysql(db))
       Ok(schema)
     }
-    PostgreSQL -> {
-      use schema <- result.try(fetch_schema_postgresql(db))
+    cli.PostgreSQL -> {
+      use schema <- result.try(db.fetch_schema_postgresql(db))
       Ok(schema)
     }
-    SQlite -> {
-      use schema <- result.try(fetch_schema_sqlite(db))
+    cli.SQlite -> {
+      use schema <- result.try(db.fetch_schema_sqlite(db))
       let sql =
         schema
         |> list.map(string.trim)
@@ -158,15 +104,12 @@ pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
   })
   let _ = simplifile.write(schema_file, schema_sql)
 
-  case
+  let gen_res =
     shellout.command(run: "sqlc", with: ["generate"], in: sqlc_dir, opt: [])
-  {
-    Error(#(_, err)) -> {
-      io.println(colored.red("could not call `sqlc generate`:\n" <> err))
-      panic
-    }
-    Ok(_) -> Nil
-  }
+  use _ <- given.ok(gen_res, else_return: fn(err) {
+    let #(_, err) = err
+    Error(errors.SqlcGenerateError(err))
+  })
 
   let project_name = project.project_name()
   let config =
@@ -177,238 +120,4 @@ pub fn cmd_gen(engine: Engine, db: String) -> Result(Nil, ParrotError) {
   let _ = codegen.codegen_from_config(config)
 
   Ok(Nil)
-}
-
-pub fn fetch_schema_mysql(db: String) -> Result(String, ParrotError) {
-  let assert Ok(conn) = uri.parse(db)
-
-  let creds = case conn.userinfo {
-    option.None -> option.None
-    option.Some(userinfo) -> {
-      case string.split(userinfo, ":") {
-        [user] -> option.Some(#(user, ""))
-        [user, pass] -> option.Some(#(user, pass))
-        _ -> option.None
-      }
-    }
-  }
-
-  use #(user, pass) <- result.try(option.to_result(creds, MySqlDBNotFound("")))
-
-  let port = case conn.port {
-    option.None -> "3306"
-    option.Some(port) -> int.to_string(port)
-  }
-  let host = case conn.host {
-    option.None -> "localhost"
-    option.Some(host) -> host
-  }
-  let db = string.replace(conn.path, "/", "")
-
-  use out <- result.try(
-    shellout.command(
-      run: "mysqldump",
-      with: ["--no-data", "-u", user, "-p" <> pass, "-h", host, "-P", port, db],
-      in: ".",
-      opt: [],
-    )
-    |> result.replace_error(MysqldumpError),
-  )
-
-  out
-  |> string.split("\n")
-  |> list.filter(fn(line) { string.contains(line, "mysqldump:") == False })
-  |> string.join("\n")
-  |> Ok
-}
-
-pub fn fetch_schema_postgresql(db: String) -> Result(String, ParrotError) {
-  shellout.command(
-    run: "pg_dump",
-    with: [
-      "--no-privileges",
-      "--no-acl",
-      "--no-owner",
-      "--schema-only",
-      "--no-comments",
-      "--encoding=utf8",
-      db,
-    ],
-    in: ".",
-    opt: [],
-  )
-  |> result.replace_error(PgdumpError)
-}
-
-pub fn fetch_schema_sqlite(db: String) -> Result(List(String), ParrotError) {
-  use conn <- sqlight.with_connection(db)
-
-  let schema_decoder = {
-    use sql <- decode.field(0, decode.string)
-    decode.success(sql)
-  }
-
-  let sql =
-    "
-SELECT sql
-  FROM sqlite_master
-  WHERE type IN ('table', 'view', 'index', 'trigger')
-    AND name NOT LIKE 'sqlite_%'
-    AND sql IS NOT NULL
-  ORDER BY
-      CASE type
-          WHEN 'table' THEN 1
-          WHEN 'view' THEN 2
-          WHEN 'index' THEN 3
-          WHEN 'trigger' THEN 4
-          ELSE 5
-      END,
-      name;
-  "
-
-  use result <- result.try(
-    sqlight.query(sql, on: conn, with: [], expecting: schema_decoder)
-    |> result.replace_error(SqlitDBNotFound("")),
-  )
-  Ok(result)
-}
-
-pub fn gen_sqlc_yaml(engine: Engine, queries: List(String)) {
-  let result = "
-version: \"2\"
-plugins:
-  - name: jsonb
-    wasm:
-      url: https://github.com/daniellionel01/sqlc-gen-json/releases/download/v1.0.0/sqlc-gen-json.wasm
-      sha256: ffbd8cfaecc971d8cdf145591eac28731ffb50b7348131868ce66cc0e3192b7e
-sql:
-  - schema: schema.sql
-    queries: [" <> string.join(queries, ", ") <> "]
-    engine: " <> engine_to_sqlc_string(engine) <> "
-    codegen:
-      - out: .
-        plugin: jsonb
-        options:
-          indent: \"  \"
-          filename: queries.json
-  "
-
-  string.trim(result)
-}
-
-/// Finds all `from/**/sql` directories and lists the full paths of the `*.sql`
-/// files inside each one.
-/// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
-///
-pub fn walk(from: String) -> Dict(String, List(String)) {
-  case filepath.base_name(from) {
-    "sql" -> {
-      let assert Ok(files) = simplifile.read_directory(from)
-      let files = {
-        use file <- list.filter_map(files)
-        use extension <- result.try(filepath.extension(file))
-        use <- bool.guard(when: extension != "sql", return: Error(Nil))
-        let file_name = filepath.join(from, file)
-        case simplifile.is_file(file_name) {
-          Ok(True) -> Ok(file_name)
-          Ok(False) | Error(_) -> Error(Nil)
-        }
-      }
-      dict.from_list([#(from, files)])
-    }
-
-    _ -> {
-      let assert Ok(files) = simplifile.read_directory(from)
-      let directories = {
-        use file <- list.filter_map(files)
-        let file_name = filepath.join(from, file)
-        case simplifile.is_directory(file_name) {
-          Ok(True) -> Ok(file_name)
-          Ok(False) | Error(_) -> Error(Nil)
-        }
-      }
-
-      list.map(directories, walk)
-      |> list.fold(from: dict.new(), with: dict.merge)
-    }
-  }
-}
-
-pub type Param {
-  ParamInt(Int)
-  ParamString(String)
-  ParamFloat(Float)
-  ParamBool(Bool)
-  ParamBitArray(BitArray)
-  ParamTimestamp(Timestamp)
-  ParamDynamic(decode.Dynamic)
-}
-
-pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
-  decode.one_of(datetime_string_decoder(), or: [datetime_tuple_decoder()])
-}
-
-fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
-  decode.string
-  |> decode.then(fn(datetime_str) {
-    case timestamp.parse_rfc3339(datetime_str) {
-      Ok(ts) -> decode.success(ts)
-      Error(_) ->
-        decode.failure(
-          timestamp.from_unix_seconds(0),
-          "Invalid datetime format",
-        )
-    }
-  })
-}
-
-fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
-  use date <- decode.field(0, date_decoder())
-  use time <- decode.field(1, time_decoder())
-
-  timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
-  |> decode.success()
-}
-
-fn date_decoder() -> decode.Decoder(Date) {
-  use year <- decode.field(0, decode.int)
-  use month <- decode.field(
-    1,
-    decode.int
-      |> decode.then(fn(month) {
-        case calendar.month_from_int(month) {
-          Error(_) -> decode.failure(calendar.January, "Month")
-          Ok(month) -> decode.success(month)
-        }
-      }),
-  )
-  use day <- decode.field(2, decode.int)
-
-  decode.success(Date(year:, month:, day:))
-}
-
-fn time_decoder() -> decode.Decoder(TimeOfDay) {
-  use hours <- decode.field(0, decode.int)
-  use minutes <- decode.field(1, decode.int)
-  use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())
-
-  calendar.TimeOfDay(hours:, minutes:, seconds:, nanoseconds:)
-  |> decode.success()
-}
-
-fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
-  let int = {
-    decode.int
-    |> decode.map(fn(i) { #(i, 0) })
-  }
-  let float = {
-    decode.float
-    |> decode.map(fn(f) {
-      let floored = float.floor(f)
-      let seconds = float.round(floored)
-      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
-      #(seconds, nanoseconds)
-    })
-  }
-  decode.one_of(int, [float])
 }
