@@ -19,27 +19,6 @@ pub fn snake_case(text: String) -> String {
   |> string.lowercase
 }
 
-/// Convert a string to a `camelCase`.
-///
-/// # Examples
-///
-/// ```gleam
-/// camel_case("Hello World")
-/// // -> "helloWorld"
-/// ```
-///
-pub fn camel_case(text: String) -> String {
-  text
-  |> split_words
-  |> list.index_map(fn(word, i) {
-    case i {
-      0 -> string.lowercase(word)
-      _ -> string.capitalise(word)
-    }
-  })
-  |> string.concat
-}
-
 /// Convert a string to a `PascalCase`.
 ///
 /// # Examples
@@ -54,38 +33,6 @@ pub fn pascal_case(text: String) -> String {
   |> split_words
   |> list.map(string.capitalise)
   |> string.concat
-}
-
-/// Convert a string to a `kebab-case`.
-///
-/// # Examples
-///
-/// ```gleam
-/// kabab_case("Hello World")
-/// // -> "hello-world
-/// ```
-///
-pub fn kebab_case(text: String) -> String {
-  text
-  |> split_words
-  |> string.join("-")
-  |> string.lowercase
-}
-
-/// Convert a string to a `Sentence case`.
-///
-/// # Examples
-///
-/// ```gleam
-/// sentence_case("hello-world")
-/// // -> "Hello world
-/// ```
-///
-pub fn sentence_case(text: String) -> String {
-  text
-  |> split_words
-  |> string.join(" ")
-  |> string.capitalise
 }
 
 fn split_words(text: String) -> List(String) {
