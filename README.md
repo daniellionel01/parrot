@@ -16,7 +16,7 @@ $ gleam add parrot
 ```
 
 ```sh
-# automatically detect database & default en
+# automatically detect database & default engine
 $ gleam run -m parrot
 
 # specify sqlite file
