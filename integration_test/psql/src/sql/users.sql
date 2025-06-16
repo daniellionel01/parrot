@@ -20,7 +20,7 @@ ORDER BY
 INSERT INTO
   users (username)
 VALUES
-  ($1);
+  (sqlc.arg(name));
 
 -- name: UpdateUserUsername :exec
 UPDATE users

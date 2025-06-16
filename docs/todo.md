@@ -6,18 +6,9 @@
   - [ ] sqlight
   - [ ] pog
 
-- [ ] dx
-  - [ ] add spinner progress indicators
-
 - [ ] targets
-  - [ ] linux
-    - [ ] support unzip .tar.gz sqlc file
   - [ ] verify javascript target works
     - [ ] add get_os and get_cpu ffi for javascript
-
-- [ ] functionality
-  - [ ] download sqlc automatically (put in ./build/.parrot)
-  - [ ] named sqlc parameters
 
 - [ ] extend types
   - [ ] https://github.com/sqlc-dev/sqlc-gen-python/blob/main/internal/postgresql_type.go

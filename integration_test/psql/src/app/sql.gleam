@@ -58,12 +58,12 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   decode.success(ListUsers(id: , username: , created_at: ))
 }
 
-pub fn create_user(username username: String){
+pub fn create_user(name name: String){
   let sql = "INSERT INTO
   users (username)
 VALUES
   ($1)"
-  #(sql, [dev.ParamString(username)])
+  #(sql, [dev.ParamString(name)])
 }
 
 pub fn update_user_username(username username: String, id id: Int){
