@@ -4,10 +4,6 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
-## Project Status
-
-this project is currently in **alpha**. it will be released under v1.0.0 once ready for usage.
-
 ## Introduction
 
 ### Features
