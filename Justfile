@@ -2,7 +2,7 @@
 default:
   @just --choose
 
-@integration_test:
+@integration-test:
   just test-sqlite
   just test-mysql
   just test-psql

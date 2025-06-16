@@ -13,7 +13,6 @@ this project is currently in **alpha**. it will be released under v1.0.0 once re
 ### Features
 
 ✅ Supports SQlite, PostgreSQL and MySQL<br />
-✅ Utility functions for [lpil/sqlight](https://github.com/lpil/sqlight) and [lpil/pog](https://github.com/lpil/pog)<br />
 ✅ Named parameters<br />
 ✅ Automatically downloads required binary ([sqlc](https://sqlc.dev/))
 
@@ -21,29 +20,12 @@ this project is currently in **alpha**. it will be released under v1.0.0 once re
 
 ## Usage
 
+### Installation
 ```sh
 $ gleam add parrot
 ```
 
-```sh
-# automatically detect database & default engine
-$ gleam run -m parrot
-
-# specify sqlite file
-$ gleam run -m parrot --sqlite <file_path>
-`````
-
-For parrot to work you need to make sure you have [sqlc](https://sqlc.dev/) installed ([guide](https://docs.sqlc.dev/en/latest/overview/install.html)).
-- If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have mysql installed)
-- If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes per default if you have postgresql installed)
-
-1. Install
-```sh
-$ gleam add parrot
-```
-
-2. Define your queries
-
+### Define your Queries
 - Parrot will look for all *.sql files in any sql directory under your project's src directory.
 - Each *.sql file can contain as many SQL queries as you want.
 - All of the queries will compile into a single `src/[project name]/sql.gleam` module.
@@ -53,12 +35,21 @@ Here are some links to help you start out, if you are unfamiliar with the [sqlc]
 - [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html)
 - [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html)
 
-2. Generate Gleam code
+### Code Generation
 ```sh
-$ gleam run -m parrot --sqlite sqlite file.db
-$ DATABASE_URL="mysql://user:password@127.0.0.1:3309/db" gleam run -m parrot
-$ DATABASE_URL="mysql://user:password@127.0.0.1:3309/db" gleam run -m parrot
-```
+# automatically detect database & default engine
+$ gleam run -m parrot
+
+# specify sqlite file
+$ gleam run -m parrot --sqlite <file_path>
+
+# see all options
+$ gleam run -m parrot help
+`````
+
+If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have a mysql client installed)
+
+If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes per default if you have a postgresql client installed)
 
 ## How it works
 
@@ -72,7 +63,12 @@ graph LR
     JSON -- parrot --> Gleam[Gleam Code]
 ```
 
-## An Example
+### Examples
+
+If you want to see how this works in action, take a look at the integration tests:
+- PostgreSQL Test using [lpil/pog](https://github.com/lpil/pog): [./integration_test/psql](./integration_test/psql)
+- MySQL Test using [ninanomenon/shork](https://github.com/ninanomenon/shork): [./integration_test/mysql](./integration_test/mysql)
+- SQlite Test using [lpil/sqlight](https://github.com/lpil/sqlight): [./integration_test/sqlite](./integration_test/sqlite)
 
 Let's take the following SQL queries as an example:
 ```sql
