@@ -12,10 +12,8 @@ this project is currently in **alpha**. it will be released under v1.0.0 once re
 
 ### Features
 
-✅ Supports SQlite, PostgreSQL and MySQL
-
-✅ Named parameters
-
+✅ Supports SQlite, PostgreSQL and MySQL<br />
+✅ Named parameters<br />
 ✅ Automatically downloads required binary ((sqlc)[https://sqlc.dev/])
 
 *Most of these features are provided by / built into sqlc, so I do not aim to take credit for them.*
