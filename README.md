@@ -45,7 +45,7 @@ $ gleam run -m parrot --sqlite <file_path>
 
 # see all options
 $ gleam run -m parrot help
-`````
+```
 
 If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have a mysql client installed)
 
