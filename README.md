@@ -8,8 +8,17 @@
 
 this project is currently in **alpha**. it will be released under v1.0.0 once ready for usage.
 
-## Usage
+## Introduction
 
+### Features
+
+✅ Supports SQlite, PostgreSQL and MySQL
+✅ Named parameters
+✅ Automatically downloads required binary ((sqlc)[https://sqlc.dev/])
+
+*Most of these features are provided by / built into sqlc, so I do not aim to take credit for them.*
+
+## Usage
 
 ```sh
 $ gleam add parrot
@@ -245,6 +254,13 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
+
+## Future Work
+
+Here are some ideas and thoughts on how you might develop this library further:
+* dedicated packages for dependencies that might not be required (f.e. `pog`, `sqlight`)
+
+Contributions are welcomed!
 
 ## Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
