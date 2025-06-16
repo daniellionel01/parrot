@@ -258,7 +258,9 @@ fn engine_to_sqlc_string(engine: cli.Engine) {
 }
 
 pub fn sqlc_binary_path() {
-  filepath.join(project.root(), "build/.parrot/sqlc")
+  filepath.join(project.root(), "./build/.parrot/sqlc")
+  |> filepath.expand()
+  |> result.unwrap("")
 }
 
 fn binary_exists(path) {
@@ -271,32 +273,27 @@ fn binary_exists(path) {
 const sqlc_version = "1.29.0"
 
 fn get_download_path() {
-  let base =
-    "https://github.com/sqlc-dev/sqlc/releases/download/v"
-    <> sqlc_version
-    <> "/sqlc_"
-    <> sqlc_version
+  let base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
 
   let os = get_os()
   let cpu = get_cpu()
 
   let platform = case os, cpu {
     // Darwin (macOS)
-    "darwin", "arm64" | "darwin", "aarch64" ->
-      Ok(base <> "_darwin_arm64.tar.gz")
+    "darwin", "arm64" | "darwin", "aarch64" -> Ok("_darwin_arm64.tar.gz")
 
     "darwin", "amd64" | "darwin", "x86_64" | "darwin", "x64" ->
-      Ok(base <> "_darwin_amd64.tar.gz")
+      Ok("_darwin_amd64.tar.gz")
 
     // Linux
-    "linux", "arm64" | "linux", "aarch64" -> Ok(base <> "_linux_arm64.tar.gz")
+    "linux", "arm64" | "linux", "aarch64" -> Ok("_linux_arm64.tar.gz")
 
     "linux", "amd64" | "linux", "x86_64" | "linux", "x64" ->
-      Ok(base <> "_linux_amd64.tar.gz")
+      Ok("_linux_amd64.tar.gz")
 
     // Windows
     "win32", "amd64" | "win32", "x86_64" | "win32", "x64" ->
-      Ok(base <> "_windows_amd64.tar.gz")
+      Ok("_windows_amd64.tar.gz")
 
     _, _ -> Error("")
   }
@@ -320,17 +317,22 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
 
   use download <- result.try(get_download_path())
 
-  let assert Ok(req) = request.to(download)
-
-  use res <- result.try(
-    httpc.send(req)
+  use tarball <- result.try(
+    download_zip(download)
     |> result.map_error(fn(_) {
       errors.SqlcDownloadError("could not curl the sqlc binary")
     }),
   )
 
-  let assert Ok(body) = decode.run(dynamic.string(res.body), decode.string)
-  let assert Ok(_) = simplifile.write(path, body)
+  use bin <- result.try(
+    extract_sqlc_binary(tarball)
+    |> result.map_error(fn(e) {
+      echo e
+      errors.SqlcDownloadError("could not unzip the sqlc binary")
+    }),
+  )
+
+  let assert Ok(_) = simplifile.write_bits(path, bin)
 
   let permissions =
     FilePermissions(
@@ -348,3 +350,9 @@ pub fn get_os() -> String
 
 @external(erlang, "parrot_ffi", "get_cpu")
 pub fn get_cpu() -> String
+
+@external(erlang, "parrot_ffi", "download_zip")
+fn download_zip(url: String) -> Result(BitArray, dynamic.Dynamic)
+
+@external(erlang, "parrot_ffi", "extract_sqlc_binary")
+fn extract_sqlc_binary(tarball: BitArray) -> Result(BitArray, dynamic.Dynamic)

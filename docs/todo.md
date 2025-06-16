@@ -10,6 +10,8 @@
   - [ ] add spinner progress indicators
 
 - [ ] targets
+  - [ ] linux
+    - [ ] support unzip .tar.gz sqlc file
   - [ ] verify javascript target works
     - [ ] add get_os and get_cpu ffi for javascript
 

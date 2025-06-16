@@ -106,7 +106,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let _ = simplifile.write(schema_file, schema_sql)
 
   let gen_res =
-    shellout.command(run: "sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
   use _ <- given.ok(gen_res, else_return: fn(err) {
     let #(_, err) = err
     Error(errors.SqlcGenerateError(err))
