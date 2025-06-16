@@ -37,7 +37,7 @@ Here are some links to help you start out, if you are unfamiliar with the [sqlc]
 
 ### Code Generation
 ```sh
-# automatically detect database & default engine
+# automatically detects database & engine
 $ gleam run -m parrot
 
 # specify sqlite file
