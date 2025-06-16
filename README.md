@@ -13,6 +13,7 @@ this project is currently in **alpha**. it will be released under v1.0.0 once re
 ### Features
 
 ✅ Supports SQlite, PostgreSQL and MySQL<br />
+✅ Utility functions for [lpil/sqlight](https://github.com/lpil/sqlight) and [lpil/pog](https://github.com/lpil/pog)<br />
 ✅ Named parameters<br />
 ✅ Automatically downloads required binary ([sqlc](https://sqlc.dev/))
 
@@ -259,6 +260,7 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 Here are some ideas and thoughts on how you might develop this library further:
 * dedicated packages for dependencies that might not be required (f.e. `pog`, `sqlight`)
+* provide way to configure custom decoders for more complex types (f.e. json, geo)
 
 Contributions are welcomed!
 
