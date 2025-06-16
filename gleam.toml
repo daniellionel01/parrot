@@ -21,6 +21,8 @@ tom = ">= 2.0.0 and < 3.0.0"
 envoy = ">= 1.0.2 and < 2.0.0"
 given = ">= 5.0.4 and < 6.0.0"
 sqlight = ">= 1.0.1 and < 2.0.0"
+gleam_httpc = ">= 4.1.1 and < 5.0.0"
+gleam_http = ">= 4.0.0 and < 5.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

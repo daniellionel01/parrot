@@ -103,6 +103,7 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 ## Future Work
 
 Here are some ideas and thoughts on how you might develop this library further:
+* automatic pull request for new sqlc versions
 * dedicated packages for dependencies that might not be required (f.e. `pog`, `sqlight`)
 * provide way to configure custom decoders for more complex types (f.e. json, geo)
 

@@ -79,6 +79,8 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 
   let _ = simplifile.create_directory_all(sqlc_dir)
 
+  use _ <- result.try(sqlc.download_binary())
+
   let sqlc_yaml = sqlc.gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
 
