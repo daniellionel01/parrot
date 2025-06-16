@@ -1,0 +1,9 @@
+SQLITE_FILE := "file.db"
+
+@test:
+  rm -f src/app/sql.gleam
+  rm -f {{SQLITE_FILE}}
+  sqlite3 {{SQLITE_FILE}} < ./priv/schema.sql
+  sqlite3 {{SQLITE_FILE}} < ./priv/seed.sql
+  gleam run -m parrot -- --sqlite {{SQLITE_FILE}}
+  gleam run 2>&1 | grep -q "Compiled in" && echo "✅ PASSED" || (echo "❌ FAILED" && exit 1)

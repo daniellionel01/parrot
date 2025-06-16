@@ -34,16 +34,6 @@ fn parrot_to_pog(param: dev.Param) -> pog.Value {
   }
 }
 
-fn exec(db db: pog.Connection, sql sql: String, with with: List(dev.Param)) {
-  sql
-  |> pog.query()
-  |> list.fold(with, _, fn(acc, param) {
-    let param = parrot_to_pog(param)
-    pog.parameter(acc, param)
-  })
-  |> pog.execute(db)
-}
-
 fn query(
   db db: pog.Connection,
   sql sql: String,

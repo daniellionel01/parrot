@@ -14,4 +14,4 @@ default:
   just integration_test/psql/test
 
 @test-sqlite:
-  gleam run -m parrot gen sqlite file.db
+  just integration_test/sqlite/test
