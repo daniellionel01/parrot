@@ -5,8 +5,6 @@ import filepath
 import given
 import gleam/dynamic
 import gleam/dynamic/decode
-import gleam/http/request
-import gleam/httpc
 import gleam/option.{type Option}
 import gleam/result
 import gleam/set
