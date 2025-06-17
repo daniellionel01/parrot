@@ -21,6 +21,13 @@
 $ gleam add parrot
 ```
 
+### If you target JavaScript
+
+So here is the catch: you can only execute parrot in an erlang gleam application.
+However the generated code will also run in a javascript environment.
+So if you need parrot for a javascript project, you can create a separate package and
+copy over the generated module and that will work.
+
 ### Define your Queries
 - Parrot will look for all *.sql files in any sql directory under your project's src directory.
 - Each *.sql file can contain as many SQL queries as you want.

@@ -8,7 +8,7 @@
 
 - [ ] targets
   - [ ] verify javascript target works
-    - [ ] add get_os and get_cpu ffi for javascript
+    - [x] add get_os and get_cpu ffi for javascript
 
 - [ ] extend types
   - [ ] https://github.com/sqlc-dev/sqlc-gen-python/blob/main/internal/postgresql_type.go

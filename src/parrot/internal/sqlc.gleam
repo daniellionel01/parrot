@@ -350,7 +350,9 @@ pub fn get_os() -> String
 pub fn get_cpu() -> String
 
 @external(erlang, "parrot_ffi", "download_zip")
-fn download_zip(url: String) -> Result(BitArray, dynamic.Dynamic)
+pub fn download_zip(url: String) -> Result(BitArray, dynamic.Dynamic)
 
 @external(erlang, "parrot_ffi", "extract_sqlc_binary")
-fn extract_sqlc_binary(tarball: BitArray) -> Result(BitArray, dynamic.Dynamic)
+pub fn extract_sqlc_binary(
+  tarball: BitArray,
+) -> Result(BitArray, dynamic.Dynamic)

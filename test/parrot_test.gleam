@@ -14,6 +14,6 @@ pub fn parrot_test() {
 
 pub fn os_cpu_test() {
   // just calling these functions to make sure they're accessible
-  sqlc.get_os()
-  sqlc.get_cpu()
+  echo sqlc.get_os()
+  echo sqlc.get_cpu()
 }
