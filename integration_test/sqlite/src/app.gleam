@@ -1,4 +1,4 @@
-// import app/sql
+import app/sql
 import filepath
 import gleam/dynamic/decode
 import gleam/list
@@ -8,14 +8,20 @@ import simplifile
 import sqlight
 
 pub fn main() {
-  // let file_path = filepath.join(root(), "./file.db")
-  // use conn <- sqlight.with_connection(file_path)
+  let file_path = filepath.join(root(), "./file.db")
+  use conn <- sqlight.with_connection(file_path)
 
-  // let #(sql, params) = sql.get_user_by_username("alice")
-  // let assert Ok([sql.GetUserByUsername(1, "alice", option.Some(_))]) =
-  //   query(conn, sql, params, sql.get_user_by_username_decoder())
-
-  Ok(Nil)
+  let #(sql, params) = sql.get_user_by_username("alice")
+  let assert Ok([
+    sql.GetUserByUsername(
+      1,
+      "alice",
+      option.Some(_),
+      0.0,
+      option.None,
+      option.Some(<<31, 128>>),
+    ),
+  ]) = query(conn, sql, params, sql.get_user_by_username_decoder())
 }
 
 fn root() -> String {

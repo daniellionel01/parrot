@@ -27,7 +27,9 @@ pub fn codegen_from_config(config: Config) {
     list.each(query.columns, fn(col) {
       case sqlc_type_to_gleam(col.type_ref.name) {
         GleamDynamic -> {
-          io.println(lib.yellow("unknown column type: " <> col.type_ref.name))
+          io.print(
+            "\n" <> lib.yellow("unknown column type: " <> col.type_ref.name),
+          )
         }
         _ -> Nil
       }
@@ -84,9 +86,10 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
   }
   case string.lowercase(sqltype) {
     "int" <> _ | "bigint" | "serial" | "smallserial" | "bigserial" -> GleamInt
-    "float" | "decimal" | "real" | "numeric" | "double precision" -> GleamFloat
+    "float" | "decimal" <> _ | "real" | "numeric" | "double precision" ->
+      GleamFloat
     "text" | "varchar" -> GleamString
-    "uuid" -> GleamBitArray
+    "uuid" | "blob" -> GleamBitArray
     "datetime" | "timestamp" -> GleamTimestamp
     _ -> GleamDynamic
   }

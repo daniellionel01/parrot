@@ -1,5 +1,8 @@
 CREATE TABLE users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  balance REAL NOT NULL DEFAULT 0.0,
+  last_known_location DECIMAL(9, 6),
+  avatar BLOB
 );

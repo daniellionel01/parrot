@@ -1,6 +1,6 @@
 INSERT INTO
-  users (username)
+  users (username, avatar)
 VALUES
-  ('alice'),
-  ('bob'),
-  ('charlie');
+  ('alice', X'1F80'),
+  ('bob', X'1F80'),
+  ('charlie', X'1F80');
