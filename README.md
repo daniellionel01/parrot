@@ -103,21 +103,9 @@ pub fn main() {
 }
 ```
 
-## How it works
+## Examples
 
-This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellionel01/sqlc-gen-json),
-which it then converts into gleam code.
-
-So in a simplified manner, the pipeline looks like this:
-```mermaid
-graph LR
-    SQL[SQL Queries] -- sqlc-gen-json --> JSON[JSON Schema]
-    JSON -- parrot --> Gleam[Gleam Code]
-```
-
-### Examples
-
-If you want to see how this works in action, take a look at the integration tests:
+If you want to see how this library works in action, take a look at the integration tests:
 - PostgreSQL Test using [lpil/pog](https://github.com/lpil/pog): [./integration_test/psql](./integration_test/psql)
 - MySQL Test using [ninanomenon/shork](https://github.com/ninanomenon/shork): [./integration_test/mysql](./integration_test/mysql)
 - SQlite Test using [lpil/sqlight](https://github.com/lpil/sqlight): [./integration_test/sqlite](./integration_test/sqlite)
