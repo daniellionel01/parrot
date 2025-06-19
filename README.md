@@ -11,7 +11,7 @@
 *Most of these features are provided by / built into sqlc, so I do not aim to take credit for them.*
 
 ✅ Supports SQlite, PostgreSQL and MySQL<br />
-✅ Named parameters<sup>*1</sup> <br />
+✅ Named parameters <sup>*1</sup> <br />
 ✅ Multiple queries per file<br />
 ✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog))<br />
 ✅ Automatically downloads required binary ([sqlc](https://sqlc.dev/))
