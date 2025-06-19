@@ -1,17 +1,16 @@
 import app/sql
-import filepath
-import gleam/dynamic/decode
 import gleam/list
 import gleam/option
 import parrot/dev
-import simplifile
 import sqlight
 
 pub fn main() {
-  let file_path = filepath.join(root(), "./file.db")
-  use conn <- sqlight.with_connection(file_path)
+  use on <- sqlight.with_connection("./file.db")
 
-  let #(sql, params, expecting) = sql.get_user_by_username("alice")
+  let #(sql, params) = sql.create_user("bob")
+
+  let #(sql, with, expecting) = sql.get_user_by_username("alice")
+  let with = list.map(with, parrot_to_sqlight)
   let assert Ok([
     sql.GetUserByUsername(
       1,
@@ -21,20 +20,7 @@ pub fn main() {
       option.None,
       option.Some(<<31, 128>>),
     ),
-  ]) = query(conn, sql, params, expecting)
-}
-
-fn root() -> String {
-  find_root(".")
-}
-
-fn find_root(path: String) -> String {
-  let toml = filepath.join(path, "gleam.toml")
-
-  case simplifile.is_file(toml) {
-    Ok(False) | Error(_) -> find_root(filepath.join("..", path))
-    Ok(True) -> path
-  }
+  ]) = sqlight.query(sql, on:, with:, expecting:)
 }
 
 fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
@@ -48,14 +34,4 @@ fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
       panic as "timestamp parameter needs to be implemented"
     dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
   }
-}
-
-fn query(
-  on on: sqlight.Connection,
-  sql sql: String,
-  with with: List(dev.Param),
-  expecting expecting: decode.Decoder(a),
-) {
-  let with = list.map(with, parrot_to_sqlight)
-  sqlight.query(sql, on:, with:, expecting:)
 }
