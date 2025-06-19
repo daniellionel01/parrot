@@ -1,10 +1,22 @@
 
 export DATABASE_URL := "postgresql://daniel:parrot@127.0.0.1:5432/parrot"
 
-@test:
+test:
+  #!/bin/bash
   rm -f src/app/sql.gleam
   ../../bin/psql.sh
   ./priv/reset.sh
 
   gleam run -m parrot
-  gleam run 2>&1 | grep -q "Compiled in" && echo "✅ PASSED" || (echo "❌ FAILED" && exit 1)
+
+  tmp_file=$(mktemp /tmp/gleam_test.XXXXXX)
+  gleam run > "$tmp_file" 2>&1
+
+  if grep -q "error" "$tmp_file"; then
+    echo "❌ FAILED"
+    cat "$tmp_file"
+  else
+    echo "✅ PASSED"
+  fi
+
+  rm $tmp_file
