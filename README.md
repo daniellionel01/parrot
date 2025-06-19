@@ -83,7 +83,7 @@ of your choice.
 If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
 You can find functions to copy & paste into your codebase here: [wrappers](./docs/wrappers.md)
 
-An example with [lpil/pog](https://github.com/lpil/pog):
+An example with [lpil/sqlight](https://github.com/lpil/sqlight):
 ```gleam
 import app/sql
 import parrot/dev
