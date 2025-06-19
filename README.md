@@ -46,8 +46,6 @@ Here are some links to help you start out, if you are unfamiliar with the [sqlc]
 
 Here is an example of the file structure:
 ```sh
-$ tree
-.
 ├── gleam.toml
 ├── README.md
 ├── src
