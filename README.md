@@ -8,7 +8,7 @@
 
 *Most of the heavy lifting features are provided by / built into sqlc, so I do not aim to take credit for them.*
 
-✅ Supports SQlite, PostgreSQL and MySQL.<br />
+✅ Supports Sqlite, PostgreSQL and MySQL.<br />
 ✅ Named parameters.<sup>*1</sup> <br />
 ✅ Multiple queries per file.<br />
 ✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
@@ -41,7 +41,7 @@ copy over the generated module and that will work.
 Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
 - [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html#schema-and-queries)
 - [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html#schema-and-queries)
-- [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html#schema-and-queries)
+- [Getting started with Sqlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html#schema-and-queries)
 
 Here is an example of the file structure:
 ```sh
@@ -108,7 +108,7 @@ pub fn main() {
 If you want to see how this library works in action, take a look at the integration tests:
 - PostgreSQL: [./integration_test/psql](./integration_test/psql)
 - MySQL: [./integration_test/mysql](./integration_test/mysql)
-- SQlite: [./integration_test/sqlite](./integration_test/sqlite)
+- Sqlite: [./integration_test/sqlite](./integration_test/sqlite)
 
 ## Development
 
@@ -136,7 +136,7 @@ $ just test-psql
 
 ### What flavour of SQL does parrot support?
 This library supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
-would be MySQL, PostgreSQL and SQlite.
+would be MySQL, PostgreSQL and Sqlite.
 
 You can read more on language & SQL support here:
 https://docs.sqlc.dev/en/stable/reference/language-support.html

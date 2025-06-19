@@ -6,7 +6,7 @@ pub const usage = "
   🦜 Parrot - type-safe SQL in gleam for sqlite, postgresql & mysql
 
   USAGE:
-    gleam run -m parrot [OPTIONS]
+    gleam run -m parrot -- [OPTIONS]
     gleam run -m parrot help
 
   DESCRIPTION:
@@ -41,12 +41,12 @@ pub const usage = "
     $ export DATABASE_URL=\"postgres://user:pass@localhost/mydb\"
     $ gleam run -m parrot
 
-    # 2. Using SQlite: directly point to a database file.
-    $ gleam run -m parrot --sqlite ./priv/app.db
+    # 2. Using Sqlite: directly point to a database file.
+    $ gleam run -m parrot -- --sqlite ./priv/app.db
 
     # 3. Different environment variable
     $ export STAGING_DB_URL=\"mysql://staging:pass@remote/db\"
-    $ gleam run -m parrot --env-var STAGING_DB_URL
+    $ gleam run -m parrot -- --env-var STAGING_DB_URL
 
     # 4. Get help
     $ gleam run -m parrot help
