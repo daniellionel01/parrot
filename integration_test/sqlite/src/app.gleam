@@ -11,11 +11,17 @@ pub fn main() {
   let file_path = filepath.join(root(), "./file.db")
   use conn <- sqlight.with_connection(file_path)
 
-  let #(sql, params) = sql.get_user_by_username("alice")
-  let assert Ok([sql.GetUserByUsername(1, "alice", option.Some(_))]) =
-    query(conn, sql, params, sql.get_user_by_username_decoder())
-
-  Ok(Nil)
+  let #(sql, params, expecting) = sql.get_user_by_username("alice")
+  let assert Ok([
+    sql.GetUserByUsername(
+      1,
+      "alice",
+      option.Some(_),
+      0.0,
+      option.None,
+      option.Some(<<31, 128>>),
+    ),
+  ]) = query(conn, sql, params, expecting)
 }
 
 fn root() -> String {
@@ -37,7 +43,7 @@ fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
     dev.ParamFloat(x) -> sqlight.float(x)
     dev.ParamInt(x) -> sqlight.int(x)
     dev.ParamString(x) -> sqlight.text(x)
-    dev.ParamBitArray(x) -> panic as "bit array needs to be implemented"
+    dev.ParamBitArray(x) -> sqlight.blob(x)
     dev.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"
     dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"

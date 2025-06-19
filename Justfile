@@ -2,7 +2,11 @@
 default:
   @just --choose
 
-@integration_test:
+# count lines of code of (excluding tests)
+@loc:
+  ./bin/loc.sh
+
+@integration-test:
   just test-sqlite
   just test-mysql
   just test-psql

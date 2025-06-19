@@ -1,7 +1,6 @@
 import gleam/bool
 import gleam/dynamic/decode as d
 import gleam/int
-import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option
@@ -14,7 +13,11 @@ import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_case
 import simplifile
 
-pub fn codegen_from_config(config: Config) {
+pub type Codegen {
+  Codegen(unknown_types: List(String))
+}
+
+pub fn codegen_from_config(config: Config) -> Result(Codegen, Nil) {
   use json_string <- lib.try_nil(get_json_file(config))
 
   use dyn_json <- lib.try_nil(json.parse(from: json_string, using: d.dynamic))
@@ -23,17 +26,19 @@ pub fn codegen_from_config(config: Config) {
 
   // we check for any dynamically mapped types to alert the user that
   // they might have to contribute to this library to cover this case
-  list.each(parsed.queries, fn(query) {
-    list.each(query.columns, fn(col) {
-      case sqlc_type_to_gleam(col.type_ref.name) {
-        GleamDynamic -> {
-          io.println(lib.yellow("unknown column type: " <> col.type_ref.name))
+  let unknowns =
+    list.flat_map(parsed.queries, fn(query) {
+      list.map(query.columns, fn(col) {
+        case sqlc_type_to_gleam(col.type_ref.name) {
+          GleamDynamic -> {
+            option.Some(col.type_ref.name)
+          }
+          _ -> option.None
         }
-        _ -> Nil
-      }
+      })
     })
-  })
-  io.println("")
+    |> list.filter(option.is_some)
+    |> list.map(option.unwrap(_, ""))
 
   let module_contents = gen_gleam_module(parsed)
 
@@ -43,7 +48,7 @@ pub fn codegen_from_config(config: Config) {
   let _ =
     simplifile.write(to: get_module_path(config), contents: module_contents)
 
-  Ok(Nil)
+  Ok(Codegen(unknowns))
 }
 
 fn gen_query(query: sqlc.Query) {
@@ -83,11 +88,31 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     x -> x
   }
   case string.lowercase(sqltype) {
-    "int" <> _ | "bigint" | "serial" | "smallserial" | "bigserial" -> GleamInt
-    "float" | "decimal" | "real" | "numeric" | "double precision" -> GleamFloat
-    "text" | "varchar" -> GleamString
-    "uuid" -> GleamBitArray
-    "datetime" | "timestamp" -> GleamTimestamp
+    "int" <> _
+    | "tinyint"
+    | "smallint"
+    | "mediumint"
+    | "bigint"
+    | "serial" <> _
+    | "smallserial"
+    | "bigserial"
+    | "year" -> GleamInt
+    "float" <> _ | "dec" <> _ | "fixed" | "real" | "numeric" | "double" <> _ ->
+      GleamFloat
+    "char" <> _ | "varchar" <> _ | "text" | "mediumtext" | "longtext" <> _ ->
+      GleamString
+    "uuid"
+    | "bit"
+    | "blob"
+    | "tinyblob"
+    | "smallblob"
+    | "mediumblob"
+    | "longblob"
+    | "binary"
+    | "varbinary"
+    | "byte" <> _ -> GleamBitArray
+    "date" <> _ | "time" <> _ -> GleamTimestamp
+    "bool" <> _ -> GleamBool
     _ -> GleamDynamic
   }
 }
@@ -170,7 +195,11 @@ pub fn gen_query_function(query: sqlc.Query) {
 
   let def_fn = "pub fn " <> fn_name <> "(" <> def_fn_args <> ")"
   let def_sql = "let sql = \"" <> query.text <> "\""
-  let def_return = "#(sql, " <> def_return_params <> ")"
+  let def_exp = case query.cmd {
+    sqlc.Exec | sqlc.ExecResult -> ""
+    sqlc.Many | sqlc.One -> fn_name <> "_decoder()"
+  }
+  let def_return = "#(sql, " <> def_return_params <> ", " <> def_exp <> ")"
 
   [def_fn <> "{", "  " <> def_sql, "  " <> def_return, "}"]
   |> string.join("\n")

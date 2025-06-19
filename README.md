@@ -4,213 +4,111 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
-## Project Status
+## Features
 
-this project is currently in **alpha**. it will be released under v1.0.0 once ready for usage.
+*Most of the heavy lifting features are provided by / built into sqlc, so I do not aim to take credit for them.*
 
-## Usage
+✅ Supports SQlite, PostgreSQL and MySQL.<br />
+✅ Named parameters.<sup>*1</sup> <br />
+✅ Multiple queries per file.<br />
+✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
+✅ Automatically pulls schema of your database.<br />
+✅ Automatically downloads [sqlc](https://sqlc.dev/) binary.
 
+<sup>*1</sup>: meaning that it infers the names of the parameters from your sql queries in the gleam function you
+call. f.e. `WHERE username = $1` can yield `sql.get_user(username:)`. if you have multiple parameters of the same
+data types this can avoid confusion and bugs.
 
+## Usage / Getting Started
+
+### Installation
 ```sh
 $ gleam add parrot
 ```
 
-```sh
-# automatically detect database & default engine
-$ gleam run -m parrot
+### If you target JavaScript
 
-# specify sqlite file
-$ gleam run -m parrot --sqlite <file_path>
-`````
+So here is the catch: you can only execute parrot in an erlang gleam application.
+However the generated code will also run in a javascript environment.
+So if you need parrot for a javascript project, you can create a separate package and
+copy over the generated module and that will work.
 
-For parrot to work you need to make sure you have [sqlc](https://sqlc.dev/) installed ([guide](https://docs.sqlc.dev/en/latest/overview/install.html)).
-- If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes per default if you have mysql installed)
-- If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes per default if you have postgresql installed)
-
-1. Install
-```sh
-$ gleam add parrot
-```
-
-2. Define your queries
-
+### Define your Queries
 - Parrot will look for all *.sql files in any sql directory under your project's src directory.
 - Each *.sql file can contain as many SQL queries as you want.
 - All of the queries will compile into a single `src/[project name]/sql.gleam` module.
 
 Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
-- [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html)
-- [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html)
-- [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html)
+- [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html#schema-and-queries)
+- [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html#schema-and-queries)
+- [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html#schema-and-queries)
 
-2. Generate Gleam code
+Here is an example of the file structure:
 ```sh
-$ gleam run -m parrot --sqlite sqlite file.db
-$ DATABASE_URL="mysql://user:password@127.0.0.1:3309/db" gleam run -m parrot
-$ DATABASE_URL="mysql://user:password@127.0.0.1:3309/db" gleam run -m parrot
+├── gleam.toml
+├── README.md
+├── src
+│   ├── app.gleam
+│   └── sql
+│       ├── auth.sql
+│       └── posts.sql
+└── test
+   └── app_test.gleam
 ```
 
-## How it works
+### Code Generation
+```sh
+# automatically detects database & engine from env (DATABASE_URL by default)
+$ gleam run -m parrot
 
-This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellionel01/sqlc-gen-json),
-which it then converts into gleam code.
+# provide connection string from different environment variable
+$ gleam run -m parrot -- -e PG_DATABASE_URL
 
-So in a simplified manner, the pipeline looks like this:
-```mermaid
-graph LR
-    SQL[SQL Queries] -- sqlc-gen-json --> JSON[JSON Schema]
-    JSON -- parrot --> Gleam[Gleam Code]
+# specify sqlite file
+$ gleam run -m parrot -- --sqlite <file_path>
+
+# see all options
+$ gleam run -m parrot help
 ```
 
-## An Example
+If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes by default if you have a mysql client installed)
 
-Let's take the following SQL queries as an example:
-```sql
--- name: GetAuthor :one
-SELECT
-  *
-FROM
-  authors
-WHERE
-  id = ?
-LIMIT
-  1;
+If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes by default if you have a postgresql client installed)
 
--- name: ListAuthors :many
-SELECT
-  *
-FROM
-  authors
-ORDER BY
-  name;
-```
+### Run it!
 
-The `--name: GetAuthor :one` comment is part of [sqlc](https://sqlc.dev/) and will be used to generate the
-name and return type of the wrapper.
+You now have type safe access to your sql queries. You might have to write 1-2 wrapper functions for the database client library
+of your choice.
 
-Given the queries above, the following code will be generated:
+If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
+You can find functions to copy & paste into your codebase here: [wrappers](./docs/wrappers.md)
 
+An example with [lpil/pog](https://github.com/lpil/pog):
 ```gleam
-//// file: src/gen/parrot.gleam
+import app/sql
+import parrot/dev
 
-import gleam/option.{type Option}
-import gleam/dynamic/decode
-import gleam/time/timestamp.{type Timestamp}
-
-// Custom decoders
-fn datetime_decoder() -> decode.Decoder(Timestamp) {
-  decode.string
-  |> decode.then(fn(datetime_str) {
-    case timestamp.parse_rfc3339(datetime_str) {
-      Ok(ts) -> decode.success(ts)
-      Error(_) -> decode.failure(timestamp.from_unix_seconds(0), "Invalid datetime format")
-    }
-  })
-}
-
-pub type GetAuthor {
-  GetAuthor(
-    id: Int,
-    created_at: Timestamp,
-    name: String,
-    bio: Option(String)
-  )
-}
-
-pub fn get_author(id: Int){
-  let sql = "SELECT
-  id, created_at, name, bio
-FROM
-  authors
-WHERE
-  id = ?
-LIMIT
-  1"
-  #(sql, [sql.ParamInt(age)])
-}
-
-pub fn get_author_decoder() -> decode.Decoder(GetAuthor) {
-  use id <- decode.field("id", decode.int)
-  use created_at <- decode.field("created_at", datetime_decoder())
-  use name <- decode.field("name", decode.string)
-  use bio <- decode.field("bio", decode.optional(decode.string))
-  decode.success(GetAuthor(id: , created_at: , name: , bio: ))
-}
-
-pub type ListAuthors {
-  ListAuthors(
-    id: Int,
-    created_at: Timestamp,
-    name: String,
-    bio: Option(String)
-  )
-}
-
-pub fn list_authors(){
-  let sql = "SELECT
-  id, created_at, name, bio
-FROM
-  authors
-ORDER BY
-  name"
-  #(sql, Nil)
-}
-
-pub fn list_authors_decoder() -> decode.Decoder(ListAuthors) {
-  use id <- decode.field("id", decode.int)
-  use created_at <- decode.field("created_at", datetime_decoder())
-  use name <- decode.field("name", decode.string)
-  use bio <- decode.field("bio", decode.optional(decode.string))
-  decode.success(ListAuthors(id: , created_at: , name: , bio: ))
-}
-```
-
-Every SQL statement wrapper follows the schema of `#(String, List(Params))`. The first element is
-the raw SQL that can be executed by your database driver and the second element is a
-tuple of all of the parameters that you need for this query.
-
-The query parameters are wrapped in a custom type that you can use to map them to your
-database driver's types. Here is an example for [lpil/sqlight](https://github.com/lpil/sqlight):
-```gleam
-import gleam/list
-import gleam/time/calendar
-import gleam/time/timestamp
-import lpil_sqlight/sql
-import parrot/sql as parrot
-import sqlight
-
-/// Generated sql module by parrot
-import parrot/sql
-
-pub fn params_to_sqlight(args: List(parrot.Param)) -> List(sqlight.Value) {
-  list.map(args, fn(arg) {
-    case arg {
-      parrot.ParamInt(a) -> sqlight.int(a)
-      parrot.ParamBool(a) -> sqlight.bool(a)
-      parrot.ParamFloat(a) -> sqlight.float(a)
-      parrot.ParamString(a) -> sqlight.text(a)
-      parrot.ParamTimestamp(ts) -> {
-        ts
-        |> timestamp.to_rfc3339(calendar.utc_offset)
-        |> sqlight.text
-      }
-    }
-  })
+fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+  // ...
 }
 
 pub fn main() {
-  // ... setup database ...
+  // ...
 
-  let #(raw_sql, args) = sql.get_author(7)
-  let _ =
-    echo sqlight.query(
-      raw_sql,
-      on: conn,
-      with: params_to_sqlight(args),
-      expecting: sql.get_author_decoder(),
-    )
+  let #(sql, with, expecting) = sql.get_user_by_username("alice")
+  let with = parrot_to_sqlight(with)
+  let row = sqlight.query(sql, on:, with:, expecting:)
+
+  // ...
 }
 ```
+
+## Examples
+
+If you want to see how this library works in action, take a look at the integration tests:
+- PostgreSQL: [./integration_test/psql](./integration_test/psql)
+- MySQL: [./integration_test/mysql](./integration_test/mysql)
+- SQlite: [./integration_test/sqlite](./integration_test/sqlite)
 
 ## Development
 
@@ -245,6 +143,21 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
+
+## Future Work
+
+Here are some ideas and thoughts on how you might develop this library further:
+* automatic pull request for new sqlc versions
+* support more complex postgres data types (`path`, `point`, `polygon`)
+* provide way to configure custom decoders for json columns
+* use glance for codegen
+* remove unused imports / types in generated sql.gleam module
+* provide config for custom include / exclude patterns of *.sql query files
+* improve codebase structure and adding opaque types
+* handle more query annotations cmd syntaxes
+  https://docs.sqlc.dev/en/stable/reference/query-annotations.html
+
+Contributions are welcomed!
 
 ## Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!

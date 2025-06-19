@@ -5,5 +5,6 @@ export DATABASE_URL := "postgresql://daniel:parrot@127.0.0.1:5432/parrot"
   rm -f src/app/sql.gleam
   ../../bin/psql.sh
   ./priv/reset.sh
+
   gleam run -m parrot
   gleam run 2>&1 | grep -q "Compiled in" && echo "✅ PASSED" || (echo "❌ FAILED" && exit 1)

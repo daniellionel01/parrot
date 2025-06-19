@@ -13,6 +13,7 @@ import parrot/internal/db
 import parrot/internal/errors
 import parrot/internal/lib
 import parrot/internal/project
+import parrot/internal/spinner
 import parrot/internal/sqlc
 import shellout
 import simplifile
@@ -79,8 +80,20 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 
   let _ = simplifile.create_directory_all(sqlc_dir)
 
+  let spinner =
+    spinner.new("downloading sqlc binary")
+    |> spinner.start()
+
+  use _ <- result.try(sqlc.download_binary())
+
   let sqlc_yaml = sqlc.gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
+
+  spinner.complete_current(spinner)
+
+  let spinner =
+    spinner.new("fetching schema")
+    |> spinner.start()
 
   use schema_sql <- result.try(case engine {
     cli.MySQL -> {
@@ -103,8 +116,14 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   })
   let _ = simplifile.write(schema_file, schema_sql)
 
+  spinner.complete_current(spinner)
+
+  let spinner =
+    spinner.new("generating gleam code")
+    |> spinner.start()
+
   let gen_res =
-    shellout.command(run: "sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
   use _ <- given.ok(gen_res, else_return: fn(err) {
     let #(_, err) = err
     Error(errors.SqlcGenerateError(err))
@@ -116,7 +135,17 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       gleam_module_out_path: project_name <> "/sql.gleam",
       json_file_path: queries_file,
     )
-  let _ = codegen.codegen_from_config(config)
+  let gen_result = codegen.codegen_from_config(config)
+  use gen_result <- given.ok(gen_result, else_return: fn(_) {
+    Error(errors.CodegenError)
+  })
+
+  spinner.complete_current(spinner)
+
+  list.each(gen_result.unknown_types, fn(unknown) {
+    io.println(lib.yellow("unknown column type: " <> unknown))
+  })
+  io.println("")
 
   Ok(Nil)
 }

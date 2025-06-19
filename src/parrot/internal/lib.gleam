@@ -8,7 +8,7 @@ import gleam/list
 import gleam/result
 import simplifile
 
-const colorless = "\u{001b}[0m"
+pub const colorless = "\u{001b}[0m"
 
 pub fn try_nil(
   result: Result(a, b),

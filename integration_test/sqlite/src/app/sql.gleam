@@ -9,25 +9,31 @@ pub type ListUsers {
   ListUsers(
     id: Int,
     username: String,
-    created_at: Option(String)
+    created_at: Option(String),
+    balance: Float,
+    last_known_location: Option(Float),
+    avatar: Option(BitArray)
   )
 }
 
 pub fn list_users(){
   let sql = "SELECT
-  id, username, created_at
+  id, username, created_at, balance, last_known_location, avatar
 FROM
   users
 ORDER BY
   created_at DESC"
-  #(sql, Nil)
+  #(sql, Nil, list_users_decoder())
 }
 
 pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   use id <- decode.field(0, decode.int)
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(decode.string))
-  decode.success(ListUsers(id: , username: , created_at: ))
+  use balance <- decode.field(3, decode.float)
+  use last_known_location <- decode.field(4, decode.optional(decode.float))
+  use avatar <- decode.field(5, decode.optional(decode.bit_array))
+  decode.success(ListUsers(id: , username: , created_at: , balance: , last_known_location: , avatar: ))
 }
 
 pub fn create_user(username username: String){
@@ -35,7 +41,7 @@ pub fn create_user(username username: String){
   users (username)
 VALUES
   (?)"
-  #(sql, [dev.ParamString(username)])
+  #(sql, [dev.ParamString(username)], )
 }
 
 pub fn update_user_username(username username: String, id id: Int){
@@ -44,39 +50,45 @@ SET
   username = ?
 WHERE
   id = ?"
-  #(sql, [dev.ParamString(username), dev.ParamInt(id)])
+  #(sql, [dev.ParamString(username), dev.ParamInt(id)], )
 }
 
 pub fn delete_user(id id: Int){
   let sql = "DELETE FROM users
 WHERE
   id = ?"
-  #(sql, [dev.ParamInt(id)])
+  #(sql, [dev.ParamInt(id)], )
 }
 
 pub type GetUserByUsername {
   GetUserByUsername(
     id: Int,
     username: String,
-    created_at: Option(String)
+    created_at: Option(String),
+    balance: Float,
+    last_known_location: Option(Float),
+    avatar: Option(BitArray)
   )
 }
 
 pub fn get_user_by_username(username username: String){
   let sql = "SELECT
-  id, username, created_at
+  id, username, created_at, balance, last_known_location, avatar
 FROM
   users
 WHERE
   username = ?
 LIMIT
   1"
-  #(sql, [dev.ParamString(username)])
+  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
 }
 
 pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use id <- decode.field(0, decode.int)
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(decode.string))
-  decode.success(GetUserByUsername(id: , username: , created_at: ))
+  use balance <- decode.field(3, decode.float)
+  use last_known_location <- decode.field(4, decode.optional(decode.float))
+  use avatar <- decode.field(5, decode.optional(decode.bit_array))
+  decode.success(GetUserByUsername(id: , username: , created_at: , balance: , last_known_location: , avatar: ))
 }
