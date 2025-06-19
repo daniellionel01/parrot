@@ -24,5 +24,35 @@ fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
 
 ## https://github.com/lpil/pog
 
+Postgresql provides a vast amount of simple and complex data types. Parrot is able to map all commonly used data types,
+but might struggle with more complex data types such as `polygon`.
+
 ```gleam
+pub fn parrot_to_pog(param: parrot.Param) -> pog.Value {
+  case param {
+    parrot.ParamDynamic(_) -> todo
+    parrot.ParamBool(x) -> pog.bool(x)
+    parrot.ParamFloat(x) -> pog.float(x)
+    parrot.ParamInt(x) -> pog.int(x)
+    parrot.ParamString(x) -> pog.text(x)
+    parrot.ParamBitArray(x) -> pog.bytea(x)
+    parrot.ParamTimestamp(x) -> {
+      let #(date, time) = timestamp.to_calendar(x, calendar.utc_offset)
+
+      pog.timestamp(pog.Timestamp(
+        pog.Date(
+          year: date.year,
+          month: calendar.month_to_int(date.month),
+          day: date.day,
+        ),
+        pog.Time(
+          hours: time.hours,
+          minutes: time.minutes,
+          seconds: time.seconds,
+          microseconds: time.nanoseconds / 1000,
+        ),
+      ))
+    }
+  }
+}
 ```

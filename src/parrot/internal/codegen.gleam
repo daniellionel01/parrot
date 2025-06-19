@@ -106,7 +106,8 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     | "mediumblob"
     | "longblob"
     | "binary"
-    | "varbinary" -> GleamBitArray
+    | "varbinary"
+    | "byte" <> _ -> GleamBitArray
     "date" <> _ | "time" <> _ -> GleamTimestamp
     "bool" <> _ -> GleamBool
     _ -> GleamDynamic
