@@ -158,7 +158,6 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 Here are some ideas and thoughts on how you might develop this library further:
 * automatic pull request for new sqlc versions
-* dedicated packages for dependencies that might not be required (f.e. `pog`, `sqlight`)
 * support more complex postgres data types (`path`, `point`, `polygon`)
 * provide way to configure custom decoders for json columns
 * use glance for codegen
