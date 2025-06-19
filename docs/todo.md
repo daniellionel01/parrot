@@ -1,5 +1,16 @@
 # todo
 
+- [ ] further integration tests
+  - [ ] mysql
+    - [ ] test exec queries
+    - [ ] test more advanced column types
+  - [ ] psql
+    - [ ] test exec queries
+    - [ ] test more advanced column types
+  - [ ] sqlite
+    - [ ] test exec queries
+    - [ ] test more advanced column types
+
 - [ ] advanced types
   - [ ] mysql: enum & set
   - [ ] https://docs.sqlc.dev/en/stable/reference/datatypes.html#geometry
