@@ -324,7 +324,7 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
 
   use bin <- result.try(
     extract_sqlc_binary(tarball)
-    |> result.map_error(fn(e) {
+    |> result.map_error(fn(_) {
       errors.SqlcDownloadError("could not unzip the sqlc binary")
     }),
   )
