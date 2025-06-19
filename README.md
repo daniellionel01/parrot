@@ -12,7 +12,7 @@
 ✅ Named parameters.<sup>*1</sup> <br />
 ✅ Multiple queries per file.<br />
 ✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
-✅ Automatically infers schema of your database.<br />
+✅ Automatically pulls schema of your database.<br />
 ✅ Automatically downloads [sqlc](https://sqlc.dev/) binary.
 
 <sup>*1</sup>: meaning that it infers the names of the parameters from your sql queries in the gleam function you
