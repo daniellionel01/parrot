@@ -61,8 +61,11 @@ Here is an example of the file structure:
 # automatically detects database & engine from env (DATABASE_URL by default)
 $ gleam run -m parrot
 
+# provide connection string from different environment variable
+$ gleam run -m parrot -- -e PG_DATABASE_URL
+
 # specify sqlite file
-$ gleam run -m parrot --sqlite <file_path>
+$ gleam run -m parrot -- --sqlite <file_path>
 
 # see all options
 $ gleam run -m parrot help
