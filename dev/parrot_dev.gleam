@@ -1,3 +1,5 @@
+//// Basically a scratch pad to test out different functions while developing them
+
 import parrot/internal/sqlc
 import simplifile
 
