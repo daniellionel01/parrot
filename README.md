@@ -106,9 +106,9 @@ pub fn main() {
 ## Examples
 
 If you want to see how this library works in action, take a look at the integration tests:
-- PostgreSQL Test using [lpil/pog](https://github.com/lpil/pog): [./integration_test/psql](./integration_test/psql)
-- MySQL Test using [ninanomenon/shork](https://github.com/ninanomenon/shork): [./integration_test/mysql](./integration_test/mysql)
-- SQlite Test using [lpil/sqlight](https://github.com/lpil/sqlight): [./integration_test/sqlite](./integration_test/sqlite)
+- PostgreSQL: [./integration_test/psql](./integration_test/psql)
+- MySQL: [./integration_test/mysql](./integration_test/mysql)
+- SQlite: [./integration_test/sqlite](./integration_test/sqlite)
 
 ## Development
 
