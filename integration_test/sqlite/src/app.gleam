@@ -8,14 +8,15 @@ import sqlight
 pub fn main() {
   use on <- sqlight.with_connection("./file.db")
 
-  let #(sql, with) = sql.create_user("bob")
+  let #(sql, with) = sql.create_user("danny")
   let with = list.map(with, parrot_to_sqlight)
   let assert Ok(_) =
     sqlight.query(sql, on:, with:, expecting: decode.success(""))
 
-  let #(sql, with, expecting) = sql.list_users()
+  let #(sql, with, expecting) = sql.count_users()
   let with = list.map(with, parrot_to_sqlight)
-  let assert Ok(_) = sqlight.query(sql, on:, with:, expecting:)
+  let assert Ok([sql.CountUsers(4)]) =
+    sqlight.query(sql, on:, with:, expecting:)
 
   let #(sql, with, expecting) = sql.get_user_by_username("alice")
   let with = list.map(with, parrot_to_sqlight)

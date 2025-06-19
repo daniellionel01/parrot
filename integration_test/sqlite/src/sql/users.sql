@@ -1,10 +1,8 @@
--- name: ListUsers :many
+-- name: CountUsers :many
 SELECT
-  *
+  count(*)
 FROM
-  users
-ORDER BY
-  created_at DESC;
+  users;
 
 -- name: CreateUser :exec
 INSERT INTO
@@ -16,11 +14,6 @@ VALUES
 UPDATE users
 SET
   username = ?
-WHERE
-  id = ?;
-
--- name: DeleteUser :exec
-DELETE FROM users
 WHERE
   id = ?;
 
