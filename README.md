@@ -19,7 +19,7 @@
 call. f.e. `WHERE username = $1` can yield `sql.get_user(username:)`. if you have multiple parameters of the same
 data types this can avoid confusion and bugs.
 
-## Usage
+## Usage / Getting Started
 
 ### Installation
 ```sh
