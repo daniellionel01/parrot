@@ -48,7 +48,7 @@ FROM
   users
 ORDER BY
   created_at DESC"
-  #(sql, Nil, list_users_decoder())
+  #(sql, [], list_users_decoder())
 }
 
 pub fn list_users_decoder() -> decode.Decoder(ListUsers) {

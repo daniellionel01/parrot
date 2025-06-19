@@ -172,7 +172,7 @@ pub fn gen_query_function(query: sqlc.Query) {
     |> string.join(", ")
 
   let def_return_params = case query.params {
-    [] -> "Nil"
+    [] -> "[]"
     args ->
       "["
       <> args
