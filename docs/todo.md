@@ -2,6 +2,8 @@
 
 ## road to v1
 
+- [ ] return decoder in tuple
+
 - [ ] add driver utilities in readme / docs
   - [ ] sqlight
   - [ ] pog

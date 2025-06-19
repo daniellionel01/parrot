@@ -55,6 +55,38 @@ If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0
 
 If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes per default if you have a postgresql client installed)
 
+### Run it!
+
+You now have type safe access to your sql queries. You might have to write 1-2 wrapper functions for the database client library
+of your choice.
+
+If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
+You can find functions to copy & paste into your codebase here:
+
+This is what you write to access your sql with the example of [lpil/pog](https://github.com/lpil/pog):
+```gleam
+import app/sql
+import parrot/dev
+
+fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+  // ...
+}
+
+pub fn main() {
+  // ...
+
+  let #(sql, params) = sql.get_user_by_username("alice")
+  let row = sqlight.query(
+    sql,
+    on:,
+    with: parrot_to_sqlight(params),
+    expecting: sql.get_user_by_username_decoder()
+  )
+
+  // ...
+}
+```
+
 ## How it works
 
 This library makes use of a [sqlc-gen-json plugin](https://github.com/daniellionel01/sqlc-gen-json),
