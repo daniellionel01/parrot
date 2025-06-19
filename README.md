@@ -44,6 +44,21 @@ Here are some links to help you start out, if you are unfamiliar with the [sqlc]
 - [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html)
 - [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html)
 
+Here is an example of the file structure:
+```sh
+$ tree
+.
+├── gleam.toml
+├── README.md
+├── src
+│   ├── app.gleam
+│   └── sql
+│       ├── auth.sql
+│       └── posts.sql
+└── test
+   └── app_test.gleam
+```
+
 ### Code Generation
 ```sh
 # automatically detects database & engine
@@ -148,6 +163,10 @@ Here are some ideas and thoughts on how you might develop this library further:
 * dedicated packages for dependencies that might not be required (f.e. `pog`, `sqlight`)
 * support more complex postgres data types (`path`, `point`, `polygon`)
 * provide way to configure custom decoders for json columns
+* use glance for codegen
+* remove unused imports / types in generated sql.gleam module
+* handle more query annotations cmd syntaxes
+  https://docs.sqlc.dev/en/stable/reference/query-annotations.html
 
 Contributions are welcomed!
 

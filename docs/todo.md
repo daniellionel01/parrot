@@ -2,11 +2,6 @@
 
 ## road to v1
 
-- [x] return decoder in tuple
-
-- [ ] handle more query annotations cmd syntaxes
-      https://docs.sqlc.dev/en/stable/reference/query-annotations.html
-
 - [ ] types
   - [ ] mysql: enum & set
   - [ ] https://docs.sqlc.dev/en/stable/reference/datatypes.html#geometry
