@@ -85,12 +85,30 @@ pub fn sqlc_type_to_gleam(sqltype: String) -> GleamType {
     x -> x
   }
   case string.lowercase(sqltype) {
-    "int" <> _ | "bigint" | "serial" | "smallserial" | "bigserial" -> GleamInt
-    "float" | "decimal" <> _ | "real" | "numeric" | "double precision" ->
+    "int" <> _
+    | "tinyint"
+    | "smallint"
+    | "mediumint"
+    | "bigint"
+    | "serial" <> _
+    | "smallserial"
+    | "bigserial"
+    | "year" -> GleamInt
+    "float" <> _ | "dec" <> _ | "fixed" | "real" | "numeric" | "double" <> _ ->
       GleamFloat
-    "text" | "varchar" -> GleamString
-    "uuid" | "blob" -> GleamBitArray
-    "datetime" | "timestamp" -> GleamTimestamp
+    "char" <> _ | "varchar" <> _ | "text" | "mediumtext" | "longtext" <> _ ->
+      GleamString
+    "uuid"
+    | "bit"
+    | "blob"
+    | "tinyblob"
+    | "smallblob"
+    | "mediumblob"
+    | "longblob"
+    | "binary"
+    | "varbinary" -> GleamBitArray
+    "date" <> _ | "time" <> _ -> GleamTimestamp
+    "bool" <> _ -> GleamBool
     _ -> GleamDynamic
   }
 }
