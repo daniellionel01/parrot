@@ -163,6 +163,7 @@ Here are some ideas and thoughts on how you might develop this library further:
 * provide way to configure custom decoders for json columns
 * use glance for codegen
 * remove unused imports / types in generated sql.gleam module
+* provide config for custom include / exclude patterns of *.sql query files
 * handle more query annotations cmd syntaxes
   https://docs.sqlc.dev/en/stable/reference/query-annotations.html
 
