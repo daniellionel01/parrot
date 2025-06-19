@@ -11,7 +11,7 @@ pub fn main() {
   let file_path = filepath.join(root(), "./file.db")
   use conn <- sqlight.with_connection(file_path)
 
-  let #(sql, params) = sql.get_user_by_username("alice")
+  let #(sql, params, expecting) = sql.get_user_by_username("alice")
   let assert Ok([
     sql.GetUserByUsername(
       1,
@@ -21,7 +21,7 @@ pub fn main() {
       option.None,
       option.Some(<<31, 128>>),
     ),
-  ]) = query(conn, sql, params, sql.get_user_by_username_decoder())
+  ]) = query(conn, sql, params, expecting)
 }
 
 fn root() -> String {

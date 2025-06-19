@@ -80,13 +80,9 @@ fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
 pub fn main() {
   // ...
 
-  let #(sql, params) = sql.get_user_by_username("alice")
-  let row = sqlight.query(
-    sql,
-    on:,
-    with: parrot_to_sqlight(params),
-    expecting: sql.get_user_by_username_decoder()
-  )
+  let #(sql, with, expecting) = sql.get_user_by_username("alice")
+  let with = parrot_to_sqlight(with)
+  let row = sqlight.query(sql, on:, with:, expecting:)
 
   // ...
 }

@@ -12,11 +12,11 @@ pub fn main() {
   use config <- result.try(pog.url_config(database_url))
   let db = pog.connect(config)
 
-  let #(sql, params) = sql.get_user_by_username("alice")
+  let #(sql, params, expecting) = sql.get_user_by_username("alice")
   let assert Ok(pog.Returned(
     1,
     [sql.GetUserByUsername(1, "alice", option.Some(_))],
-  )) = query(db, sql, params, sql.get_user_by_username_decoder())
+  )) = query(db, sql, params, expecting)
 
   Ok(Nil)
 }

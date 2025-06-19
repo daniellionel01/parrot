@@ -192,7 +192,11 @@ pub fn gen_query_function(query: sqlc.Query) {
 
   let def_fn = "pub fn " <> fn_name <> "(" <> def_fn_args <> ")"
   let def_sql = "let sql = \"" <> query.text <> "\""
-  let def_return = "#(sql, " <> def_return_params <> ")"
+  let def_exp = case query.cmd {
+    sqlc.Exec | sqlc.ExecResult -> ""
+    sqlc.Many | sqlc.One -> fn_name <> "_decoder()"
+  }
+  let def_return = "#(sql, " <> def_return_params <> ", " <> def_exp <> ")"
 
   [def_fn <> "{", "  " <> def_sql, "  " <> def_return, "}"]
   |> string.join("\n")

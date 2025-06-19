@@ -23,7 +23,7 @@ FROM
   users
 ORDER BY
   created_at DESC"
-  #(sql, Nil)
+  #(sql, Nil, list_users_decoder())
 }
 
 pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
@@ -41,7 +41,7 @@ pub fn create_user(username username: String){
   users (username)
 VALUES
   (?)"
-  #(sql, [dev.ParamString(username)])
+  #(sql, [dev.ParamString(username)], )
 }
 
 pub fn update_user_username(username username: String, id id: Int){
@@ -50,14 +50,14 @@ SET
   username = ?
 WHERE
   id = ?"
-  #(sql, [dev.ParamString(username), dev.ParamInt(id)])
+  #(sql, [dev.ParamString(username), dev.ParamInt(id)], )
 }
 
 pub fn delete_user(id id: Int){
   let sql = "DELETE FROM users
 WHERE
   id = ?"
-  #(sql, [dev.ParamInt(id)])
+  #(sql, [dev.ParamInt(id)], )
 }
 
 pub type GetUserByUsername {
@@ -80,7 +80,7 @@ WHERE
   username = ?
 LIMIT
   1"
-  #(sql, [dev.ParamString(username)])
+  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
 }
 
 pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {

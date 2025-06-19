@@ -14,11 +14,11 @@ pub fn main() {
     |> shork.port(3309)
     |> shork.connect
 
-  let #(sql, params) = sql.get_user_by_username("alice")
+  let #(sql, params, expecting) = sql.get_user_by_username("alice")
   let assert Ok(shork.Returned(
     ["id", "username", "created_at"],
     [sql.GetUserByUsername(1, "alice", option.Some(_))],
-  )) = query(db, sql, params, sql.get_user_by_username_decoder())
+  )) = query(db, sql, params, expecting)
 
   Ok(Nil)
 }
