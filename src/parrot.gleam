@@ -89,7 +89,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let sqlc_yaml = sqlc.gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
 
-  spinner.stop(spinner)
+  spinner.complete_current(spinner)
 
   let spinner =
     spinner.new("fetching schema")
@@ -116,7 +116,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   })
   let _ = simplifile.write(schema_file, schema_sql)
 
-  spinner.stop(spinner)
+  spinner.complete_current(spinner)
 
   let spinner =
     spinner.new("generating gleam code")
@@ -135,9 +135,17 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       gleam_module_out_path: project_name <> "/sql.gleam",
       json_file_path: queries_file,
     )
-  let _ = codegen.codegen_from_config(config)
+  let gen_result = codegen.codegen_from_config(config)
+  use gen_result <- given.ok(gen_result, else_return: fn(_) {
+    Error(errors.CodegenError)
+  })
 
-  spinner.stop(spinner)
+  spinner.complete_current(spinner)
+
+  list.each(gen_result.unknown_types, fn(unknown) {
+    io.println(lib.yellow("unknown column type: " <> unknown))
+  })
+  io.println("")
 
   Ok(Nil)
 }

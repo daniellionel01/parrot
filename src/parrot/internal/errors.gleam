@@ -11,6 +11,8 @@ pub type ParrotError {
   NoQueriesFound
   MysqldumpError
   PgdumpError
+
+  CodegenError
 }
 
 pub fn err_to_string(error: ParrotError) {
@@ -24,5 +26,6 @@ pub fn err_to_string(error: ParrotError) {
     PgdumpError -> "there was an error pg_dump"
     NoQueriesFound -> "no queries were found to codegen"
     UnknownEngine(engine) -> "unknown engine: " <> engine
+    CodegenError -> "there was an error during codegen"
   }
 }

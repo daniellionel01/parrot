@@ -1,7 +1,6 @@
 import gleam/bool
 import gleam/dynamic/decode as d
 import gleam/int
-import gleam/io
 import gleam/json
 import gleam/list
 import gleam/option
@@ -14,7 +13,11 @@ import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_case
 import simplifile
 
-pub fn codegen_from_config(config: Config) {
+pub type Codegen {
+  Codegen(unknown_types: List(String))
+}
+
+pub fn codegen_from_config(config: Config) -> Result(Codegen, Nil) {
   use json_string <- lib.try_nil(get_json_file(config))
 
   use dyn_json <- lib.try_nil(json.parse(from: json_string, using: d.dynamic))
@@ -23,19 +26,19 @@ pub fn codegen_from_config(config: Config) {
 
   // we check for any dynamically mapped types to alert the user that
   // they might have to contribute to this library to cover this case
-  list.each(parsed.queries, fn(query) {
-    list.each(query.columns, fn(col) {
-      case sqlc_type_to_gleam(col.type_ref.name) {
-        GleamDynamic -> {
-          io.print(
-            "\n" <> lib.yellow("unknown column type: " <> col.type_ref.name),
-          )
+  let unknowns =
+    list.flat_map(parsed.queries, fn(query) {
+      list.map(query.columns, fn(col) {
+        case sqlc_type_to_gleam(col.type_ref.name) {
+          GleamDynamic -> {
+            option.Some(col.type_ref.name)
+          }
+          _ -> option.None
         }
-        _ -> Nil
-      }
+      })
     })
-  })
-  io.println("")
+    |> list.filter(option.is_some)
+    |> list.map(option.unwrap(_, ""))
 
   let module_contents = gen_gleam_module(parsed)
 
@@ -45,7 +48,7 @@ pub fn codegen_from_config(config: Config) {
   let _ =
     simplifile.write(to: get_module_path(config), contents: module_contents)
 
-  Ok(Nil)
+  Ok(Codegen(unknowns))
 }
 
 fn gen_query(query: sqlc.Query) {

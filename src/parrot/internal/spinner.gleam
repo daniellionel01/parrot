@@ -9,6 +9,10 @@ fn magenta(text: String) {
   "\u{001b}[35m" <> text <> lib.colorless
 }
 
+fn green(text: String) {
+  "\u{001b}[32m" <> text <> lib.colorless
+}
+
 const clear_line_code = "\u{001b}[2K"
 
 const go_to_start_code = "\r"
@@ -29,8 +33,13 @@ pub const triangle_frames = ["◢", "◣", "◤", "◥"]
 
 pub const walking_frames = ["⢄", "⢂", "⢁", "⡁", "⡈", "⡐", "⡠"]
 
+// ONLY CHANGE: Added current_text field to track the text
 pub opaque type Spinner {
-  Spinner(repeater: Repeater(State), frames: Array(String))
+  Spinner(
+    repeater: Repeater(State),
+    frames: Array(String),
+    current_text: String,
+  )
 }
 
 type State {
@@ -64,6 +73,7 @@ pub fn with_spinner(builder: Builder, context: fn(Spinner) -> a) {
   stop(spinner)
 }
 
+// ONLY CHANGE: Added current_text to constructor
 pub fn start(builder: Builder) -> Spinner {
   let frames = glearray.from_list(builder.frames)
   let repeater =
@@ -71,7 +81,7 @@ pub fn start(builder: Builder) -> Spinner {
       print(frames, state, i)
       state
     })
-  Spinner(repeater, frames)
+  Spinner(repeater, frames, builder.text)
 }
 
 pub fn set_text(spinner: Spinner, text: String) -> Nil {
@@ -84,6 +94,78 @@ pub fn set_colour(spinner: Spinner, colour: fn(String) -> String) -> Nil {
   repeatedly.update_state(spinner.repeater, fn(state) {
     State(..state, colour: colour)
   })
+}
+
+/// Stop the spinner with a checkmark and move to the next line.
+/// This shows completion and prepares for the next task.
+///
+pub fn complete_and_continue(spinner: Spinner, completed_text: String) -> Nil {
+  // Stop the current spinner
+  repeatedly.stop(spinner.repeater)
+
+  // Show the completed task with a checkmark
+  let checkmark = "✓"
+  io.print(
+    clear_line_code
+    <> go_to_start_code
+    <> green(checkmark)
+    <> " "
+    <> completed_text,
+  )
+  io.print("\n")
+  // Move to next line
+}
+
+// NEW FUNCTION: Use current spinner text for completion (intermediate)
+pub fn complete_and_continue_current(spinner: Spinner) -> Nil {
+  complete_and_continue(spinner, spinner.current_text)
+}
+
+/// Stop the spinner with a checkmark, showing the completed task.
+/// This is useful when you want to show completion without starting a new spinner.
+///
+pub fn complete(spinner: Spinner, completed_text: String) -> Nil {
+  repeatedly.stop(spinner.repeater)
+
+  let checkmark = "✓"
+  let show_cursor = "\u{001b}[?25h"
+  io.print(
+    clear_line_code
+    <> go_to_start_code
+    <> green(checkmark)
+    <> " "
+    <> completed_text
+    <> show_cursor,
+  )
+  io.print("\n")
+  // Move to next line
+}
+
+// NEW FUNCTION: Use current spinner text for completion (final)
+pub fn complete_current(spinner: Spinner) -> Nil {
+  complete(spinner, spinner.current_text)
+  io.print("")
+}
+
+/// Stop the spinner with an error mark, showing the failed task.
+/// This is useful when you want to show failure.
+///
+pub fn fail(spinner: Spinner, failed_text: String) -> Nil {
+  repeatedly.stop(spinner.repeater)
+
+  let error_mark = "✗"
+  let red = fn(text: String) { "\u{001b}[31m" <> text <> lib.colorless }
+  let show_cursor = "\u{001b}[?25h"
+  io.print(
+    clear_line_code
+    <> go_to_start_code
+    <> red(error_mark)
+    <> " "
+    <> failed_text
+    <> show_cursor,
+  )
+  io.print("\n")
+  // Move to next line
 }
 
 /// Stop the spinner, clearing the terminal line and showing the cursor. You
