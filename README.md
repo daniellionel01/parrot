@@ -4,17 +4,16 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
-## Introduction
-
-### Features
+## Features
 
 *Most of these features are provided by / built into sqlc, so I do not aim to take credit for them.*
 
-✅ Supports SQlite, PostgreSQL and MySQL<br />
-✅ Named parameters <sup>*1</sup> <br />
-✅ Multiple queries per file<br />
-✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog))<br />
-✅ Automatically downloads required binary ([sqlc](https://sqlc.dev/))
+✅ Supports SQlite, PostgreSQL and MySQL.<br />
+✅ Named parameters.<sup>*1</sup> <br />
+✅ Multiple queries per file.<br />
+✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
+✅ Automatically infers schema of your database.<br />
+✅ Automatically downloads [sqlc](https://sqlc.dev/) binary.
 
 <sup>*1</sup>: meaning that it infers the names of the parameters from your sql queries in the gleam function you
 call. f.e. `WHERE username = $1` can yield `sql.get_user(username:)`. if you have multiple parameters of the same
