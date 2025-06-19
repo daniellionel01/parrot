@@ -66,7 +66,7 @@ You now have type safe access to your sql queries. You might have to write 1-2 w
 of your choice.
 
 If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
-You can find functions to copy & paste into your codebase here:
+You can find functions to copy & paste into your codebase here: [Wrappers](./docs/wrappers.md)
 
 An example with [lpil/pog](https://github.com/lpil/pog):
 ```gleam
