@@ -9,6 +9,7 @@
 ### Features
 
 ✅ Supports SQlite, PostgreSQL and MySQL<br />
+✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog))<br />
 ✅ Named parameters<br />
 ✅ Automatically downloads required binary ([sqlc](https://sqlc.dev/))
 
