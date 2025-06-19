@@ -43,7 +43,7 @@ fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
     dev.ParamFloat(x) -> sqlight.float(x)
     dev.ParamInt(x) -> sqlight.int(x)
     dev.ParamString(x) -> sqlight.text(x)
-    dev.ParamBitArray(x) -> panic as "bit array needs to be implemented"
+    dev.ParamBitArray(x) -> sqlight.blob(x)
     dev.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"
     dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
