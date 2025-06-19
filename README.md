@@ -63,7 +63,7 @@ of your choice.
 If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
 You can find functions to copy & paste into your codebase here:
 
-This is what you write to access your sql with the example of [lpil/pog](https://github.com/lpil/pog):
+An example with [lpil/pog](https://github.com/lpil/pog):
 ```gleam
 import app/sql
 import parrot/dev
