@@ -58,7 +58,7 @@ Here is an example of the file structure:
 
 ### Code Generation
 ```sh
-# automatically detects database & engine
+# automatically detects database & engine from env (DATABASE_URL by default)
 $ gleam run -m parrot
 
 # specify sqlite file
