@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for `JSON`, `JSONB`, `MONEY`
 - Support for Postgres & MySQL `ENUM`
 - Improved testing for all databases
+- Use of `assert` syntax
 
 ## [1.0.1] - 2025-06-19
 

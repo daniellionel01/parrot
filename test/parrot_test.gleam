@@ -1,5 +1,4 @@
 import gleeunit
-import gleeunit/should
 import parrot/internal/project
 import parrot/internal/sqlc
 
@@ -8,8 +7,7 @@ pub fn main() {
 }
 
 pub fn parrot_test() {
-  project.project_name()
-  |> should.equal("parrot")
+  assert project.project_name() == "parrot"
 }
 
 pub fn os_cpu_test() {
