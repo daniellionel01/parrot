@@ -1,6 +1,9 @@
 
 export DATABASE_URL := "postgresql://daniel:parrot@127.0.0.1:5432/parrot"
 
+run:
+  gleam run
+
 test:
   #!/bin/bash
   rm -f src/app/sql.gleam

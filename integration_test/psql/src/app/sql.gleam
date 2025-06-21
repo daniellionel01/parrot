@@ -10,13 +10,18 @@ pub type GetUser {
   GetUser(
     id: Int,
     username: String,
-    created_at: Option(Timestamp)
+    created_at: Option(Timestamp),
+    profile: Option(String),
+    extra_info: Option(String),
+    favorite_numbers: Option(List(Int)),
+    role: Option(decode.Dynamic),
+    document: Option(BitArray)
   )
 }
 
 pub fn get_user(id id: Int){
   let sql = "SELECT
-  id, username, created_at
+  id, username, created_at, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 WHERE
@@ -30,20 +35,30 @@ pub fn get_user_decoder() -> decode.Decoder(GetUser) {
   use id <- decode.field(0, decode.int)
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
-  decode.success(GetUser(id: , username: , created_at: ))
+  use profile <- decode.field(3, decode.optional(decode.string))
+  use extra_info <- decode.field(4, decode.optional(decode.string))
+  use favorite_numbers <- decode.field(5, decode.optional(decode.list(of: decode.int)))
+  use role <- decode.field(6, decode.optional(decode.dynamic))
+  use document <- decode.field(7, decode.optional(decode.bit_array))
+  decode.success(GetUser(id: , username: , created_at: , profile: , extra_info: , favorite_numbers: , role: , document: ))
 }
 
 pub type ListUsers {
   ListUsers(
     id: Int,
     username: String,
-    created_at: Option(Timestamp)
+    created_at: Option(Timestamp),
+    profile: Option(String),
+    extra_info: Option(String),
+    favorite_numbers: Option(List(Int)),
+    role: Option(decode.Dynamic),
+    document: Option(BitArray)
   )
 }
 
 pub fn list_users(){
   let sql = "SELECT
-  id, username, created_at
+  id, username, created_at, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 ORDER BY
@@ -55,7 +70,12 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   use id <- decode.field(0, decode.int)
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
-  decode.success(ListUsers(id: , username: , created_at: ))
+  use profile <- decode.field(3, decode.optional(decode.string))
+  use extra_info <- decode.field(4, decode.optional(decode.string))
+  use favorite_numbers <- decode.field(5, decode.optional(decode.list(of: decode.int)))
+  use role <- decode.field(6, decode.optional(decode.dynamic))
+  use document <- decode.field(7, decode.optional(decode.bit_array))
+  decode.success(ListUsers(id: , username: , created_at: , profile: , extra_info: , favorite_numbers: , role: , document: ))
 }
 
 pub fn create_user(name name: String){
@@ -86,13 +106,18 @@ pub type GetUserByUsername {
   GetUserByUsername(
     id: Int,
     username: String,
-    created_at: Option(Timestamp)
+    created_at: Option(Timestamp),
+    profile: Option(String),
+    extra_info: Option(String),
+    favorite_numbers: Option(List(Int)),
+    role: Option(decode.Dynamic),
+    document: Option(BitArray)
   )
 }
 
 pub fn get_user_by_username(username username: String){
   let sql = "SELECT
-  id, username, created_at
+  id, username, created_at, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 WHERE
@@ -106,5 +131,10 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use id <- decode.field(0, decode.int)
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
-  decode.success(GetUserByUsername(id: , username: , created_at: ))
+  use profile <- decode.field(3, decode.optional(decode.string))
+  use extra_info <- decode.field(4, decode.optional(decode.string))
+  use favorite_numbers <- decode.field(5, decode.optional(decode.list(of: decode.int)))
+  use role <- decode.field(6, decode.optional(decode.dynamic))
+  use document <- decode.field(7, decode.optional(decode.bit_array))
+  decode.success(GetUserByUsername(id: , username: , created_at: , profile: , extra_info: , favorite_numbers: , role: , document: ))
 }

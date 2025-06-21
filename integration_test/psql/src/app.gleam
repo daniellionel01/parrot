@@ -15,8 +15,20 @@ pub fn main() {
   let #(sql, params, expecting) = sql.get_user_by_username("alice")
   let assert Ok(pog.Returned(
     1,
-    [sql.GetUserByUsername(1, "alice", option.Some(_))],
+    [
+      sql.GetUserByUsername(
+        3,
+        "alice",
+        option.Some(_),
+        option.Some("{\"a\": 1, \"b\": 2}"),
+        option.Some("{\"c\": 3}"),
+        option.Some([3, 11]),
+        option.Some(_),
+        option.Some(<<222, 173, 190, 239>>),
+      ),
+    ],
   )) = query(db, sql, params, expecting)
+  // echo query(db, sql, params, decode.dynamic)
 
   Ok(Nil)
 }
@@ -28,6 +40,7 @@ fn parrot_to_pog(param: dev.Param) -> pog.Value {
     dev.ParamInt(x) -> pog.int(x)
     dev.ParamString(x) -> pog.text(x)
     dev.ParamBitArray(x) -> pog.bytea(x)
+    dev.ParamList(x) -> pog.array(parrot_to_pog, x)
     dev.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"
     dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"

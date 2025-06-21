@@ -1,6 +1,9 @@
 
 export DATABASE_URL := "mysql://root:daniel@127.0.0.1:3309/parrot"
 
+run:
+  gleam run
+
 test:
   #!/bin/bash
   rm -f src/app/sql.gleam

@@ -1,5 +1,8 @@
 SQLITE_FILE := "file.db"
 
+run:
+  gleam run
+
 test:
   #!/bin/bash
   rm -f src/app/sql.gleam
