@@ -121,8 +121,7 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn) -> GleamType {
     | "text" <> _
     | "mediumtext" <> _
     | "longtext" <> _
-    | "json" <> _
-    | "inet" -> GleamString
+    | "json" <> _ -> GleamString
     "uuid"
     | "bit"
     | "blob"
@@ -135,8 +134,6 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn) -> GleamType {
     | "byte" <> _ -> GleamBitArray
     "date" <> _ | "time" <> _ -> GleamTimestamp
     "bool" <> _ -> GleamBool
-    // planned for v2
-    "hstore" -> GleamDynamic
     _ -> GleamDynamic
   }
 }
