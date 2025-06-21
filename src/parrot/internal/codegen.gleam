@@ -5,6 +5,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import gleam/result
 import gleam/string
 import parrot/internal/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
@@ -23,14 +24,14 @@ pub fn codegen_from_config(config: Config) -> Result(Codegen, Nil) {
 
   use dyn_json <- lib.try_nil(json.parse(from: json_string, using: d.dynamic))
 
-  let assert Ok(parsed) = sqlc.decode_sqlc(dyn_json)
+  let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
 
   // we check for any dynamically mapped types to alert the user that
   // they might have to contribute to this library to cover this case
   let unknowns =
-    list.flat_map(parsed.queries, fn(query) {
+    list.flat_map(context.queries, fn(query) {
       list.map(query.columns, fn(col) {
-        case sqlc_col_to_gleam(col) {
+        case sqlc_col_to_gleam(col, context) {
           GleamDynamic -> {
             option.Some(col.type_ref.name)
           }
@@ -41,7 +42,7 @@ pub fn codegen_from_config(config: Config) -> Result(Codegen, Nil) {
     |> list.filter(option.is_some)
     |> list.map(option.unwrap(_, ""))
 
-  let module_contents = gen_gleam_module(parsed)
+  let module_contents = gen_gleam_module(context)
 
   let _ =
     get_module_directory(config)
@@ -52,14 +53,14 @@ pub fn codegen_from_config(config: Config) -> Result(Codegen, Nil) {
   Ok(Codegen(unknowns))
 }
 
-fn gen_query(query: sqlc.Query) {
+fn gen_query(query: sqlc.Query, context: SQLC) {
   let type_str = case list.length(query.columns) {
     0 -> ""
-    _ -> gen_query_type(query) <> "\n\n"
+    _ -> gen_query_type(query, context) <> "\n\n"
   }
 
-  let func = gen_query_function(query)
-  let deco = gen_query_decoder(query)
+  let func = gen_query_function(query, context)
+  let deco = gen_query_decoder(query, context)
   type_str <> func <> deco
 }
 
@@ -70,8 +71,9 @@ pub type GleamType {
   GleamBool
   GleamTimestamp
   GleamBitArray
-  GleamDynamic
   GleamList(GleamType)
+  GleamCustomType(String)
+  GleamDynamic
 }
 
 pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
@@ -83,14 +85,15 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamTimestamp -> "Timestamp"
     GleamBitArray -> "BitArray"
     GleamList(sub) -> "List(" <> gleam_type_to_string(sub) <> ")"
+    GleamCustomType(name) -> name
     GleamDynamic -> "decode.Dynamic"
   }
 }
 
-pub fn sqlc_col_to_gleam(col: sqlc.TableColumn) -> GleamType {
+pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
   use <- given.that(col.is_array, return: fn() {
     let col = sqlc.TableColumn(..col, is_array: False)
-    let type_ = sqlc_col_to_gleam(col)
+    let type_ = sqlc_col_to_gleam(col, context)
     GleamList(type_)
   })
 
@@ -99,6 +102,24 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn) -> GleamType {
     "pg_catalog." <> x -> x
     x -> x
   }
+
+  let schema_name = col.type_ref.schema
+  let schema_name = case schema_name {
+    "" -> context.catalog.default_schema
+    _ -> schema_name
+  }
+
+  let assert Ok(schema) =
+    list.find(context.catalog.schemas, fn(s) { s.name == schema_name })
+
+  let enum =
+    schema.enums
+    |> list.find(fn(e) { e.name == sqltype })
+  use <- given.that(result.is_ok(enum), return: fn() {
+    let assert Ok(enum) = enum
+    todo
+  })
+
   case string.lowercase(sqltype) {
     "int" <> _
     | "tinyint"
@@ -155,13 +176,13 @@ pub fn gen_column_name(query: sqlc.Query, col: sqlc.TableColumn) -> String {
   string_case.snake_case(result)
 }
 
-pub fn gen_query_type(query: sqlc.Query) {
+pub fn gen_query_type(query: sqlc.Query, context: SQLC) {
   let name = string_case.pascal_case(query.name)
 
   let args =
     query.columns
     |> list.map(fn(col) {
-      let gleam_type = sqlc_col_to_gleam(col)
+      let gleam_type = sqlc_col_to_gleam(col, context)
       let col_type = gleam_type_to_string(gleam_type)
       let col_type = case col.not_null {
         True -> col_type
@@ -186,17 +207,18 @@ fn gleam_type_to_param(gtype: GleamType) -> String {
     GleamTimestamp -> "dev.ParamTimestamp"
     GleamBitArray -> "dev.ParamBitArray"
     GleamDynamic -> "dev.ParamDynamic"
+    GleamCustomType(name) -> todo
     GleamList(sub) -> "dev.ParamList(" <> gleam_type_to_param(sub) <> ")"
   }
 }
 
-pub fn gen_query_function(query: sqlc.Query) {
+pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
   let fn_name = string_case.snake_case(query.name)
 
   let def_fn_args =
     query.params
     |> list.map(fn(p) {
-      let gleam_type = sqlc_col_to_gleam(p.column)
+      let gleam_type = sqlc_col_to_gleam(p.column, context)
       p.column.name
       <> " "
       <> p.column.name
@@ -211,7 +233,7 @@ pub fn gen_query_function(query: sqlc.Query) {
       "["
       <> args
       |> list.map(fn(arg) {
-        let arg_type = sqlc_col_to_gleam(arg.column)
+        let arg_type = sqlc_col_to_gleam(arg.column, context)
         let param = gleam_type_to_param(arg_type)
         param <> "(" <> arg.column.name <> ")"
       })
@@ -240,11 +262,12 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
     GleamTimestamp -> "dev.datetime_decoder()"
     GleamBitArray -> "decode.bit_array"
     GleamList(x) -> "decode.list(of: " <> gleam_type_to_decoder(x) <> ")"
+    GleamCustomType(x) -> todo
     GleamDynamic -> "decode.dynamic"
   }
 }
 
-pub fn gen_query_decoder(query: sqlc.Query) {
+pub fn gen_query_decoder(query: sqlc.Query, context: SQLC) {
   case list.length(query.columns) {
     0 -> ""
     _ -> {
@@ -254,7 +277,7 @@ pub fn gen_query_decoder(query: sqlc.Query) {
       let decoder_fields =
         query.columns
         |> list.index_map(fn(col, index) {
-          let col_type = sqlc_col_to_gleam(col)
+          let col_type = sqlc_col_to_gleam(col, context)
           let decoder_type = gleam_type_to_decoder(col_type)
 
           let decoder = case col.not_null {
@@ -294,24 +317,24 @@ pub fn gen_query_decoder(query: sqlc.Query) {
   }
 }
 
-pub fn gen_gleam_module(schema: SQLC) {
+pub fn gen_gleam_module(context: SQLC) {
   let queries =
-    schema.queries
-    |> list.map(gen_query)
+    context.queries
+    |> list.map(gen_query(_, context))
     |> string.join("\n\n")
 
   let uses_timestamp =
-    list.any(schema.queries, fn(query) {
+    list.any(context.queries, fn(query) {
       let col_ts =
         list.any(query.columns, fn(col) {
-          case sqlc_col_to_gleam(col) {
+          case sqlc_col_to_gleam(col, context) {
             GleamTimestamp -> True
             _ -> False
           }
         })
       let param_ts =
         list.any(query.params, fn(param) {
-          case sqlc_col_to_gleam(param.column) {
+          case sqlc_col_to_gleam(param.column, context) {
             GleamTimestamp -> True
             _ -> False
           }

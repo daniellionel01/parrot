@@ -2,18 +2,18 @@
 
 ## v2
 
-- [ ] support columns
-  - [ ] postgres hstore
-  - [ ] postgres network address types
+- [ ] support complex postgres columns
+  - [ ] hstore
+  - [ ] network address types
         inet, cidr, macaddr, macaddr8
-  - [ ] postgres int4range, tsrange
-  - [ ] postgres geometric
+  - [ ] int4range, tsrange
+  - [ ] geometric
         point, polygon
-  - [ ] postgres interval
-  - [ ] postgres tsvector
+  - [ ] interval
+  - [ ] tsvector
 - [ ] provide better decoder for dyn cols
   -> param record add type, column, table
-- [ ] provide gleam types for db schema
+- [ ] provide gleam records for db schema
 - [ ] provide clever joining mechanism
 - [ ] idea: provide config where you can
       override every de- and encoder
@@ -21,6 +21,7 @@
   - params? gleam types?
   - instead of params maybe sqlctype?
   - db -> sqlc -> gleam | en- & decode
+- [ ] differenciate between schemas
 
 ## miscellaneous
 
