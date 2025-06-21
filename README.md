@@ -132,6 +132,25 @@ $ just test-mysql
 $ just test-psql
 ```
 
+## Quirks
+
+With everything in software, there are some quirks with this library, due to
+the nature of your database of choice and sqlc.
+
+### Multidimensional Arrays
+
+If you have a `INTEGER[][]` column in Postgres, `pg_dump` does not correctly identify
+the column as a two-dimensional array and thereby only give you a `List(Int)` instead
+of a `List(List(Int))`. If this is a problem for you, you can raise an issue and
+we might come up with a solution or workaround.
+
+### Dynamic Data Types
+
+There are a couple of complex data types that are explictly made `dynamic`
+since they are too complex to handle with the current implementation.
+There is a plan for a better and more flexible implementation. Until then,
+it will be wrapped in a dynamic type.
+
 ## FAQ
 
 ### What flavour of SQL does parrot support?

@@ -9,6 +9,7 @@ pub type Param {
   ParamBool(Bool)
   ParamBitArray(BitArray)
   ParamTimestamp(Timestamp)
+  ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
 }
 

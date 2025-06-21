@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-06-20
+
+- Support for `JSON`, `JSONB`
+- Support for Postgres & MySQL `ENUM`
+- Improved testing for all databases
+
 ## [1.0.1] - 2025-06-19
 
 - Provide empty list instead of `Nil` when there are no parameters for a consistent return type
