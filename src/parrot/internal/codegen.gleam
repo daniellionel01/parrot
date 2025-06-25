@@ -90,10 +90,6 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
   }
 }
 
-pub fn col_schema(col: sqlc.TableColumn, context: SQLC) {
-  todo
-}
-
 fn normalise_col_type(col: sqlc.TableColumn) {
   let type_ = col.type_ref.name
   case type_ {

@@ -1,6 +1,7 @@
 import gleam/dynamic/decode
+import gleam/float
+import gleam/time/calendar.{type Date, type TimeOfDay, Date}
 import gleam/time/timestamp.{type Timestamp}
-import parrot/internal/decoder
 
 pub type Param {
   ParamInt(Int)
@@ -14,7 +15,70 @@ pub type Param {
 }
 
 pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
-  decode.one_of(decoder.datetime_string_decoder(), or: [
-    decoder.datetime_tuple_decoder(),
-  ])
+  decode.one_of(datetime_string_decoder(), or: [datetime_tuple_decoder()])
+}
+
+fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
+  decode.string
+  |> decode.then(fn(datetime_str) {
+    case timestamp.parse_rfc3339(datetime_str) {
+      Ok(ts) -> decode.success(ts)
+      Error(_) ->
+        decode.failure(
+          timestamp.from_unix_seconds(0),
+          "Invalid datetime format",
+        )
+    }
+  })
+}
+
+fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
+  use date <- decode.field(0, date_decoder())
+  use time <- decode.field(1, time_decoder())
+
+  timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
+  |> decode.success()
+}
+
+fn date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(
+    1,
+    decode.int
+      |> decode.then(fn(month) {
+        case calendar.month_from_int(month) {
+          Error(_) -> decode.failure(calendar.January, "Month")
+          Ok(month) -> decode.success(month)
+        }
+      }),
+  )
+  use day <- decode.field(2, decode.int)
+
+  decode.success(Date(year:, month:, day:))
+}
+
+fn time_decoder() -> decode.Decoder(TimeOfDay) {
+  use hours <- decode.field(0, decode.int)
+  use minutes <- decode.field(1, decode.int)
+  use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())
+
+  calendar.TimeOfDay(hours:, minutes:, seconds:, nanoseconds:)
+  |> decode.success()
+}
+
+fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
+  let int = {
+    decode.int
+    |> decode.map(fn(i) { #(i, 0) })
+  }
+  let float = {
+    decode.float
+    |> decode.map(fn(f) {
+      let floored = float.floor(f)
+      let seconds = float.round(floored)
+      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
+      #(seconds, nanoseconds)
+    })
+  }
+  decode.one_of(int, [float])
 }

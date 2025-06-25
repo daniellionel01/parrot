@@ -38,12 +38,12 @@
 
 ## v1.1.0
 
-- [ ] merge `decoder` module into `dev`
 - [ ] write tests for timestamp de- and encoder
-- [ ] postgres enum
-- [ ] mysql enum
 - [ ] update wrappers in docs
+- [ ] merge `decoder` module into `dev`
 
+- [x] postgres enum
+- [x] mysql enum
 - [x] use assert syntax
 - [x] test exec queries
   - [x] mysql
