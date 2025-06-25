@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2025-06-20
 
-- Support for `JSON`, `JSONB`, `MONEY`
-- Support for Postgres & MySQL `ENUM`
+- Decodes `JSON`, `JSONB`, `MONEY` (not `Dynamic` anymore)
+- Support for Postgres & MySQL `ENUM` (creates a custom type)
 - Improved testing for all databases
-- Use of `assert` syntax
+- Use of `assert` syntax (instead of `gleeunit/should`)
 
 ## [1.0.1] - 2025-06-19
 

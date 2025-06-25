@@ -25,15 +25,7 @@
 
 ## miscellaneous
 
-- [ ] further integration tests
-  - [ ] mysql
-    - [x] test exec queries
-    - [ ] advanced types
-  - [ ] psql
-    - [x] test exec queries
-    - [ ] advanced types
-  - [ ] sqlite
-    - [x] test exec queries
+- [ ] add type mapping table for psql, mysql, sqlite to gleam type
 
 - [ ] advanced types
   - [ ] mysql: enum & set
@@ -46,5 +38,10 @@
 - [ ] write tests for timestamp de- and encoder
 - [ ] postgres enum
 - [ ] mysql enum
-- [ ] use assert syntax
-- [ ] update wrappers
+- [ ] update wrappers in docs
+
+- [x] use assert syntax
+- [x] test exec queries
+  - [x] mysql
+  - [x] psql
+  - [x] sqlite
