@@ -25,12 +25,10 @@
 
 ## miscellaneous
 
+- [ ] write tests for timestamp de- and encoder
 - [ ] potentially colliding enum definition names from different schemas / catalogs
-
 - [ ] https://docs.sqlc.dev/en/latest/howto/managed-databases.html
-
 - [ ] add type mapping table for psql, mysql, sqlite to gleam type
-
 - [ ] advanced types
   - [ ] mysql: enum & set
   - [ ] https://docs.sqlc.dev/en/stable/reference/datatypes.html#geometry
@@ -38,9 +36,7 @@
 
 ## v1.1.0
 
-- [ ] write tests for timestamp de- and encoder
-- [ ] update wrappers in docs
-
+- [x] update wrappers in docs
 - [x] merge `decoder` module into `dev`
 - [x] postgres enum
 - [x] mysql enum
