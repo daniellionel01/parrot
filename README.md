@@ -139,7 +139,7 @@ the nature of your database of choice and sqlc.
 
 ### Multidimensional Arrays
 
-If you have a `INTEGER[][]` column in Postgres, `pg_dump` does not correctly identify
+If you have an `INTEGER[][]` column in Postgres, `pg_dump` does not correctly identify
 the column as a two-dimensional array and thereby only give you a `List(Int)` instead
 of a `List(List(Int))`. If this is a problem for you, you can raise an issue and
 we might come up with a solution or workaround.
