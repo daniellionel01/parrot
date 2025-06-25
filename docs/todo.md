@@ -2,7 +2,7 @@
 
 ## v2
 
-- [ ] support complex postgres columns
+- [ ] support more complex postgres columns
   - [ ] hstore
   - [ ] network address types
         inet, cidr, macaddr, macaddr8
@@ -10,7 +10,7 @@
   - [ ] geometric
         point, polygon
   - [ ] interval
-  - [ ] tsvector
+  - [ ] tsvector, tsquery
 - [ ] provide better decoder for dyn cols
   -> param record add type, column, table
 - [ ] provide gleam records for db schema
@@ -21,18 +21,21 @@
   - params? gleam types?
   - instead of params maybe sqlctype?
   - db -> sqlc -> gleam | en- & decode
-- [ ] differenciate between schemas
 
 ## miscellaneous
 
 - [ ] write tests for timestamp de- and encoder
 - [ ] potentially colliding enum definition names from different schemas / catalogs
-- [ ] https://docs.sqlc.dev/en/latest/howto/managed-databases.html
+- [ ]
 - [ ] add type mapping table for psql, mysql, sqlite to gleam type
 - [ ] advanced types
-  - [ ] mysql: enum & set
+  - [ ] set
   - [ ] https://docs.sqlc.dev/en/stable/reference/datatypes.html#geometry
-  - [ ] psql: interval, json, jsonb, macaddr <> _, path, pg_lsn, pg_snapshot, point, polygon, tsquery, tsquery, txid_snapshot, xml, lseg, line, inet, box, bytea
+
+## v1.2.0
+
+- [ ] integration managed db (https://docs.sqlc.dev/en/latest/howto/managed-databases.html)
+- [ ] pg_lsn
 
 ## v1.1.0
 
