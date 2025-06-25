@@ -442,7 +442,7 @@ pub fn gen_gleam_module(context: SQLC) {
 
       "pub type "
       <> record_name
-      <> "{\n"
+      <> " {\n"
       <> string.join(values, "\n")
       <> "\n}\n\n"
       //
