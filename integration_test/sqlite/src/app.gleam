@@ -22,7 +22,7 @@ pub fn main() {
   let with = list.map(with, parrot_to_sqlight)
   let assert Ok([
     sql.GetUserByUsername(
-      1,
+      3,
       "alice",
       option.Some(_),
       0.0,
