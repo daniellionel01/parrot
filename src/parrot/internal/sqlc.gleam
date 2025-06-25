@@ -157,7 +157,7 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
   }
 
   let enum_decoder = {
-    use name <- decode.field("rel", decode.string)
+    use name <- decode.field("name", decode.string)
     use vals <- decode.field("vals", decode.list(decode.string))
     use comment <- decode.field("comment", decode.string)
     decode.success(Enum(name, vals, comment))

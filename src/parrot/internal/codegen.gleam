@@ -72,7 +72,7 @@ pub type GleamType {
   GleamTimestamp
   GleamBitArray
   GleamList(GleamType)
-  GleamCustomType(String)
+  GleamEnum(String)
   GleamDynamic
 }
 
@@ -85,9 +85,35 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamTimestamp -> "Timestamp"
     GleamBitArray -> "BitArray"
     GleamList(sub) -> "List(" <> gleam_type_to_string(sub) <> ")"
-    GleamCustomType(name) -> name
+    GleamEnum(name) -> string_case.pascal_case(name)
     GleamDynamic -> "decode.Dynamic"
   }
+}
+
+pub fn col_schema(col: sqlc.TableColumn, context: SQLC) {
+  todo
+}
+
+fn normalise_col_type(col: sqlc.TableColumn) {
+  let type_ = col.type_ref.name
+  case type_ {
+    "pg_catalog." <> x -> x
+    x -> x
+  }
+}
+
+fn find_col_schema(col: sqlc.TableColumn, context: SQLC) {
+  let schema_name = col.type_ref.schema
+
+  let schema_name = case schema_name {
+    "" | "pg_catalog" -> context.catalog.default_schema
+    _ -> schema_name
+  }
+
+  let assert Ok(schema) =
+    list.find(context.catalog.schemas, fn(s) { s.name == schema_name })
+
+  schema
 }
 
 pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
@@ -97,27 +123,15 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     GleamList(type_)
   })
 
-  let type_ = col.type_ref.name
-  let sqltype = case type_ {
-    "pg_catalog." <> x -> x
-    x -> x
-  }
-
-  let schema_name = col.type_ref.schema
-  let schema_name = case schema_name {
-    "" -> context.catalog.default_schema
-    _ -> schema_name
-  }
-
-  let assert Ok(schema) =
-    list.find(context.catalog.schemas, fn(s) { s.name == schema_name })
+  let sqltype = normalise_col_type(col)
+  let schema = find_col_schema(col, context)
 
   let enum =
     schema.enums
     |> list.find(fn(e) { e.name == sqltype })
   use <- given.that(result.is_ok(enum), return: fn() {
     let assert Ok(enum) = enum
-    todo
+    GleamEnum(enum.name)
   })
 
   case string.lowercase(sqltype) {
@@ -207,7 +221,7 @@ fn gleam_type_to_param(gtype: GleamType) -> String {
     GleamTimestamp -> "dev.ParamTimestamp"
     GleamBitArray -> "dev.ParamBitArray"
     GleamDynamic -> "dev.ParamDynamic"
-    GleamCustomType(name) -> todo
+    GleamEnum(_) -> "dev.ParamString"
     GleamList(sub) -> "dev.ParamList(" <> gleam_type_to_param(sub) <> ")"
   }
 }
@@ -235,7 +249,14 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
       |> list.map(fn(arg) {
         let arg_type = sqlc_col_to_gleam(arg.column, context)
         let param = gleam_type_to_param(arg_type)
-        param <> "(" <> arg.column.name <> ")"
+        let value = case arg_type {
+          GleamEnum(name) -> {
+            let name = string_case.snake_case(name)
+            name <> "_to_string(" <> arg.column.name <> ")"
+          }
+          _ -> arg.column.name
+        }
+        param <> "(" <> value <> ")"
       })
       |> string.join(", ")
       <> "]"
@@ -262,7 +283,10 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
     GleamTimestamp -> "dev.datetime_decoder()"
     GleamBitArray -> "decode.bit_array"
     GleamList(x) -> "decode.list(of: " <> gleam_type_to_decoder(x) <> ")"
-    GleamCustomType(x) -> todo
+    GleamEnum(name) -> {
+      let name = string_case.snake_case(name)
+      name <> "_decoder()"
+    }
     GleamDynamic -> "decode.dynamic"
   }
 }
@@ -349,14 +373,112 @@ pub fn gen_gleam_module(context: SQLC) {
   }
 
   let imports =
-    "import gleam/option.{type Option}"
+    "import gleam/dynamic/decode"
     <> "\n"
-    <> "import gleam/dynamic/decode"
+    <> "import gleam/option.{type Option}"
     <> "\n"
     <> timestamp_import
     <> "import parrot/dev"
 
-  comment_dont_edit() <> "\n\n" <> imports <> "\n\n" <> queries
+  let enums =
+    list.flat_map(context.queries, fn(query) {
+      let columns =
+        list.filter_map(query.columns, fn(col) {
+          case sqlc_col_to_gleam(col, context) {
+            GleamEnum(_) -> {
+              let type_ = normalise_col_type(col)
+              let schema = find_col_schema(col, context)
+
+              let assert Ok(enum) =
+                schema.enums
+                |> list.find(fn(e) { e.name == type_ })
+
+              Ok(enum)
+            }
+            _ -> Error(Nil)
+          }
+        })
+      let params =
+        list.filter_map(query.params, fn(param) {
+          case sqlc_col_to_gleam(param.column, context) {
+            GleamEnum(_) -> {
+              let type_ = normalise_col_type(param.column)
+              let schema = find_col_schema(param.column, context)
+
+              let assert Ok(enum) =
+                schema.enums
+                |> list.find(fn(e) { e.name == type_ })
+
+              Ok(enum)
+            }
+            _ -> Error(Nil)
+          }
+        })
+
+      list.append(columns, params)
+    })
+    |> list.unique()
+    |> list.map(fn(enum) {
+      let record_name = string_case.pascal_case(enum.name)
+      let fn_name = string_case.snake_case(enum.name)
+
+      let values =
+        list.map(enum.vals, fn(val) { "  " <> string_case.pascal_case(val) })
+
+      let to_str_vals =
+        list.map(enum.vals, fn(val) {
+          let type_ = string_case.pascal_case(val)
+          "    " <> type_ <> " -> " <> "\"" <> val <> "\""
+        })
+
+      let decode_str_vals =
+        list.map(enum.vals, fn(val) {
+          let type_ = string_case.pascal_case(val)
+          "    \"" <> val <> "\" -> " <> "decode.success(" <> type_ <> ")"
+        })
+
+      let assert Ok(first_value) = list.first(enum.vals)
+      let zero_value = string_case.pascal_case(first_value)
+
+      "pub type "
+      <> record_name
+      <> "{\n"
+      <> string.join(values, "\n")
+      <> "\n}\n\n"
+      //
+      <> "pub fn "
+      <> fn_name
+      <> "_decoder() {\n"
+      <> "  use variant <- decode.then(decode.string)\n"
+      <> "  case variant {\n"
+      <> string.join(decode_str_vals, "\n")
+      <> "\n    _ -> decode.failure("
+      <> zero_value
+      <> ", \""
+      <> record_name
+      <> "\")\n"
+      <> "  }\n"
+      <> "}\n\n"
+      //
+      <> "pub fn "
+      <> fn_name
+      <> "_to_string(val: "
+      <> record_name
+      <> ") {\n"
+      <> "  case val {\n"
+      <> string.join(to_str_vals, "\n")
+      <> "\n  }\n"
+      <> "}"
+    })
+    |> string.join("\n\n")
+
+  comment_dont_edit()
+  <> "\n\n"
+  <> imports
+  <> "\n\n"
+  <> enums
+  <> "\n\n"
+  <> queries
 }
 
 pub fn comment_dont_edit() {
