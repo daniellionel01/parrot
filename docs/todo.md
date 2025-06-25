@@ -25,6 +25,8 @@
 
 ## miscellaneous
 
+- [ ] potentially colliding enum definition names from different schemas / catalogs
+
 - [ ] https://docs.sqlc.dev/en/latest/howto/managed-databases.html
 
 - [ ] add type mapping table for psql, mysql, sqlite to gleam type

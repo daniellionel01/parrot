@@ -23,7 +23,7 @@ pub fn main() {
         option.Some("{\"a\": 1, \"b\": 2}"),
         option.Some("{\"c\": 3}"),
         option.Some([3, 11]),
-        option.Some(_),
+        option.Some(sql.User),
         option.Some(<<222, 173, 190, 239>>),
       ),
     ],
