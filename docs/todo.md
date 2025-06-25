@@ -40,8 +40,8 @@
 
 - [ ] write tests for timestamp de- and encoder
 - [ ] update wrappers in docs
-- [ ] merge `decoder` module into `dev`
 
+- [x] merge `decoder` module into `dev`
 - [x] postgres enum
 - [x] mysql enum
 - [x] use assert syntax
