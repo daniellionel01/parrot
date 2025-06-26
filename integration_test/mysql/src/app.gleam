@@ -16,8 +16,8 @@ pub fn main() {
 
   let #(sql, params, expecting) = sql.get_user_by_username("alice")
   let assert Ok(shork.Returned(
-    ["id", "username", "created_at"],
-    [sql.GetUserByUsername(1, "alice", option.Some(_))],
+    ["id", "username", "created_at", "status"],
+    [sql.GetUserByUsername(1, "alice", option.Some(_), option.None)],
   )) = query(db, sql, params, expecting)
 
   Ok(Nil)
@@ -29,6 +29,7 @@ fn parrot_to_shork(param: dev.Param) {
     dev.ParamFloat(x) -> shork.float(x)
     dev.ParamInt(x) -> shork.int(x)
     dev.ParamString(x) -> shork.text(x)
+    dev.ParamList(_) -> panic as "shork does not support lists"
     dev.ParamBitArray(_) -> panic as "shork does not support bit arrays"
     dev.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"

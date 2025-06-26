@@ -142,7 +142,9 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 
   spinner.complete_current(spinner)
 
-  list.each(gen_result.unknown_types, fn(unknown) {
+  gen_result.unknown_types
+  |> list.unique()
+  |> list.each(fn(unknown) {
     io.println(lib.yellow("unknown column type: " <> unknown))
   })
   io.println("")

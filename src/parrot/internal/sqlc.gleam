@@ -47,7 +47,11 @@ pub type Table {
 }
 
 pub type Schema {
-  Schema(comment: String, name: String, tables: List(Table))
+  Schema(comment: String, name: String, tables: List(Table), enums: List(Enum))
+}
+
+pub type Enum {
+  Enum(name: String, vals: List(String), comment: String)
 }
 
 pub type Catalog {
@@ -152,11 +156,19 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
     decode.success(Table(rel, comment, columns))
   }
 
+  let enum_decoder = {
+    use name <- decode.field("name", decode.string)
+    use vals <- decode.field("vals", decode.list(decode.string))
+    use comment <- decode.field("comment", decode.string)
+    decode.success(Enum(name, vals, comment))
+  }
+
   let schema_decoder = {
     use comment <- decode.field("comment", decode.string)
     use name <- decode.field("name", decode.string)
     use tables <- decode.field("tables", decode.list(table_decoder))
-    decode.success(Schema(comment, name, tables))
+    use enums <- decode.field("enums", decode.list(enum_decoder))
+    decode.success(Schema(comment, name, tables, enums))
   }
 
   let catalog_decoder = {

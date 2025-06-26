@@ -4,7 +4,10 @@ default:
 
 # count lines of code of (excluding tests)
 @loc:
-  ./bin/loc.sh
+  echo "SOURCE CODE"
+  cloc . --vcs=git --exclude-dir=integration_test,test
+  echo "\TESTS"
+  cloc integration_test test --vcs=git
 
 @integration-test:
   just test-sqlite

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-06-20
+
+- Decodes `JSON`, `JSONB`, `MONEY`
+  (not `Dynamic` anymore)
+- Support for Postgres & MySQL `ENUM`
+  (creates a custom type)
+- Improved testing for all databases
+  (more data types & operations)
+- Use of `assert` syntax
+  (instead of `gleeunit/should`)
+
 ## [1.0.1] - 2025-06-19
 
 - Provide empty list instead of `Nil` when there are no parameters for a consistent return type

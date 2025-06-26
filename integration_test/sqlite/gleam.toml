@@ -7,8 +7,6 @@ gleam_time = ">= 1.2.0 and < 2.0.0"
 parrot = { path = "../.." }
 envoy = ">= 1.0.2 and < 2.0.0"
 sqlight = ">= 1.0.1 and < 2.0.0"
-filepath = ">= 1.1.2 and < 2.0.0"
-simplifile = ">= 2.2.1 and < 3.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
