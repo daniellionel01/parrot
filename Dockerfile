@@ -17,7 +17,10 @@ RUN apk add --no-cache \
   bash \
   curl \
   make \
-  git
+  git \
+  build-base \
+  gcc \
+  musl-dev
 
 # Copy gleam binary from build stage
 COPY --from=build /bin/gleam /bin/gleam
