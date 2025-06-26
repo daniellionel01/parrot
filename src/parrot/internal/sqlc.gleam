@@ -268,9 +268,7 @@ fn engine_to_sqlc_string(engine: cli.Engine) {
 }
 
 pub fn sqlc_binary_path() {
-  filepath.join(project.root(), "./build/.parrot/sqlc")
-  |> filepath.expand()
-  |> result.unwrap("")
+  filepath.join(project.root(), "build/.parrot/sqlc")
 }
 
 fn binary_exists(path) {
