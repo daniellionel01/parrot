@@ -13,7 +13,6 @@ pub fn main() {
   // let assert Ok(binary) = sqlc.extract_sqlc_binary(tarball)
   // let assert Ok(_) = simplifile.write_bits("./sqlc", binary)
 
-  echo project.root()
-  filepath.join(project.root(), "build/.parrot/sqlc")
+  sqlc.verify_binary()
   |> echo
 }

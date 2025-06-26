@@ -86,6 +86,14 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 
   use _ <- result.try(sqlc.download_binary())
 
+  spinner.complete_current(spinner)
+
+  let spinner =
+    spinner.new("verifying sqlc binary")
+    |> spinner.start()
+
+  use _ <- result.try(sqlc.verify_binary())
+
   let sqlc_yaml = sqlc.gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
 
