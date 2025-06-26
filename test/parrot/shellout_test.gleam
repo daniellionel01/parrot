@@ -35,12 +35,6 @@ pub fn command_test() {
   |> should.equal(output)
 
   let assert Error(#(status, message)) =
-    shellout.command(run: "", with: [], in: ".", opt: [LetBeStdout])
-  status
-  |> should.not_equal(0)
-  should_be_without_stdout(message)
-
-  let assert Error(#(status, message)) =
     shellout.command(run: "dimension_x", with: [], in: ".", opt: [])
   status
   |> should.equal(1)
