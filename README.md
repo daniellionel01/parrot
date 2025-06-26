@@ -112,6 +112,8 @@ If you want to see how this library works in action, take a look at the integrat
 
 ## Development
 
+[just](https://github.com/casey/just) is used to run project commands.
+
 ### Database
 
 There are scripts to spawn a MySQL or PostgreSQL docker container:
