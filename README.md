@@ -134,7 +134,7 @@ $ just test-psql
 
 ## Quirks
 
-With everything in software, there are some quirks with this library, due to
+As with everything in software, there are some quirks with this library, due to
 the nature of your database of choice and sqlc.
 
 ### Multidimensional Arrays
