@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2025-06-26
+
+- Bug Fix: `sqlc generate` fails due to incorrect path resolution on Linux
+
 ## [1.1.1] - 2025-06-26
 
 - Output debugging information, when sqlc binary download fails

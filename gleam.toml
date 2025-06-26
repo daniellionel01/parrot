@@ -1,5 +1,5 @@
 name = "parrot"
-version = "1.1.1"
+version = "1.1.2"
 
 description = "🦜 type-safe SQL in gleam for sqlite, postgresql & mysql"
 licences = ["Apache-2.0"]
@@ -17,7 +17,6 @@ pages = [
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 simplifile = ">= 2.2.0 and < 3.0.0"
 filepath = ">= 1.1.0 and < 2.0.0"
-shellout = ">= 1.7.0 and < 2.0.0"
 exception = ">= 2.0.0 and < 3.0.0"
 argv = ">= 1.0.2 and < 2.0.0"
 gleam_json = ">= 3.0.1 and < 4.0.0"

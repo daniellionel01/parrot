@@ -6,7 +6,7 @@ import gleam/result
 import gleam/string
 import gleam/uri
 import parrot/internal/errors
-import shellout
+import parrot/internal/shellout
 import sqlight
 
 pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
