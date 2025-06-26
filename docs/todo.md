@@ -26,7 +26,7 @@
 
 - [ ] write tests for timestamp de- and encoder
 - [ ] potentially colliding enum definition names from different schemas / catalogs
-- [ ]
+- [ ] dockerize
 - [ ] add type mapping table for psql, mysql, sqlite to gleam type
 - [ ] advanced types
   - [ ] set
@@ -39,8 +39,8 @@
 
 ## v1.1.1
 
-- [ ] add additional check for sqlc binary download
-- [ ] add more useful debugging output if sqlc binary is not available
+- [x] add additional check for sqlc binary download
+- [x] add more useful debugging output if sqlc binary is not available
 
 ## v1.1.0
 
