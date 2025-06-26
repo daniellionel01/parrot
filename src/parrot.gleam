@@ -73,7 +73,8 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     })
     |> list.flatten()
 
-  let sqlc_dir = filepath.join(project.root(), "build/.parrot/")
+  let sqlc_binary = sqlc.sqlc_binary_path()
+  let sqlc_dir = filepath.directory_name(sqlc_binary)
   let schema_file = filepath.join(sqlc_dir, "schema.sql")
   let sqlc_file = filepath.join(sqlc_dir, "sqlc.yaml")
   let queries_file = filepath.join(sqlc_dir, "queries.json")
