@@ -8,6 +8,11 @@ repository = { type = "github", user = "daniellionel01", repo = "parrot" }
 
 target = "erlang"
 
+[documentation]
+pages = [
+  { title = "Changelog", path = "changelog.html", source = "./CHANGELOG.md" },
+]
+
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 simplifile = ">= 2.2.0 and < 3.0.0"
