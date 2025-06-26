@@ -37,10 +37,14 @@
 - [ ] integration managed db (https://docs.sqlc.dev/en/latest/howto/managed-databases.html)
 - [ ] pg_lsn
 
+## v.1.1.2
+
+- [ ] check hash of downloaded binary
+
 ## v1.1.1
 
-- [ ] add additional check for sqlc binary download
-- [ ] add more useful debugging output if sqlc binary is not available
+- [x] add additional check for sqlc binary download
+- [x] add more useful debugging output if sqlc binary is not available
 
 ## v1.1.0
 
