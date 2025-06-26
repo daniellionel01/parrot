@@ -36,20 +36,5 @@ RUN \
 COPY --from=build /app /app
 WORKDIR /app
 
-# Create a script to run integration tests with configurable database URLs
-RUN echo '#!/bin/bash' > /app/run-tests.sh && \
-    echo 'set -e' >> /app/run-tests.sh && \
-    echo 'cd /app' >> /app/run-tests.sh && \
-    echo 'if [ -n "$MYSQL_DATABASE_URL" ]; then' >> /app/run-tests.sh && \
-    echo '  export DATABASE_URL="$MYSQL_DATABASE_URL"' >> /app/run-tests.sh && \
-    echo '  cd integration_test/mysql && gleam run -m parrot && cd -' >> /app/run-tests.sh && \
-    echo 'fi' >> /app/run-tests.sh && \
-    echo 'if [ -n "$POSTGRES_DATABASE_URL" ]; then' >> /app/run-tests.sh && \
-    echo '  export DATABASE_URL="$POSTGRES_DATABASE_URL"' >> /app/run-tests.sh && \
-    echo '  cd integration_test/psql && gleam run -m parrot && cd -' >> /app/run-tests.sh && \
-    echo 'fi' >> /app/run-tests.sh && \
-    echo 'cd integration_test/sqlite && gleam run -m parrot' >> /app/run-tests.sh && \
-    chmod +x /app/run-tests.sh
-
 ENTRYPOINT ["/bin/sh"]
 CMD ["/app/entrypoint.sh", "run"]
