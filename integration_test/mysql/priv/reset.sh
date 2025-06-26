@@ -12,6 +12,27 @@ if [ -z "${DATABASE_URL}" ]; then
   exit 1
 fi
 
+# Handle host resolution for Docker environments
+if [[ "$DATABASE_URL" == *"@mysql:"* ]]; then
+  # We're in Docker, wait for MySQL to be ready
+  MAX_ATTEMPTS=30
+  ATTEMPT=1
+  
+  echo "Waiting for MySQL to be ready..."
+  until mysql -h mysql -P 3306 -u root -p"daniel" -e "SELECT 1;" &>/dev/null; do
+    echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: MySQL not ready yet..."
+    sleep 2
+    
+    ATTEMPT=$((ATTEMPT + 1))
+    if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
+      echo "Error: MySQL did not become ready in time."
+      exit 1
+    fi
+  done
+  
+  echo "MySQL is ready!"
+fi
+
 if [ ! -f "${SCHEMA_FILE}" ]; then
   echo "Error: Schema file not found at: ${SCHEMA_FILE}"
   exit 1

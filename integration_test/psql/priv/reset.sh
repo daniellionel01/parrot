@@ -12,6 +12,27 @@ if [ -z "${DATABASE_URL}" ]; then
   exit 1
 fi
 
+# Handle host resolution for Docker environments
+if [[ "$DATABASE_URL" == *"@postgres:"* ]]; then
+  # We're in Docker, wait for PostgreSQL to be ready
+  MAX_ATTEMPTS=30
+  ATTEMPT=1
+  
+  echo "Waiting for PostgreSQL to be ready..."
+  until PGPASSWORD=parrot psql -h postgres -U daniel -d postgres -c "SELECT 1;" &>/dev/null; do
+    echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: PostgreSQL not ready yet..."
+    sleep 2
+    
+    ATTEMPT=$((ATTEMPT + 1))
+    if [ $ATTEMPT -gt $MAX_ATTEMPTS ]; then
+      echo "Error: PostgreSQL did not become ready in time."
+      exit 1
+    fi
+  done
+  
+  echo "PostgreSQL is ready!"
+fi
+
 if [ ! -f "${SCHEMA_FILE}" ]; then
   echo "Error: Schema file not found at: ${SCHEMA_FILE}"
   exit 1

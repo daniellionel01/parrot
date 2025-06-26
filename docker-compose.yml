@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: /bin/sh -c "sleep 10 && /app/entrypoint.sh test" # Wait for DB services to start
+    depends_on:
+      - mysql
+      - postgres
+    environment:
+      - MYSQL_DATABASE_URL=mysql://root:daniel@mysql:3306/parrot
+      - POSTGRES_DATABASE_URL=postgresql://daniel:parrot@postgres:5432/parrot
+    volumes:
+      - .:/app
+      
+  mysql:
+    image: mysql:8.0.30
+    environment:
+      - MYSQL_ROOT_PASSWORD=daniel
+      - MYSQL_DATABASE=parrot
+    command: --default-authentication-plugin=caching_sha2_password --max_connections=10000
+    
+  postgres:
+    image: postgres:17
+    environment:
+      - POSTGRES_USER=daniel
+      - POSTGRES_PASSWORD=parrot
+      - POSTGRES_DB=parrot

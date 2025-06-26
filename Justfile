@@ -25,3 +25,14 @@ clean:
 
 @test-sqlite:
   just integration_test/sqlite/test
+
+@docker:
+  docker build . --file Dockerfile --tag parrot
+  docker run -d --rm parrot
+
+@docker-test:
+  docker build . --file Dockerfile --tag parrot-test
+  docker run --rm parrot-test /app/entrypoint.sh test
+
+@docker-compose-test:
+  docker-compose up --build --abort-on-container-exit
