@@ -12,6 +12,7 @@ import gleam/string
 import parrot/internal/cli
 import parrot/internal/errors
 import parrot/internal/project
+import shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 pub type TypeRef {
@@ -268,9 +269,7 @@ fn engine_to_sqlc_string(engine: cli.Engine) {
 }
 
 pub fn sqlc_binary_path() {
-  filepath.join(project.root(), "./build/.parrot/sqlc")
-  |> filepath.expand()
-  |> result.unwrap("")
+  filepath.join(project.root(), "build/.parrot/sqlc")
 }
 
 fn binary_exists(path) {
@@ -315,6 +314,45 @@ fn get_download_path() {
   })
 
   Ok(base <> platform)
+}
+
+pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
+  use download <- result.try(get_download_path())
+
+  let path = sqlc_binary_path()
+  let in = filepath.directory_name(path)
+  let gen_res = shellout.command(run: "./sqlc", with: ["version"], in:, opt: [])
+
+  case gen_res {
+    Error(_) -> {
+      let information =
+        [
+          "download path: " <> download,
+          "os: " <> get_os(),
+          "cpu: " <> get_cpu(),
+          "sqlc path: " <> path,
+          "parrot build path: " <> in,
+        ]
+        |> string.join("\n")
+      Error(errors.SqlcDownloadError(
+        "could not verify sqlc binary. information:\n" <> information,
+      ))
+    }
+    Ok(v) -> {
+      let sqlc_version = "v" <> sqlc_version
+      let v = string.trim(v)
+      case v == sqlc_version {
+        True -> Ok(Nil)
+        False ->
+          Error(errors.SqlcDownloadError(
+            "Could not match sqlc version. Wanted "
+            <> sqlc_version
+            <> ". Received "
+            <> v,
+          ))
+      }
+    }
+  }
 }
 
 pub fn download_binary() -> Result(Nil, errors.ParrotError) {

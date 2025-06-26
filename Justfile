@@ -2,6 +2,9 @@
 default:
   @just --choose
 
+clean:
+  find . -name build -type d -prune -o -name gleam.toml -execdir gleam clean \;
+
 # count lines of code of (excluding tests)
 @loc:
   echo "SOURCE CODE"
