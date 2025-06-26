@@ -320,8 +320,9 @@ pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
   use download <- result.try(get_download_path())
 
   let path = sqlc_binary_path()
-  let in = filepath.directory_name(path)
-  let gen_res = shellout.command(run: "./sqlc", with: ["version"], in:, opt: [])
+  let dir = filepath.directory_name(path)
+  let gen_res =
+    shellout.command(run: "./sqlc", with: ["version"], in: dir, opt: [])
 
   case gen_res {
     Error(_) -> {
@@ -330,8 +331,7 @@ pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
           "download path: " <> download,
           "os: " <> get_os(),
           "cpu: " <> get_cpu(),
-          "sqlc path: " <> path,
-          "parrot build path: " <> in,
+          "sqlc binary path: " <> path,
         ]
         |> string.join("\n")
       Error(errors.SqlcDownloadError(
