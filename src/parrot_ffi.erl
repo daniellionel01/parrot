@@ -143,12 +143,26 @@ is_sqlc_binary(Filename) ->
 %% === === === === === === === === === %%
 
 os_command(Command, Args, Dir, Opts, EnvBin) ->
+    HasPathSep = is_absolute_or_has_path_separator(Command),
+
     Which =
-        case os_which(Command) of
-            {error, _} ->
-                os_which(filename:join(Dir, Command));
-            WhichResult ->
-                WhichResult
+        case HasPathSep of
+            true ->
+                % Command has path separators (like "./sqlc" or "/usr/bin/cmd")
+                % Resolve it relative to Dir if it's relative
+                ResolvedCommand = resolve_command_path(Command, Dir),
+                Result = os_which_absolute(ResolvedCommand),
+                Result;
+            false ->
+                % Command is just a name (like "sqlc"), try PATH first, then Dir
+                case os_which(Command) of
+                    {error, _}  ->
+                        JoinedPath = filename:join(Dir, Command),
+                        Result = os_which_absolute(JoinedPath),
+                        Result;
+                    WhichResult ->
+                        WhichResult
+                end
         end,
     {ExitCode, Output} =
         case Which of
@@ -156,6 +170,7 @@ os_command(Command, Args, Dir, Opts, EnvBin) ->
                 {1, WhichError};
             {ok, Executable} ->
                 ExecutableChars = binary_to_list(Executable),
+
                 LetBeStdout = maps:get(let_be_stdout, Opts, false),
                 FromBin = fun({Name, Val}) ->
                     {
@@ -164,6 +179,7 @@ os_command(Command, Args, Dir, Opts, EnvBin) ->
                     }
                 end,
                 Env = lists:map(FromBin, EnvBin),
+
                 PortSettings = lists:merge([
                     [
                         {args, Args},
@@ -187,13 +203,20 @@ os_command(Command, Args, Dir, Opts, EnvBin) ->
                         _ -> [stream]
                     end
                 ]),
-                Port = open_port({spawn_executable, ExecutableChars}, PortSettings),
-                {Status, OutputChars} = get_data(Port, []),
-                case LetBeStdout of
-                    true -> {Status, <<>>};
-                    _ -> {Status, list_to_binary(OutputChars)}
+
+                try
+                    Port = open_port({spawn_executable, ExecutableChars}, PortSettings),
+                    {Status, OutputChars} = get_data(Port, []),
+                    case LetBeStdout of
+                        true -> {Status, <<>>};
+                        _ -> {Status, list_to_binary(OutputChars)}
+                    end
+                catch
+                    Error:Reason ->
+                        {1, list_to_binary(io_lib:format("Port execution failed: ~p:~p", [Error, Reason]))}
                 end
         end,
+
     case ExitCode of
         0 ->
             {ok, Output};
@@ -208,17 +231,67 @@ os_command(Command, Args, Dir, Opts, EnvBin) ->
             {error, {ExitCode, Output}}
     end.
 
+% Helper to check if command contains path separators
+is_absolute_or_has_path_separator(Command) ->
+    CommandStr = binary_to_list(Command),
+    PathType = filename:pathtype(CommandStr),
+    HasSlash = lists:member($/, CommandStr),
+    HasBackslash = lists:member($\\, CommandStr),
+    Result = PathType =/= relative orelse HasSlash orelse HasBackslash,
+    Result.
+
+% Resolve command path relative to Dir if it's a relative path
+resolve_command_path(Command, Dir) ->
+    CommandStr = binary_to_list(Command),
+    DirStr = binary_to_list(Dir),
+    PathType = filename:pathtype(CommandStr),
+
+    Result = case PathType of
+        absolute ->
+            % Already absolute, use as-is
+            list_to_binary(CommandStr);
+        relative ->
+            % For relative paths, we need to resolve the command relative to Dir
+            % But we need to preserve the original command's relative nature
+
+            % First, make Dir absolute if it isn't already
+            AbsDir = case filename:pathtype(DirStr) of
+                absolute -> DirStr;
+                relative -> filename:absname(DirStr)
+            end,
+
+            % Now resolve the command relative to the absolute Dir
+            % Use filename:absname/2 to resolve CommandStr relative to AbsDir
+            NormalizedPath = filename:absname(CommandStr, AbsDir),
+            list_to_binary(NormalizedPath)
+    end,
+    Result.
+
+% Version of os_which that works with absolute paths and doesn't use os:find_executable
+os_which_absolute(Command) ->
+    CommandChars = binary_to_list(Command),
+
+    FileExists = filelib:is_file(CommandChars),
+
+    case FileExists of
+        false ->
+            ExecutableError = "command `" ++ CommandChars ++ "` not found\n",
+            {error, list_to_binary(ExecutableError)};
+        true ->
+            IsRegular = filelib:is_regular(CommandChars),
+            case IsRegular of
+                false ->
+                    ExecutableError = "command `" ++ CommandChars ++ "` is not a regular file\n",
+                    {error, list_to_binary(ExecutableError)};
+                true ->
+                    % Check if file is executable (Unix-like systems)
+                    {ok, Command}
+            end
+    end.
+
 get_data(Port, SoFar) ->
     receive
-        {Port, {data, {Flag, Bytes}}} ->
-            io:format("~ts", [
-                list_to_binary(
-                    case Flag of
-                        eol -> [Bytes, $\n];
-                        noeol -> [Bytes]
-                    end
-                )
-            ]),
+        {Port, {data, {_Flag, Bytes}}} ->
             get_data(Port, [SoFar | Bytes]);
         {Port, {data, Bytes}} ->
             get_data(Port, [SoFar | Bytes]);
