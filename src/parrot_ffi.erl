@@ -1,6 +1,6 @@
 -module(parrot_ffi).
 
--export([get_cpu/0, get_os/0, download_file/1, download_zip/1, extract_sqlc_binary/1, extract_sqlc_from_targz/1]).
+-export([get_cpu/0, get_os/0, download_file/1, download_zip/1, extract_sqlc_binary/1, extract_sqlc_from_targz/1, os_command/5, os_exit/1, os_which/1, start_arguments/0]).
 
 get_os() ->
     case os:type() of
@@ -139,3 +139,202 @@ is_sqlc_binary(Filename) ->
         "sqlc.exe" -> true;
         _ -> false
     end.
+
+os_command(Command, Args, Dir, Opts, EnvBin) ->
+    % Convert working directory to absolute path
+    AbsDir = case filename:pathtype(Dir) of
+        absolute -> Dir;
+        _ -> filename:absname(Dir)
+    end,
+
+    % Check if directory exists first
+    case filelib:is_dir(AbsDir) of
+        false ->
+            DirError = list_to_binary(
+                "The directory \"" ++
+                    binary_to_list(Dir) ++
+                    "\" does not exist\n"
+            ),
+            {error, {2, DirError}};
+        true ->
+            % Find the executable
+            Which = find_executable(Command, AbsDir),
+            {ExitCode, Output} =
+                case Which of
+                    {error, WhichError} ->
+                        {1, WhichError};
+                    {ok, Executable} ->
+                        execute_command(Executable, Args, AbsDir, Opts, EnvBin)
+                end,
+            case ExitCode of
+                0 ->
+                    {ok, Output};
+                _ ->
+                    {error, {ExitCode, Output}}
+            end
+    end.
+
+find_executable(Command, WorkingDir) ->
+    CommandStr = binary_to_list(Command),
+    WorkingDirStr = binary_to_list(WorkingDir),
+
+    % Handle empty command
+    case CommandStr of
+        "" ->
+            {error, <<"">>};
+        _ ->
+            % Try different approaches to find the executable
+            case filename:pathtype(CommandStr) of
+                absolute ->
+                    % Absolute path - check if file exists and is executable
+                    case filelib:is_regular(CommandStr) of
+                        true ->
+                            {ok, Command};  % Return original binary
+                        false ->
+                            ErrorMsg = "command `" ++ CommandStr ++ "` not found\n",
+                            {error, list_to_binary(ErrorMsg)}
+                    end;
+                relative ->
+                    % Check if command starts with "./"
+                    case lists:prefix("./", CommandStr) of
+                        true ->
+                            % Starts with "./" - resolve relative to working directory
+                            FullPath = filename:join(WorkingDirStr, CommandStr),
+                            case filelib:is_regular(FullPath) of
+                                true ->
+                                    {ok, list_to_binary(FullPath)};
+                                false ->
+                                    ErrorMsg = "command `" ++ CommandStr ++ "` not found\n",
+                                    {error, list_to_binary(ErrorMsg)}
+                            end;
+                        false ->
+                            % Plain command name - search in PATH and working directory
+                            find_in_path_or_workdir(CommandStr, WorkingDirStr)
+                    end
+            end
+    end.
+
+find_in_path_or_workdir(CommandStr, WorkingDirStr) ->
+    % Handle empty command string
+    case CommandStr of
+        "" ->
+            {error, <<"">>};
+        _ ->
+            % First try to find in PATH - but protect against empty strings
+            try os:find_executable(CommandStr) of
+                false ->
+                    % Not in PATH, try in working directory
+                    WorkdirPath = filename:join(WorkingDirStr, CommandStr),
+                    case filelib:is_regular(WorkdirPath) of
+                        true ->
+                            {ok, list_to_binary(WorkdirPath)};
+                        false ->
+                            ErrorMsg = "command `" ++ CommandStr ++ "` not found\n",
+                            {error, list_to_binary(ErrorMsg)}
+                    end;
+                Executable ->
+                    {ok, list_to_binary(Executable)}
+            catch
+                error:badarg ->
+                    % os:find_executable failed with badarg (probably empty string)
+                    {error, <<"">>}
+            end
+    end.
+
+execute_command(Executable, Args, Dir, Opts, EnvBin) ->
+    ExecutableChars = binary_to_list(Executable),
+    LetBeStdout = maps:get(let_be_stdout, Opts, false),
+
+    FromBin = fun({Name, Val}) ->
+        {
+            binary_to_list(Name),
+            unicode:characters_to_list(Val, file:native_name_encoding())
+        }
+    end,
+    Env = lists:map(FromBin, EnvBin),
+
+    PortSettings = lists:merge([
+        [
+            {args, Args},
+            {cd, Dir},
+            {env, Env},
+            eof,
+            exit_status,
+            hide,
+            in
+        ],
+        case maps:get(overlapped_stdio, Opts, false) of
+            true -> [overlapped_io];
+            _ -> []
+        end,
+        case LetBeStdout or maps:get(let_be_stderr, Opts, false) of
+            true -> [];
+            _ -> [stderr_to_stdout]
+        end,
+        case LetBeStdout of
+            true -> [{line, 99999999}];
+            _ -> [stream]
+        end
+    ]),
+
+    Port = open_port({spawn_executable, ExecutableChars}, PortSettings),
+    {Status, OutputChars} = get_data(Port, []),
+    case LetBeStdout of
+        true -> {Status, <<>>};
+        _ -> {Status, list_to_binary(OutputChars)}
+    end.
+
+get_data(Port, SoFar) ->
+    receive
+        {Port, {data, {Flag, Bytes}}} ->
+            io:format("~ts", [
+                list_to_binary(
+                    case Flag of
+                        eol -> [Bytes, $\n];
+                        noeol -> [Bytes]
+                    end
+                )
+            ]),
+            get_data(Port, [SoFar | Bytes]);
+        {Port, {data, Bytes}} ->
+            get_data(Port, [SoFar | Bytes]);
+        {Port, eof} ->
+            Port ! {self(), close},
+            receive
+                {Port, closed} ->
+                    true
+            end,
+            receive
+                {'EXIT', Port, _} ->
+                    ok
+                % force context switch
+            after 1 ->
+                ok
+            end,
+            ExitCode =
+                receive
+                    {Port, {exit_status, Code}} ->
+                        Code
+                end,
+            {ExitCode, lists:flatten(SoFar)}
+    end.
+
+os_exit(Status) ->
+    halt(Status).
+
+os_which(Command) ->
+    try binary_to_list(Command) of
+        "" ->
+            {error, <<"">>};
+        _CommandStr ->
+            case find_executable(Command, <<".">>) of
+                {ok, Executable} -> {ok, Executable};
+                {error, Error} -> {error, Error}
+            end
+    catch
+        error:badarg ->
+            {error, <<"">>}
+    end.
+
+start_arguments() ->
+    lists:map(fun unicode:characters_to_binary/1, init:get_plain_arguments()).

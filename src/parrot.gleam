@@ -13,9 +13,9 @@ import parrot/internal/db
 import parrot/internal/errors
 import parrot/internal/lib
 import parrot/internal/project
+import parrot/internal/shellout
 import parrot/internal/spinner
 import parrot/internal/sqlc
-import shellout
 import simplifile
 
 pub fn main() {
