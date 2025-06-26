@@ -1,9 +1,7 @@
 import gleam/dict
 import gleam/string
 import gleeunit/should
-import parrot/internal/shellout.{
-  type Lookups, LetBeStderr, LetBeStdout, SetEnvironment,
-}
+import parrot/internal/shellout.{type Lookups, LetBeStderr, SetEnvironment}
 
 const message = "Howdy!"
 
@@ -90,12 +88,6 @@ pub fn environment_test() {
 
   test_var([#("HOME", "")], "HOME")
   |> should.be_error
-}
-
-fn should_be_without_stdout(message) {
-  // Erlang ports can't separate stderr from stdout; it's all or nothing
-  message
-  |> should.equal("")
 }
 
 pub fn style_test() {
