@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.1.0] - 2025-06-20
+## [1.1.1] - 2025-06-26
+
+- Output debugging information, when sqlc binary download fails
+
+## [1.1.0] - 2025-06-25
 
 - Support `List` columns in Postgres.<br />
   **Requires handling `dev.ParamList` in wrapper**

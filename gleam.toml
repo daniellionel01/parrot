@@ -1,5 +1,5 @@
 name = "parrot"
-version = "1.1.0"
+version = "1.1.1"
 
 description = "🦜 type-safe SQL in gleam for sqlite, postgresql & mysql"
 licences = ["Apache-2.0"]
