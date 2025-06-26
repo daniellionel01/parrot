@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] - 2025-06-20
 
-- Support `List` columns in Postgres.
-  *Requires handling `dev.ParamList` in wrapper*
+- Support `List` columns in Postgres.<br />
+  **Requires handling `dev.ParamList` in wrapper**
 - Decodes `JSON`, `JSONB`, `MONEY`
   (not `Dynamic` anymore)
 - Support for Postgres & MySQL `ENUM`
