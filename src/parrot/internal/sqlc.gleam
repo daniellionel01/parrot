@@ -12,7 +12,7 @@ import gleam/string
 import parrot/internal/cli
 import parrot/internal/errors
 import parrot/internal/project
-import shellout
+import parrot/internal/shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 pub type TypeRef {
