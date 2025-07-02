@@ -134,14 +134,14 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     spinner.new("generating gleam code")
     |> spinner.start()
 
-  let sqlc_path = case verify_res {
-    Error(_) -> "sqlc"
-    Ok(_) -> "./sqlc"
+  let gen_attempt_1 =
+    shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+  let gen_attempt_2 = case gen_attempt_1 {
+    Error(_) ->
+      shellout.command(run: "sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    Ok(val) -> Ok(val)
   }
-
-  let gen_res =
-    shellout.command(run: sqlc_path, with: ["generate"], in: sqlc_dir, opt: [])
-  use _ <- given.ok(gen_res, else_return: fn(err) {
+  use _ <- given.ok(gen_attempt_2, else_return: fn(err) {
     let #(_, err) = err
     Error(errors.SqlcGenerateError(err))
   })
