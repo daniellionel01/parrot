@@ -8,20 +8,20 @@ clean:
 # count lines of code of (excluding tests)
 @loc:
   echo "SOURCE CODE"
-  cloc . --vcs=git --exclude-dir=integration_test,test
+  cloc . --vcs=git --exclude-dir=integration,test
   echo "\TESTS"
-  cloc integration_test test --vcs=git
+  cloc integration test --vcs=git
 
-@integration-test:
+@integration:
   just test-sqlite
   just test-mysql
   just test-psql
 
 @test-mysql:
-  just integration_test/mysql/test
+  just integration/mysql/test
 
 @test-psql:
-  just integration_test/psql/test
+  just integration/psql/test
 
 @test-sqlite:
-  just integration_test/sqlite/test
+  just integration/sqlite/test

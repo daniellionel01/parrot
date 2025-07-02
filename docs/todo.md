@@ -34,5 +34,7 @@
 
 ## v1.2.0
 
+- [ ] use sqlc as binary fallback
+- [x] rename "integration_test" just "integration"
+  - [x] also rename just recipe
 - [ ] integration managed db (https://docs.sqlc.dev/en/latest/howto/managed-databases.html)
-- [ ] pg_lsn
