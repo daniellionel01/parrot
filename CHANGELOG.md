@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2025-07-01
+
+- Only issue a warning when download of sqlc binary was not successfull. This makes parrot
+  work without an internet connection if sqlc is already downloaded or installed system wide.
+- Use system wide sqlc binary as fallback, if local sqlc binary throws an error. This
+  is an edge case on MacOS.
+
 ## [1.1.2] - 2025-06-26
 
 - Bug Fix: `sqlc generate` fails due to incorrect path resolution on Linux
