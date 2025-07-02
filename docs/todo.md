@@ -31,8 +31,12 @@
 - [ ] advanced types
   - [ ] set
   - [ ] https://docs.sqlc.dev/en/stable/reference/datatypes.html#geometry
+- [ ] integration managed db (https://docs.sqlc.dev/en/latest/howto/managed-databases.html)
 
 ## v1.2.0
 
-- [ ] integration managed db (https://docs.sqlc.dev/en/latest/howto/managed-databases.html)
-- [ ] pg_lsn
+- [x] use sqlc as binary fallback
+- [x] rename "integration_test" just "integration"
+  - [x] also rename just recipe
+- [x] offline dev
+  - [x] throw warning when couldnt download sqlc binary

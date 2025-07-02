@@ -106,9 +106,9 @@ pub fn main() {
 ## Examples
 
 If you want to see how this library works in action, take a look at the integration tests:
-- PostgreSQL: [./integration_test/psql](./integration_test/psql)
-- MySQL: [./integration_test/mysql](./integration_test/mysql)
-- Sqlite: [./integration_test/sqlite](./integration_test/sqlite)
+- PostgreSQL: [./integration/psql](./integration/psql)
+- MySQL: [./integration/mysql](./integration/mysql)
+- Sqlite: [./integration/sqlite](./integration/sqlite)
 
 ## Development
 

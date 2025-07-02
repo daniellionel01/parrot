@@ -10,7 +10,7 @@ pub fn main() {
   shellout.command(
     run: "./sqlc",
     with: ["version"],
-    in: "./integration_test/sqlite/build/.parrot/",
+    in: "./integration/sqlite/build/.parrot/",
     opt: [],
   )
   |> echo

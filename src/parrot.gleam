@@ -85,20 +85,23 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     spinner.new("downloading sqlc binary")
     |> spinner.start()
 
-  use _ <- result.try(sqlc.download_binary())
-
-  spinner.complete_current(spinner)
-
+  let download_res = sqlc.download_binary()
+  case download_res {
+    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
+    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
+  }
   let spinner =
     spinner.new("verifying sqlc binary")
     |> spinner.start()
 
-  use _ <- result.try(sqlc.verify_binary())
+  let verify_res = sqlc.verify_binary()
+  case verify_res {
+    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
+    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
+  }
 
   let sqlc_yaml = sqlc.gen_sqlc_yaml(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_yaml)
-
-  spinner.complete_current(spinner)
 
   let spinner =
     spinner.new("fetching schema")
@@ -125,14 +128,19 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   })
   let _ = simplifile.write(schema_file, schema_sql)
 
-  spinner.complete_current(spinner)
+  spinner.complete_current(spinner, spinner.green_checkmark())
 
   let spinner =
     spinner.new("generating gleam code")
     |> spinner.start()
 
+  let sqlc_path = case verify_res {
+    Error(_) -> "sqlc"
+    Ok(_) -> "./sqlc"
+  }
+
   let gen_res =
-    shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    shellout.command(run: sqlc_path, with: ["generate"], in: sqlc_dir, opt: [])
   use _ <- given.ok(gen_res, else_return: fn(err) {
     let #(_, err) = err
     Error(errors.SqlcGenerateError(err))
@@ -149,7 +157,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     Error(errors.CodegenError)
   })
 
-  spinner.complete_current(spinner)
+  spinner.complete_current(spinner, spinner.green_checkmark())
 
   gen_result.unknown_types
   |> list.unique()

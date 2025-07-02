@@ -121,18 +121,27 @@ pub fn complete_and_continue_current(spinner: Spinner) -> Nil {
   complete_and_continue(spinner, spinner.current_text)
 }
 
+pub fn green_checkmark() {
+  let checkmark = "✓"
+  green(checkmark)
+}
+
+pub fn orange_warning() {
+  let warning = "⚠️"
+  magenta(warning)
+}
+
 /// Stop the spinner with a checkmark, showing the completed task.
 /// This is useful when you want to show completion without starting a new spinner.
 ///
-pub fn complete(spinner: Spinner, completed_text: String) -> Nil {
+pub fn complete(spinner: Spinner, completed_text: String, prefix: String) -> Nil {
   repeatedly.stop(spinner.repeater)
 
-  let checkmark = "✓"
   let show_cursor = "\u{001b}[?25h"
   io.print(
     clear_line_code
     <> go_to_start_code
-    <> green(checkmark)
+    <> prefix
     <> " "
     <> completed_text
     <> show_cursor,
@@ -142,8 +151,8 @@ pub fn complete(spinner: Spinner, completed_text: String) -> Nil {
 }
 
 // NEW FUNCTION: Use current spinner text for completion (final)
-pub fn complete_current(spinner: Spinner) -> Nil {
-  complete(spinner, spinner.current_text)
+pub fn complete_current(spinner: Spinner, prefix: String) -> Nil {
+  complete(spinner, spinner.current_text, prefix)
   io.print("")
 }
 
