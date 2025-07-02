@@ -38,3 +38,5 @@
 - [x] rename "integration_test" just "integration"
   - [x] also rename just recipe
 - [ ] integration managed db (https://docs.sqlc.dev/en/latest/howto/managed-databases.html)
+- [ ] offline dev
+  - [ ] throw warning when couldnt download sqlc binary
