@@ -1,27 +1,5 @@
 # todo
 
-## v2
-
-- [ ] support more complex postgres columns
-  - [ ] hstore
-  - [ ] network address types
-        inet, cidr, macaddr, macaddr8
-  - [ ] int4range, tsrange
-  - [ ] geometric
-        point, polygon
-  - [ ] interval
-  - [ ] tsvector, tsquery
-- [ ] provide better decoder for dyn cols
-  -> param record add type, column, table
-- [ ] provide gleam records for db schema
-- [ ] provide clever joining mechanism
-- [ ] idea: provide config where you can
-      override every de- and encoder
-- [ ] improve type api
-  - params? gleam types?
-  - instead of params maybe sqlctype?
-  - db -> sqlc -> gleam | en- & decode
-
 ## miscellaneous
 
 - [ ] write tests for timestamp de- and encoder
@@ -32,11 +10,3 @@
   - [ ] set
   - [ ] https://docs.sqlc.dev/en/stable/reference/datatypes.html#geometry
 - [ ] integration managed db (https://docs.sqlc.dev/en/latest/howto/managed-databases.html)
-
-## v1.2.0
-
-- [x] use sqlc as binary fallback
-- [x] rename "integration_test" just "integration"
-  - [x] also rename just recipe
-- [x] offline dev
-  - [x] throw warning when couldnt download sqlc binary
