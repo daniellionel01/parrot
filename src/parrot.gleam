@@ -87,20 +87,16 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 
   let download_res = sqlc.download_binary()
   case download_res {
-    Error(_) -> {
-      spinner.complete_current(spinner, spinner.orange_warning())
-    }
+    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
     Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
   }
   let spinner =
     spinner.new("verifying sqlc binary")
     |> spinner.start()
 
-  let download_res = sqlc.verify_binary()
-  case download_res {
-    Error(_) -> {
-      spinner.complete_current(spinner, spinner.orange_warning())
-    }
+  let verify_res = sqlc.verify_binary()
+  case verify_res {
+    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
     Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
   }
 
@@ -138,8 +134,13 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     spinner.new("generating gleam code")
     |> spinner.start()
 
+  let sqlc_path = case verify_res {
+    Error(_) -> "sqlc"
+    Ok(_) -> "./sqlc"
+  }
+
   let gen_res =
-    shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    shellout.command(run: sqlc_path, with: ["generate"], in: sqlc_dir, opt: [])
   use _ <- given.ok(gen_res, else_return: fn(err) {
     let #(_, err) = err
     Error(errors.SqlcGenerateError(err))
