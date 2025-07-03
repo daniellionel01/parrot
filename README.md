@@ -4,6 +4,17 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
+## Table of Contents
+- [🦜 Parrot / type-safe SQL in gleam](#---parrot---type-safe-sql-in-gleam)
+  * [Features](#features)
+  * [Usage / Getting Started](#usage---getting-started)
+  * [Examples](#examples)
+  * [Development](#development)
+  * [Quirks](#quirks)
+  * [FAQ](#faq)
+  * [Future Work](#future-work)
+  * [Acknowledgements](#acknowledgements)
+
 ## Features
 
 *Most of the heavy lifting features are provided by / built into sqlc, so I do not aim to take credit for them.*
