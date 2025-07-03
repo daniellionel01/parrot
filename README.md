@@ -168,16 +168,7 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 ## Future Work
 
-Here are some ideas and thoughts on how you might develop this library further:
-* automatic pull request for new sqlc versions
-* support more complex postgres data types (`path`, `point`, `polygon`)
-* provide way to configure custom decoders for json columns
-* use glance for codegen
-* remove unused imports / types in generated sql.gleam module
-* provide config for custom include / exclude patterns of *.sql query files
-* improve codebase structure and adding opaque types
-* handle more query annotations cmd syntaxes
-  https://docs.sqlc.dev/en/stable/reference/query-annotations.html
+Ideas and actionable ideas are collected and organised here: https://github.com/daniellionel01/parrot/issues
 
 Contributions are welcomed!
 
