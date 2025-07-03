@@ -15,6 +15,8 @@
   * [Future Work](#future-work)
   * [Acknowledgements](#acknowledgements)
 
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
+
 ## Features
 
 *Most of the heavy lifting features are provided by / built into sqlc, so I do not aim to take credit for them.*
