@@ -11,6 +11,7 @@
 ✅ Supports Sqlite, PostgreSQL and MySQL.<br />
 ✅ Named parameters.<sup>*1</sup> <br />
 ✅ Multiple queries per file.<br />
+✅ Database client agnostic.<br />
 ✅ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
 ✅ Automatically pulls schema of your database.<br />
 ✅ Automatically downloads [sqlc](https://sqlc.dev/) binary.

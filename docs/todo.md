@@ -2,8 +2,6 @@
 
 ## miscellaneous
 
-- [ ] write tests for timestamp de- and encoder
-- [ ] potentially colliding enum definition names from different schemas / catalogs
 - [ ] dockerize
 - [ ] add type mapping table for psql, mysql, sqlite to gleam type
 - [ ] advanced types
