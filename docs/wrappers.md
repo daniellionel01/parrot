@@ -9,7 +9,7 @@ we do not have to provide implementations for booleans and timestamps.
 you can provide your own implementation.
 
 ```gleam
-fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+pub fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
   case param {
     dev.ParamFloat(x) -> sqlight.float(x)
     dev.ParamInt(x) -> sqlight.int(x)
