@@ -9,7 +9,7 @@ CREATE TYPE user_role AS ENUM ('admin', 'user', 'guest');
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(255) NOT NULL UNIQUE,
-  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   profile JSONB,
   extra_info JSON,

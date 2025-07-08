@@ -110,6 +110,14 @@ VALUES
   #(sql, [dev.ParamString(name)], )
 }
 
+pub fn create_user_at(username username: String, created_at created_at: Float){
+  let sql = "INSERT INTO
+  users (username, created_at)
+VALUES
+  ($1, to_timestamp($2::float))"
+  #(sql, [dev.ParamString(username), dev.ParamFloat(created_at)], )
+}
+
 pub fn update_user_username(username username: String, id id: Int){
   let sql = "UPDATE users
 SET

@@ -229,11 +229,17 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
     query.params
     |> list.map(fn(p) {
       let gleam_type = sqlc_col_to_gleam(p.column, context)
-      p.column.name
-      <> " "
-      <> p.column.name
-      <> ": "
-      <> gleam_type_to_string(gleam_type)
+      let name = p.column.name
+      case name {
+        "" ->
+          panic as {
+            "Parameter name for "
+            <> fn_name
+            <> " is empty! Please use a named parameter instead (f.e. \"sqlc.arg(name)\" or \"@arg\")"
+          }
+        _ -> Nil
+      }
+      name <> " " <> name <> ": " <> gleam_type_to_string(gleam_type)
     })
     |> string.join(", ")
 

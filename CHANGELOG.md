@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-07-08
+
+- Bug Fix https://github.com/daniellionel01/parrot/issues/27<br />
+  This is an edge case when you cast a type for a non-named argument, which lead to
+  an empty string for the gleam function parameter.
+
 ## [1.2.0] - 2025-07-01
 
 - Only issue a warning when download of sqlc binary was not successfull. This makes parrot
