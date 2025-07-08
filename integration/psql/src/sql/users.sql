@@ -22,6 +22,12 @@ INSERT INTO
 VALUES
   (sqlc.arg(name));
 
+-- name: CreateUserAt :exec
+INSERT INTO
+  users (username, created_at)
+VALUES
+  ($1, to_timestamp($2::float));
+
 -- name: UpdateUserUsername :exec
 UPDATE users
 SET
