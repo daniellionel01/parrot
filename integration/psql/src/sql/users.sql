@@ -26,7 +26,7 @@ VALUES
 INSERT INTO
   users (username, created_at)
 VALUES
-  ($1, to_timestamp($2::float));
+  ($1, to_timestamp(@created_at::float));
 
 -- name: UpdateUserUsername :exec
 UPDATE users
