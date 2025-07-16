@@ -159,6 +159,26 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 
   spinner.complete_current(spinner, spinner.green_checkmark())
 
+  let spinner =
+    spinner.new("formatting generated code")
+    |> spinner.start()
+
+  let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
+
+  let stdout_format =
+    shellout.command(
+      run: "gleam",
+      with: ["format", output_path],
+      in: project.root(),
+      opt: [],
+    )
+  use _ <- given.ok(stdout_format, else_return: fn(err) {
+    let #(_, err) = err
+    Error(errors.GleamFormatError(err))
+  })
+
+  spinner.complete_current(spinner, spinner.green_checkmark())
+
   gen_result.unknown_types
   |> list.unique()
   |> list.each(fn(unknown) {
