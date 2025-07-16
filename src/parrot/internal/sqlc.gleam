@@ -3,6 +3,8 @@
 
 import filepath
 import given
+import gleam/bit_array
+import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/option.{type Option}
@@ -281,43 +283,66 @@ fn binary_exists(path) {
 
 const sqlc_version = "1.29.0"
 
-fn get_download_path() {
+fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError) {
   let base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
 
   let os = get_os()
   let cpu = get_cpu()
 
   let platform = case os, cpu {
-    // Darwin (macOS)
-    "darwin", "arm64" | "darwin", "aarch64" -> Ok("_darwin_arm64.tar.gz")
+    "darwin", "arm64" | "darwin", "aarch64" ->
+      Ok(#(
+        "_darwin_arm64.tar.gz",
+        "A63ED937BA43530B739BE40EF52F81C146A251460F0E4170474426F0A7248424",
+      ))
 
     "darwin", "amd64" | "darwin", "x86_64" | "darwin", "x64" ->
-      Ok("_darwin_amd64.tar.gz")
+      Ok(#(
+        "_darwin_amd64.tar.gz",
+        "B6F6FDBB390A3E40CB080CFB54F3C1308BAD56C32C3033DB7CF4CCD3A02CFDDB",
+      ))
 
-    // Linux
-    "linux", "arm64" | "linux", "aarch64" -> Ok("_linux_arm64.tar.gz")
+    "linux", "arm64" | "linux", "aarch64" ->
+      Ok(#(
+        "_linux_arm64.tar.gz",
+        "F386B669B63BF8FA6227AB61CDA000C8D25A2F5A4C997ECF7D7B89EA5385FE45",
+      ))
 
     "linux", "amd64" | "linux", "x86_64" | "linux", "x64" ->
-      Ok("_linux_amd64.tar.gz")
+      Ok(#(
+        "_linux_amd64.tar.gz",
+        "005C9409272F98DF050C3A0687E8A80001E59E1F7ABF638E3BC32E880774F8AE",
+      ))
 
-    // Windows
     "win32", "amd64" | "win32", "x86_64" | "win32", "x64" ->
-      Ok("_windows_amd64.tar.gz")
+      Ok(#(
+        "_windows_amd64.tar.gz",
+        "0B203324BA2995E60187943B344D2383DDA7C0A010C0CBD3C7C3DFC47B71A2D4",
+      ))
 
-    _, _ -> Error("")
+    _, _ -> Error(Nil)
   }
 
-  use platform <- given.ok(platform, else_return: fn(_) {
+  use #(platform, hash) <- given.ok(platform, else_return: fn(_) {
     Error(errors.SqlcDownloadError(
       "unsupported platform: " <> os <> ", " <> cpu,
     ))
   })
 
-  Ok(base <> platform)
+  Ok(#(base <> platform, hash))
+}
+
+fn check_sqlc_integrity(bin: BitArray, expected_hash: String) {
+  let hash = crypto.hash(crypto.Sha256, bin)
+  let hash_string = bit_array.base16_encode(hash)
+  case hash_string == expected_hash {
+    True -> Nil
+    False -> panic as "sqlc binary hash did not match expected hash!"
+  }
 }
 
 pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
-  use download <- result.try(get_download_path())
+  use #(download, _) <- result.try(get_download_path_and_hash())
 
   let path = sqlc_binary_path()
   let dir = filepath.directory_name(path)
@@ -360,10 +385,17 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
   let dir = filepath.directory_name(path)
   let assert Ok(_) = simplifile.create_directory_all(dir)
 
-  let binary_exists = binary_exists(path)
-  use <- given.that(binary_exists, return: fn() { Ok(Nil) })
+  use #(download, hash) <- result.try(get_download_path_and_hash())
 
-  use download <- result.try(get_download_path())
+  let binary_exists = binary_exists(path)
+  use <- given.that(binary_exists, return: fn() {
+    use bin <- result.try(
+      simplifile.read_bits(path)
+      |> result.map_error(fn(_) { errors.SqlcDownloadError("could not verify") }),
+    )
+    check_sqlc_integrity(bin, hash)
+    Ok(Nil)
+  })
 
   use tarball <- result.try(
     download_zip(download)
@@ -378,6 +410,7 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
       errors.SqlcDownloadError("could not unzip the sqlc binary")
     }),
   )
+  check_sqlc_integrity(bin, hash)
 
   let assert Ok(_) = simplifile.write_bits(path, bin)
 
