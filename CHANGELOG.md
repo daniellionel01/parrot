@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] - 2025-07-16
+
+- Closes https://github.com/daniellionel01/parrot/issues/30
+  The generated `sql.gleam` file is now formatted with the gleam formatter.
+
 ## [1.2.1] - 2025-07-08
 
 - Bug Fix https://github.com/daniellionel01/parrot/issues/27<br />
