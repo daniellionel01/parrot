@@ -137,8 +137,9 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let gen_attempt =
     shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
   let gen_attempt = case gen_attempt {
-    Error(_) ->
+    Error(_) -> {
       shellout.command(run: "sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    }
     Ok(val) -> Ok(val)
   }
   use _ <- given.ok(gen_attempt, else_return: fn(err) {

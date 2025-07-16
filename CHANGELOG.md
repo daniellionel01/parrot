@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.3] - 2025-07-16
+
+- Closes https://github.com/daniellionel01/parrot/issues/23
+  We now check the hash integrity of the downloaded sqlc binary. Thank you [@hayleigh-dot-dev](https://github.com/hayleigh-dot-dev) for calling me out.
+
 ## [1.2.2] - 2025-07-16
 
 - Closes https://github.com/daniellionel01/parrot/issues/30
