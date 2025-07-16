@@ -129,8 +129,12 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     let assert Ok(enum) = enum
     GleamEnum(enum.name)
   })
+  let sqltype = string.lowercase(sqltype)
 
-  case string.lowercase(sqltype) {
+  let tiny_bool = sqltype == "tinyint" && col.length == 1
+  use <- bool.guard(tiny_bool, GleamBool)
+
+  case sqltype {
     "int" <> _
     | "tinyint"
     | "smallint"
@@ -280,7 +284,7 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
   case gtype {
     GleamInt -> "decode.int"
     GleamString -> "decode.string"
-    GleamBool -> "decode.bool"
+    GleamBool -> "dev.bool_decoder()"
     GleamFloat -> "decode.float"
     GleamTimestamp -> "dev.datetime_decoder()"
     GleamBitArray -> "decode.bit_array"

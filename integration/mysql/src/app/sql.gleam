@@ -33,13 +33,14 @@ pub type GetUser {
     username: String,
     created_at: Option(Timestamp),
     status: Option(UsersStatus),
+    admin: Bool,
   )
 }
 
 pub fn get_user(id id: Int) {
   let sql =
     "SELECT
-  id, username, created_at, status
+  id, username, created_at, status, admin
 FROM
   users
 WHERE
@@ -54,7 +55,8 @@ pub fn get_user_decoder() -> decode.Decoder(GetUser) {
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
   use status <- decode.field(3, decode.optional(users_status_decoder()))
-  decode.success(GetUser(id:, username:, created_at:, status:))
+  use admin <- decode.field(4, dev.bool_decoder())
+  decode.success(GetUser(id:, username:, created_at:, status:, admin:))
 }
 
 pub type ListUsers {
@@ -63,13 +65,14 @@ pub type ListUsers {
     username: String,
     created_at: Option(Timestamp),
     status: Option(UsersStatus),
+    admin: Bool,
   )
 }
 
 pub fn list_users() {
   let sql =
     "SELECT
-  id, username, created_at, status
+  id, username, created_at, status, admin
 FROM
   users
 ORDER BY
@@ -82,7 +85,8 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
   use status <- decode.field(3, decode.optional(users_status_decoder()))
-  decode.success(ListUsers(id:, username:, created_at:, status:))
+  use admin <- decode.field(4, dev.bool_decoder())
+  decode.success(ListUsers(id:, username:, created_at:, status:, admin:))
 }
 
 pub fn create_user(username username: String) {
@@ -118,13 +122,14 @@ pub type GetUserByUsername {
     username: String,
     created_at: Option(Timestamp),
     status: Option(UsersStatus),
+    admin: Bool,
   )
 }
 
 pub fn get_user_by_username(username username: String) {
   let sql =
     "SELECT
-  id, username, created_at, status
+  id, username, created_at, status, admin
 FROM
   users
 WHERE
@@ -139,5 +144,6 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
   use status <- decode.field(3, decode.optional(users_status_decoder()))
-  decode.success(GetUserByUsername(id:, username:, created_at:, status:))
+  use admin <- decode.field(4, dev.bool_decoder())
+  decode.success(GetUserByUsername(id:, username:, created_at:, status:, admin:))
 }
