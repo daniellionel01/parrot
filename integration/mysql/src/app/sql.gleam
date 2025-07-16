@@ -32,12 +32,13 @@ pub type GetUser {
     id: Int,
     username: String,
     created_at: Option(Timestamp),
-    status: Option(UsersStatus)
+    status: Option(UsersStatus),
   )
 }
 
-pub fn get_user(id id: Int){
-  let sql = "SELECT
+pub fn get_user(id id: Int) {
+  let sql =
+    "SELECT
   id, username, created_at, status
 FROM
   users
@@ -53,7 +54,7 @@ pub fn get_user_decoder() -> decode.Decoder(GetUser) {
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
   use status <- decode.field(3, decode.optional(users_status_decoder()))
-  decode.success(GetUser(id: , username: , created_at: , status: ))
+  decode.success(GetUser(id:, username:, created_at:, status:))
 }
 
 pub type ListUsers {
@@ -61,12 +62,13 @@ pub type ListUsers {
     id: Int,
     username: String,
     created_at: Option(Timestamp),
-    status: Option(UsersStatus)
+    status: Option(UsersStatus),
   )
 }
 
-pub fn list_users(){
-  let sql = "SELECT
+pub fn list_users() {
+  let sql =
+    "SELECT
   id, username, created_at, status
 FROM
   users
@@ -80,31 +82,34 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
   use status <- decode.field(3, decode.optional(users_status_decoder()))
-  decode.success(ListUsers(id: , username: , created_at: , status: ))
+  decode.success(ListUsers(id:, username:, created_at:, status:))
 }
 
-pub fn create_user(username username: String){
-  let sql = "INSERT INTO
+pub fn create_user(username username: String) {
+  let sql =
+    "INSERT INTO
   users (username)
 VALUES
   (?)"
-  #(sql, [dev.ParamString(username)], )
+  #(sql, [dev.ParamString(username)])
 }
 
-pub fn update_user_username(username username: String, id id: Int){
-  let sql = "UPDATE users
+pub fn update_user_username(username username: String, id id: Int) {
+  let sql =
+    "UPDATE users
 SET
   username = ?
 WHERE
   id = ?"
-  #(sql, [dev.ParamString(username), dev.ParamInt(id)], )
+  #(sql, [dev.ParamString(username), dev.ParamInt(id)])
 }
 
-pub fn delete_user(id id: Int){
-  let sql = "DELETE FROM users
+pub fn delete_user(id id: Int) {
+  let sql =
+    "DELETE FROM users
 WHERE
   id = ?"
-  #(sql, [dev.ParamInt(id)], )
+  #(sql, [dev.ParamInt(id)])
 }
 
 pub type GetUserByUsername {
@@ -112,12 +117,13 @@ pub type GetUserByUsername {
     id: Int,
     username: String,
     created_at: Option(Timestamp),
-    status: Option(UsersStatus)
+    status: Option(UsersStatus),
   )
 }
 
-pub fn get_user_by_username(username username: String){
-  let sql = "SELECT
+pub fn get_user_by_username(username username: String) {
+  let sql =
+    "SELECT
   id, username, created_at, status
 FROM
   users
@@ -133,5 +139,5 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use username <- decode.field(1, decode.string)
   use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
   use status <- decode.field(3, decode.optional(users_status_decoder()))
-  decode.success(GetUserByUsername(id: , username: , created_at: , status: ))
+  decode.success(GetUserByUsername(id:, username:, created_at:, status:))
 }
