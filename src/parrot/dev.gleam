@@ -14,6 +14,20 @@ pub type Param {
   ParamDynamic(decode.Dynamic)
 }
 
+pub fn bool_decoder() {
+  let int_to_bool = {
+    decode.int
+    |> decode.then(fn(v) {
+      case v {
+        0 -> decode.success(False)
+        1 -> decode.success(True)
+        _ -> decode.failure(False, "could not decode int to boolean")
+      }
+    })
+  }
+  decode.one_of(decode.bool, or: [int_to_bool])
+}
+
 pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
   decode.one_of(datetime_string_decoder(), or: [datetime_tuple_decoder()])
 }

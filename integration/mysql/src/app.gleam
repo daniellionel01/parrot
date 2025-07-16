@@ -16,8 +16,8 @@ pub fn main() {
 
   let #(sql, params, expecting) = sql.get_user_by_username("alice")
   let assert Ok(shork.Returned(
-    ["id", "username", "created_at", "status"],
-    [sql.GetUserByUsername(1, "alice", option.Some(_), option.None)],
+    ["id", "username", "created_at", "status", "admin"],
+    [sql.GetUserByUsername(1, "alice", option.Some(_), option.None, True)],
   )) = query(db, sql, params, expecting)
 
   Ok(Nil)
