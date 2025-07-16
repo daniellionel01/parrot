@@ -8,6 +8,8 @@ pub type ParrotError {
   SqlcDownloadError(String)
   SqlcGenerateError(String)
 
+  GleamFormatError(String)
+
   NoQueriesFound
   MysqldumpError
   PgdumpError
@@ -27,5 +29,7 @@ pub fn err_to_string(error: ParrotError) {
     NoQueriesFound -> "no queries were found to codegen"
     UnknownEngine(engine) -> "unknown engine: " <> engine
     CodegenError -> "there was an error during codegen"
+    GleamFormatError(err) ->
+      "there was an error formatting the generated code:" <> err
   }
 }

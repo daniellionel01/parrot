@@ -5,16 +5,13 @@ import gleam/dynamic/decode
 import gleam/option.{type Option}
 import parrot/dev
 
-
-
 pub type CountUsers {
-  CountUsers(
-    count: Int
-  )
+  CountUsers(count: Int)
 }
 
-pub fn count_users(){
-  let sql = "SELECT
+pub fn count_users() {
+  let sql =
+    "SELECT
   count(*)
 FROM
   users"
@@ -23,24 +20,26 @@ FROM
 
 pub fn count_users_decoder() -> decode.Decoder(CountUsers) {
   use count <- decode.field(0, decode.int)
-  decode.success(CountUsers(count: ))
+  decode.success(CountUsers(count:))
 }
 
-pub fn create_user(username username: String){
-  let sql = "INSERT INTO
+pub fn create_user(username username: String) {
+  let sql =
+    "INSERT INTO
   users (username)
 VALUES
   (?)"
-  #(sql, [dev.ParamString(username)], )
+  #(sql, [dev.ParamString(username)])
 }
 
-pub fn update_user_username(username username: String, id id: Int){
-  let sql = "UPDATE users
+pub fn update_user_username(username username: String, id id: Int) {
+  let sql =
+    "UPDATE users
 SET
   username = ?
 WHERE
   id = ?"
-  #(sql, [dev.ParamString(username), dev.ParamInt(id)], )
+  #(sql, [dev.ParamString(username), dev.ParamInt(id)])
 }
 
 pub type GetUserByUsername {
@@ -50,12 +49,13 @@ pub type GetUserByUsername {
     created_at: Option(String),
     balance: Float,
     last_known_location: Option(Float),
-    avatar: Option(BitArray)
+    avatar: Option(BitArray),
   )
 }
 
-pub fn get_user_by_username(username username: String){
-  let sql = "SELECT
+pub fn get_user_by_username(username username: String) {
+  let sql =
+    "SELECT
   id, username, created_at, balance, last_known_location, avatar
 FROM
   users
@@ -73,5 +73,12 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use balance <- decode.field(3, decode.float)
   use last_known_location <- decode.field(4, decode.optional(decode.float))
   use avatar <- decode.field(5, decode.optional(decode.bit_array))
-  decode.success(GetUserByUsername(id: , username: , created_at: , balance: , last_known_location: , avatar: ))
+  decode.success(GetUserByUsername(
+    id:,
+    username:,
+    created_at:,
+    balance:,
+    last_known_location:,
+    avatar:,
+  ))
 }
