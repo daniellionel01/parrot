@@ -181,7 +181,7 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 ## Future Work
 
-Ideas and actionable ideas are collected and organised here: https://github.com/daniellionel01/parrot/issues
+Ideas and actionable tasks are collected and organised here: https://github.com/daniellionel01/parrot/issues
 
 Contributions are welcomed!
 
