@@ -6,7 +6,9 @@ gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 gleam_time = ">= 1.2.0 and < 2.0.0"
 parrot = { path = "../.." }
 envoy = ">= 1.0.2 and < 2.0.0"
-pog = ">= 3.2.0 and < 4.0.0"
+pog = ">= 4.1.0 and < 5.0.0"
+gleam_erlang = ">= 1.2.0 and < 2.0.0"
+gleam_otp = ">= 1.0.0 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"
