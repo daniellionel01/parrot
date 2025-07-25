@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.5] - 2025-07-25
+
+- Closes https://github.com/daniellionel01/parrot/issues/29
+  Upgrades dependencies across project & integration tests
+
 ## [1.2.4] - 2025-07-16
 
 - Closes https://github.com/daniellionel01/parrot/issues/6
   Infer `tinyint(1)` to `Bool`
-
 
 ## [1.2.3] - 2025-07-16
 

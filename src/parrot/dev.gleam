@@ -29,7 +29,18 @@ pub fn bool_decoder() {
 }
 
 pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
-  decode.one_of(datetime_string_decoder(), or: [datetime_tuple_decoder()])
+  decode.one_of(datetime_string_decoder(), or: [
+    datetime_tuple_decoder(),
+    timestamp_decoder(),
+  ])
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L394
+fn timestamp_decoder() -> decode.Decoder(Timestamp) {
+  use microseconds <- decode.map(decode.int)
+  let seconds = microseconds / 1_000_000
+  let nanoseconds = { microseconds % 1_000_000 } * 1000
+  timestamp.from_unix_seconds_and_nanoseconds(seconds, nanoseconds)
 }
 
 fn datetime_string_decoder() -> decode.Decoder(Timestamp) {

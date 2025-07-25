@@ -1,6 +1,7 @@
 import app/sql
 import envoy
 import gleam/dynamic/decode
+import gleam/erlang/process
 import gleam/list
 import gleam/option
 import gleam/result
@@ -8,9 +9,11 @@ import parrot/dev
 import pog
 
 pub fn main() {
+  let name = process.new_name("pog")
+
   let assert Ok(database_url) = envoy.get("DATABASE_URL")
-  use config <- result.try(pog.url_config(database_url))
-  let db = pog.connect(config)
+  use config <- result.try(pog.url_config(name, database_url))
+  let assert Ok(db) = pog.start(config)
 
   let #(sql, params, expecting) = sql.get_user_by_username("alice")
   let assert Ok(pog.Returned(
@@ -27,8 +30,10 @@ pub fn main() {
         option.Some(<<222, 173, 190, 239>>),
       ),
     ],
-  )) = query(db, sql, params, expecting)
-  // echo query(db, sql, params, decode.dynamic)
+  )) = query(db.data, sql, params, expecting)
+  // echo query(db.data, sql, params, decode.dynamic)
+
+  process.send_exit(db.pid)
 
   Ok(Nil)
 }
