@@ -82,7 +82,7 @@ jobs:
     needs: test
     strategy:
       matrix:
-        postgres: ["postgres:16"]
+        postgres: ["postgres:16", "postgres:17"]
     services:
       postgres:
         image: ${{ matrix.postgres }}
