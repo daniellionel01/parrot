@@ -7,6 +7,18 @@ on:
   workflow_call:
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.11.0"
+          rebar3-version: "3"
+      - run: gleam deps download
+      - run: gleam format --check src test
+
   integration-sqlite:
     runs-on: ubuntu-latest
     needs: test
