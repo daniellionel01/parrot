@@ -21,7 +21,7 @@ pub fn main() {
     [
       sql.GetUserByUsername(
         3,
-        "alices",
+        "alice",
         option.Some(_),
         option.Some("{\"a\": 1, \"b\": 2}"),
         option.Some("{\"c\": 3}"),
