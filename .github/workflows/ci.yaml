@@ -77,15 +77,12 @@ jobs:
           gleam run -m parrot
           gleam run
 
-  integration-psql:
+  integration-psql-16:
     runs-on: ubuntu-latest
     needs: test
-    strategy:
-      matrix:
-        postgres: ["postgres:16"]
     services:
       postgres:
-        image: ${{ matrix.postgres }}
+        image: postgres:16
         env:
           POSTGRES_USER: daniel
           POSTGRES_PASSWORD: parrot
@@ -105,23 +102,78 @@ jobs:
           otp-version: "27"
           gleam-version: "1.11.0"
           rebar3-version: "3"
-      - name: Install PostgreSQL Client
+      - name: Install PostgreSQL 16 Client
         run: |
-          # Extract PostgreSQL version from matrix
-          PG_VERSION=$(echo "${{ matrix.postgres }}" | cut -d':' -f2)
-
-          # Add PostgreSQL apt repository to get correct version
+          # Add PostgreSQL apt repository
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
-
-          # Install PostgreSQL client tools matching the matrix version
-          sudo apt-get install -y postgresql-client-${PG_VERSION}
+          
+          # Install PostgreSQL 16 client tools
+          sudo apt-get install -y postgresql-16 postgresql-client-16
       - name: Run PostgreSQL Integration Tests
         working-directory: integration/psql
         env:
           DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
+          PGBIN: /usr/lib/postgresql/16/bin
         run: |
+          # Ensure PostgreSQL 16 binaries are used
+          export PATH="${PGBIN}:$PATH"
+          
+          # Verify correct pg_dump version
+          ${PGBIN}/pg_dump --version
+          
+          rm -f src/app/sql.gleam
+          ./priv/reset.sh
+          gleam run -m parrot
+          gleam run
+
+  integration-psql-17:
+    runs-on: ubuntu-latest
+    needs: test
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: daniel
+          POSTGRES_PASSWORD: parrot
+          POSTGRES_DB: parrot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.11.0"
+          rebar3-version: "3"
+      - name: Install PostgreSQL 17 Client
+        run: |
+          # Add PostgreSQL apt repository
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          
+          # Install PostgreSQL 17 client tools
+          sudo apt-get install -y postgresql-17 postgresql-client-17
+      - name: Run PostgreSQL Integration Tests
+        working-directory: integration/psql
+        env:
+          DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
+          PGBIN: /usr/lib/postgresql/17/bin
+        run: |
+          # Ensure PostgreSQL 17 binaries are used
+          export PATH="${PGBIN}:$PATH"
+          
+          # Verify correct pg_dump version
+          ${PGBIN}/pg_dump --version
+          
           rm -f src/app/sql.gleam
           ./priv/reset.sh
           gleam run -m parrot
