@@ -70,6 +70,7 @@ pub fn fetch_schema_postgresql(db: String) -> Result(String, errors.ParrotError)
     in: ".",
     opt: [],
   )
+  |> echo
   |> result.replace_error(errors.PgdumpError)
 }
 
