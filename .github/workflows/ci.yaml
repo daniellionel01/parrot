@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "${{ matrix.otp-version }}"
+          otp-version: "${{ env.otp-version }}"
           gleam-version: "1.11.0"
           rebar3-version: "3"
       - name: Install MySQL Client
@@ -111,19 +111,12 @@ jobs:
           gleam run -m parrot
           gleam run
 
-  integration-psql-16:
-    runs-on: ${{ matrix.os }}
+  integration-psql-16-ubuntu:
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: test
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        include:
-          - os: macos-latest
-            otp-version: "26.2"
-          - os: ubuntu-latest
-            otp-version: "27"
+    env:
+      otp-version: "27"
     services:
       postgres:
         image: postgres:16
@@ -138,17 +131,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        if: matrix.os == 'ubuntu-latest'
 
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "${{ matrix.otp-version }}"
+          otp-version: "${{ env.otp-version }}"
           gleam-version: "1.11.0"
           rebar3-version: "3"
-      - name: Install PostgreSQL 16 Client (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install PostgreSQL 16 Client
         run: |
           # Add PostgreSQL apt repository
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -157,21 +148,11 @@ jobs:
           
           # Install PostgreSQL 16 client tools
           sudo apt-get install -y postgresql-16 postgresql-client-16
-          
-      - name: Setup PostgreSQL 16 (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          brew install postgresql@16
-          brew services start postgresql@16
-          sleep 5
-          /opt/homebrew/opt/postgresql@16/bin/createuser -s daniel
-          /opt/homebrew/opt/postgresql@16/bin/createdb -O daniel parrot
-          /opt/homebrew/opt/postgresql@16/bin/psql -U daniel -d parrot -c "ALTER USER daniel WITH PASSWORD 'parrot';"
       - name: Run PostgreSQL Integration Tests
         working-directory: integration/psql
         env:
           DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
-          PGBIN: ${{ matrix.os == 'ubuntu-latest' && '/usr/lib/postgresql/16/bin' || '/opt/homebrew/opt/postgresql@16/bin' }}
+          PGBIN: /usr/lib/postgresql/16/bin
         run: |
           # Ensure PostgreSQL 16 binaries are used
           export PATH="${PGBIN}:$PATH"
@@ -184,19 +165,51 @@ jobs:
           gleam run -m parrot
           gleam run
 
-  integration-psql-17:
-    runs-on: ${{ matrix.os }}
+  integration-psql-16-macos:
+    runs-on: macos-latest
     timeout-minutes: 20
     needs: test
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        include:
-          - os: macos-latest
-            otp-version: "26.2"
-          - os: ubuntu-latest
-            otp-version: "27"
+    env:
+      otp-version: "26.2"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "${{ env.otp-version }}"
+          gleam-version: "1.11.0"
+          rebar3-version: "3"
+      - name: Setup PostgreSQL 16
+        run: |
+          brew install postgresql@16
+          brew services start postgresql@16
+          sleep 5
+          /opt/homebrew/opt/postgresql@16/bin/createuser -s daniel
+          /opt/homebrew/opt/postgresql@16/bin/createdb -O daniel parrot
+          /opt/homebrew/opt/postgresql@16/bin/psql -U daniel -d parrot -c "ALTER USER daniel WITH PASSWORD 'parrot';"
+      - name: Run PostgreSQL Integration Tests
+        working-directory: integration/psql
+        env:
+          DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
+          PGBIN: /opt/homebrew/opt/postgresql@16/bin
+        run: |
+          # Ensure PostgreSQL 16 binaries are used
+          export PATH="${PGBIN}:$PATH"
+          
+          # Verify correct pg_dump version
+          ${PGBIN}/pg_dump --version
+          
+          rm -f src/app/sql.gleam
+          ./priv/reset.sh
+          gleam run -m parrot
+          gleam run
+
+  integration-psql-17-ubuntu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test
+    env:
+      otp-version: "27"
     services:
       postgres:
         image: postgres:17
@@ -211,17 +224,15 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-        if: matrix.os == 'ubuntu-latest'
 
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: "${{ matrix.otp-version }}"
+          otp-version: "${{ env.otp-version }}"
           gleam-version: "1.11.0"
           rebar3-version: "3"
-      - name: Install PostgreSQL 17 Client (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install PostgreSQL 17 Client
         run: |
           # Add PostgreSQL apt repository
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
@@ -230,9 +241,38 @@ jobs:
           
           # Install PostgreSQL 17 client tools
           sudo apt-get install -y postgresql-17 postgresql-client-17
+      - name: Run PostgreSQL Integration Tests
+        working-directory: integration/psql
+        env:
+          DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
+          PGBIN: /usr/lib/postgresql/17/bin
+        run: |
+          # Ensure PostgreSQL 17 binaries are used
+          export PATH="${PGBIN}:$PATH"
           
-      - name: Setup PostgreSQL 17 (macOS)
-        if: matrix.os == 'macos-latest'
+          # Verify correct pg_dump version
+          ${PGBIN}/pg_dump --version
+          
+          rm -f src/app/sql.gleam
+          ./priv/reset.sh
+          gleam run -m parrot
+          gleam run
+          
+  integration-psql-17-macos:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    needs: test
+    env:
+      otp-version: "26.2"
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "${{ env.otp-version }}"
+          gleam-version: "1.11.0"
+          rebar3-version: "3"
+      - name: Setup PostgreSQL 17
         run: |
           brew install postgresql@17
           brew services start postgresql@17
@@ -244,7 +284,7 @@ jobs:
         working-directory: integration/psql
         env:
           DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
-          PGBIN: ${{ matrix.os == 'ubuntu-latest' && '/usr/lib/postgresql/17/bin' || '/opt/homebrew/opt/postgresql@17/bin' }}
+          PGBIN: /opt/homebrew/opt/postgresql@17/bin
         run: |
           # Ensure PostgreSQL 17 binaries are used
           export PATH="${PGBIN}:$PATH"
