@@ -7,27 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Closes https://github.com/daniellionel01/parrot/issues/21:
+- Closes https://github.com/daniellionel01/parrot/issues/21<br />
   Throw error on unsupported sqlc query annotation syntaxes.
 
 ## [1.2.5] - 2025-07-25
 
-- Closes https://github.com/daniellionel01/parrot/issues/29
+- Closes https://github.com/daniellionel01/parrot/issues/29<br />
   Upgrades dependencies across project & integration tests
 
 ## [1.2.4] - 2025-07-16
 
-- Closes https://github.com/daniellionel01/parrot/issues/6
+- Closes https://github.com/daniellionel01/parrot/issues/6<br />
   Infer `tinyint(1)` to `Bool`
 
 ## [1.2.3] - 2025-07-16
 
-- Closes https://github.com/daniellionel01/parrot/issues/23
+- Closes https://github.com/daniellionel01/parrot/issues/23<br />
   We now check the hash integrity of the downloaded sqlc binary. Thank you [@hayleigh-dot-dev](https://github.com/hayleigh-dot-dev) for calling me out.
 
 ## [1.2.2] - 2025-07-16
 
-- Closes https://github.com/daniellionel01/parrot/issues/30
+- Closes https://github.com/daniellionel01/parrot/issues/30<br />
   The generated `sql.gleam` file is now formatted with the gleam formatter.
 
 ## [1.2.1] - 2025-07-08
