@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Closes https://github.com/daniellionel01/parrot/issues/21<br />
   Throw error on unsupported sqlc query annotation syntaxes.
 
+- Closes https://github.com/daniellionel01/parrot/issues/18<br />
+  Automatically check for new sqlc versions every 24h.
+
 ## [1.2.5] - 2025-07-25
 
 - Closes https://github.com/daniellionel01/parrot/issues/29<br />
-  Upgrades dependencies across project & integration tests
+  Upgrades dependencies across project & integration tests.
 
 ## [1.2.4] - 2025-07-16
 
