@@ -20,7 +20,7 @@ jobs:
 
       - name: Update sqlc_version in version.go
         run: |
-          old=$(grep -oP 'const sqlc_version = "\K[0-9.]+' version.go)
+          old=$(awk -F'"' '/const sqlc_version/ {print $2}' src/parrot/internal/sqlc.gleam)
           new="${{ steps.get_version.outputs.latest }}"
           if [ "$old" != "$new" ]; then
             sed -i "s/const sqlc_version = \".*\"/const sqlc_version = \"$new\"/" version.go
