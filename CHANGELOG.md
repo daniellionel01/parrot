@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Closes https://github.com/daniellionel01/parrot/issues/21:
+  Throw error on unsupported sqlc query annotation syntaxes.
+
 ## [1.2.5] - 2025-07-25
 
 - Closes https://github.com/daniellionel01/parrot/issues/29
