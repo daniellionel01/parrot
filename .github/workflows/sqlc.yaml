@@ -18,7 +18,7 @@ jobs:
           latest=$(curl -s https://api.github.com/repos/sqlc-dev/sqlc/releases/latest | jq -r .tag_name | sed 's/^v//')
           echo "latest=$latest" >> $GITHUB_OUTPUT
 
-      - name: Update sqlc_version in version.go
+      - name: Update sqlc_version in code
         run: |
           old=$(awk -F'"' '/const sqlc_version/ {print $2}' src/parrot/internal/sqlc.gleam)
           new="${{ steps.get_version.outputs.latest }}"
