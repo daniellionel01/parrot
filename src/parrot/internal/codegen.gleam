@@ -273,6 +273,16 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
   let def_exp = case query.cmd {
     sqlc.Exec | sqlc.ExecResult -> ""
     sqlc.Many | sqlc.One -> fn_name <> "_decoder()"
+    sqlc.ExecRows
+    | sqlc.ExecLastId
+    | sqlc.BatchExec
+    | sqlc.BatchMany
+    | sqlc.BatchOne
+    | sqlc.CopyFrom ->
+      panic as {
+        "parrot does not support this query annotation: "
+        <> sqlc.query_cmd_to_string(query.cmd)
+      }
   }
   let def_return = "#(sql, " <> def_return_params <> ", " <> def_exp <> ")"
 
