@@ -7,6 +7,7 @@ import gleam/bit_array
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/json
 import gleam/option.{type Option}
 import gleam/result
 import gleam/set
@@ -72,6 +73,26 @@ pub type QueryCmd {
   Exec
   ExecResult
   ExecRows
+  ExecLastId
+  BatchExec
+  BatchMany
+  BatchOne
+  CopyFrom
+}
+
+pub fn query_cmd_to_string(query_cmd: QueryCmd) -> String {
+  case query_cmd {
+    One -> "one"
+    Many -> "many"
+    Exec -> "exec"
+    ExecResult -> "exec_result"
+    ExecRows -> "exec_rows"
+    ExecLastId -> "exec_last_id"
+    BatchExec -> "batch_exec"
+    BatchMany -> "batch_many"
+    BatchOne -> "batch_one"
+    CopyFrom -> "copy_from"
+  }
 }
 
 pub type QueryParam {
@@ -197,6 +218,11 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
       ":exec" -> decode.success(ExecResult)
       ":execresult" -> decode.success(ExecResult)
       ":execrows" -> decode.success(ExecRows)
+      ":execlastid" -> decode.success(ExecLastId)
+      ":batchexec" -> decode.success(BatchExec)
+      ":batchmany" -> decode.success(BatchMany)
+      ":batchone" -> decode.success(BatchOne)
+      ":copyfrom" -> decode.success(CopyFrom)
       _ -> decode.failure(One, "QueryCmd")
     }
   }

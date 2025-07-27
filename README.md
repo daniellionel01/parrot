@@ -179,6 +179,9 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
 
+- Certain query annotations are not supported and will panic the process: `:execrows`, `:execlastid`, `:batchexec`, `:batchone`, `:batchmany`, `:copyfrom`
+  You can read more about it here: https://docs.sqlc.dev/en/stable/reference/query-annotations.html
+
 ## Future Work
 
 Ideas and actionable tasks are collected and organised here: https://github.com/daniellionel01/parrot/issues
