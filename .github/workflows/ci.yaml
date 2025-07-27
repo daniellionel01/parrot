@@ -4,6 +4,9 @@ on:
     branches:
       - main
   pull_request:
+    paths-ignore:
+      - "CHANGELOG.md"
+      - "README.md"
   workflow_call:
 
 jobs:
@@ -108,7 +111,7 @@ jobs:
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
-          
+
           # Install PostgreSQL 16 client tools
           sudo apt-get install -y postgresql-16 postgresql-client-16
       - name: Run PostgreSQL Integration Tests
@@ -119,10 +122,10 @@ jobs:
         run: |
           # Ensure PostgreSQL 16 binaries are used
           export PATH="${PGBIN}:$PATH"
-          
+
           # Verify correct pg_dump version
           ${PGBIN}/pg_dump --version
-          
+
           rm -f src/app/sql.gleam
           ./priv/reset.sh
           gleam run -m parrot
@@ -159,7 +162,7 @@ jobs:
           sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
           sudo apt-get update
-          
+
           # Install PostgreSQL 17 client tools
           sudo apt-get install -y postgresql-17 postgresql-client-17
       - name: Run PostgreSQL Integration Tests
@@ -170,10 +173,10 @@ jobs:
         run: |
           # Ensure PostgreSQL 17 binaries are used
           export PATH="${PGBIN}:$PATH"
-          
+
           # Verify correct pg_dump version
           ${PGBIN}/pg_dump --version
-          
+
           rm -f src/app/sql.gleam
           ./priv/reset.sh
           gleam run -m parrot
