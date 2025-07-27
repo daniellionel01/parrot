@@ -22,22 +22,21 @@ jobs:
           latest=$(curl -s https://api.github.com/repos/sqlc-dev/sqlc/releases/latest | jq -r .tag_name | sed 's/^v//')
           echo "latest=$latest" >> $GITHUB_OUTPUT
 
-      - name: Update sqlc_version in code
+      - name: Get current sqlc_version
+        id: get_old_version
         run: |
           old=$(awk -F'"' '/const sqlc_version/ {print $2}' src/parrot/internal/sqlc.gleam)
+          echo "old=$old" >> $GITHUB_OUTPUT
+
+      - name: Update sqlc_version in src/parrot/internal/sqlc.gleam
+        if: ${{ steps.get_version.outputs.latest != steps.get_old_version.outputs.old }}
+        run: |
           new="${{ steps.get_version.outputs.latest }}"
-          if [ "$old" != "$new" ]; then
-            sed -i "s/const sqlc_version = \".*\"/const sqlc_version = \"$new\"/" src/parrot/internal/sqlc.gleam
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git checkout -b update-sqlc-version-$new
-            git add src/parrot/internal/sqlc.gleam
-            git commit -m "chore: update sqlc_version to $new"
-            git push origin update-sqlc-version-$new
-          fi
+          sed -i.bak -E "s/(const sqlc_version = \")[0-9.]+\"/\1$new\"/" src/parrot/internal/sqlc.gleam
+          rm src/parrot/internal/sqlc.gleam.bak
 
       - name: Create Pull Request
-        if: ${{ steps.get_version.outputs.latest != '' }}
+        if: ${{ steps.get_version.outputs.latest != steps.get_old_version.outputs.old }}
         uses: peter-evans/create-pull-request@v6
         with:
           commit-message: "chore: update sqlc_version to ${{ steps.get_version.outputs.latest }}"
