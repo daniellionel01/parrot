@@ -10,9 +10,6 @@ INSERT INTO
 VALUES
   (?);
 
--- name: DeleteUsers :execrows
-DELETE FROM users;
-
 -- name: UpdateUserUsername :exec
 UPDATE users
 SET
