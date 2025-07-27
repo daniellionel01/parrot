@@ -71,6 +71,7 @@ pub type QueryCmd {
   Many
   Exec
   ExecResult
+  ExecRows
 }
 
 pub type QueryParam {
@@ -195,6 +196,7 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
       ":many" -> decode.success(Many)
       ":exec" -> decode.success(ExecResult)
       ":execresult" -> decode.success(ExecResult)
+      ":execrows" -> decode.success(ExecRows)
       _ -> decode.failure(One, "QueryCmd")
     }
   }
