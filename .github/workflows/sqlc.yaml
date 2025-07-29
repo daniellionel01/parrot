@@ -19,21 +19,43 @@ jobs:
       - name: Get latest sqlc version
         id: get_version
         run: |
-          latest=$(curl -s https://api.github.com/repos/sqlc-dev/sqlc/releases/latest | jq -r .tag_name | sed 's/^v//')
+          response=$(curl -s https://api.github.com/repos/sqlc-dev/sqlc/releases/latest)
+          tag=$(echo "$response" | jq -r .tag_name)
+          if [[ -z "$tag" || "$tag" == "null" ]]; then
+            echo "Error: Failed to get valid tag name from GitHub API"
+            echo "$response" | jq .
+            exit 1
+          fi
+          latest=$(echo "$tag" | sed 's/^v//')
           echo "latest=$latest" >> $GITHUB_OUTPUT
 
       - name: Get current sqlc_version
         id: get_old_version
         run: |
-          old=$(awk -F'"' '/const sqlc_version/ {print $2}' src/parrot/internal/sqlc.gleam)
+          old=$(grep "const sqlc_version" src/parrot/internal/sqlc.gleam | awk -F'"' '{print $2}')
+          if [[ -z "$old" ]]; then
+            echo "Error: Failed to extract current sqlc_version from src/parrot/internal/sqlc.gleam"
+            exit 1
+          fi
           echo "old=$old" >> $GITHUB_OUTPUT
 
       - name: Update sqlc_version in src/parrot/internal/sqlc.gleam
         if: ${{ steps.get_version.outputs.latest != steps.get_old_version.outputs.old }}
         run: |
           new="${{ steps.get_version.outputs.latest }}"
-          sed -i.bak -E "s/(const sqlc_version = \")[0-9.]+\"/\1$new\"/" src/parrot/internal/sqlc.gleam
+          if [[ -z "$new" || "$new" == "null" ]]; then
+            echo "Error: New version is empty or null"
+            exit 1
+          fi
+          sed -i.bak -E "s/(const sqlc_version = \")[^\"]+\"/\1$new\"/" src/parrot/internal/sqlc.gleam
           rm src/parrot/internal/sqlc.gleam.bak
+          # Verify the update was successful
+          updated_version=$(grep "const sqlc_version" src/parrot/internal/sqlc.gleam | awk -F'"' '{print $2}')
+          if [[ "$updated_version" != "$new" ]]; then
+            echo "Error: Failed to update sqlc_version in the file"
+            echo "Expected: $new, Found: $updated_version"
+            exit 1
+          fi
 
       - name: Create Pull Request
         if: ${{ steps.get_version.outputs.latest != steps.get_old_version.outputs.old }}
