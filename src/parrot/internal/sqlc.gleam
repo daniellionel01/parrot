@@ -7,7 +7,6 @@ import gleam/bit_array
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
-import gleam/json
 import gleam/option.{type Option}
 import gleam/result
 import gleam/set
