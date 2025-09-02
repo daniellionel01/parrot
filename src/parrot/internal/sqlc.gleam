@@ -396,7 +396,7 @@ pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
       case v == sqlc_version {
         True -> Ok(Nil)
         False ->
-          Error(errors.SqlcDownloadError(
+          Error(errors.SqlcVersionError(
             "Could not match sqlc version. Wanted "
             <> sqlc_version
             <> ". Received "
@@ -414,8 +414,21 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
 
   use #(download, hash) <- result.try(get_download_path_and_hash())
 
-  let binary_exists = binary_exists(path)
-  use <- given.that(binary_exists, return: fn() {
+  // delete current version if version does not match
+  let _ = case binary_exists(path) {
+    True -> Ok(Nil)
+    False -> {
+      case verify_binary() {
+        Error(errors.SqlcVersionError(_)) -> {
+          let assert Ok(_) = simplifile.delete(path)
+        }
+        _ -> Ok(Nil)
+      }
+    }
+  }
+
+  let exists = binary_exists(path)
+  use <- given.that(exists, return: fn() {
     use bin <- result.try(
       simplifile.read_bits(path)
       |> result.map_error(fn(_) { errors.SqlcDownloadError("could not verify") }),
