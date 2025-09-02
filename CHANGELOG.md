@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.7] - 2025-09-02
+
+- Bump sqlc to v1.30.0
+
 ## [1.2.6] - 2025-07-27
 
 - Closes https://github.com/daniellionel01/parrot/issues/21<br />
