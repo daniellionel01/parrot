@@ -4,6 +4,7 @@ import given
 import gleam/dict
 import gleam/io
 import gleam/list
+import gleam/regexp
 import gleam/result
 import gleam/string
 import parrot/internal/cli
@@ -114,6 +115,9 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     }
     cli.PostgreSQL -> {
       use schema <- result.try(db.fetch_schema_postgresql(db))
+      let assert Ok(re) =
+        regexp.from_string("(?m)^\\\\restrict.*\n|^\\\\unrestrict.*\n")
+      let schema = regexp.replace(re, schema, "")
       Ok(schema)
     }
     cli.SQlite -> {

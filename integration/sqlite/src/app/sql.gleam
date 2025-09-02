@@ -32,11 +32,6 @@ VALUES
   #(sql, [dev.ParamString(username)])
 }
 
-pub fn delete_users() {
-  let sql = "DELETE FROM users"
-  #(sql, [])
-}
-
 pub fn update_user_username(username username: String, id id: Int) {
   let sql =
     "UPDATE users
