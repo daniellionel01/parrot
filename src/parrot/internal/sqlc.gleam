@@ -320,31 +320,31 @@ fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError)
     "darwin", "arm64" | "darwin", "aarch64" ->
       Ok(#(
         "_darwin_arm64.tar.gz",
-        "A63ED937BA43530B739BE40EF52F81C146A251460F0E4170474426F0A7248424",
+        "d8e6153c9a6c74fa178abc4465c13ac008c06d64f50720c4b7c7203f98c8cfc6",
       ))
 
     "darwin", "amd64" | "darwin", "x86_64" | "darwin", "x64" ->
       Ok(#(
         "_darwin_amd64.tar.gz",
-        "B6F6FDBB390A3E40CB080CFB54F3C1308BAD56C32C3033DB7CF4CCD3A02CFDDB",
+        "7473103d9148b218a57e15a53b562c285c916fdedd85f6053ce9feaa714dcfd5",
       ))
 
     "linux", "arm64" | "linux", "aarch64" ->
       Ok(#(
         "_linux_arm64.tar.gz",
-        "F386B669B63BF8FA6227AB61CDA000C8D25A2F5A4C997ECF7D7B89EA5385FE45",
+        "845fb31828129f3ecd3442f24e3ac0e8b1188660bf6807b8c652bd7acece0af7",
       ))
 
     "linux", "amd64" | "linux", "x86_64" | "linux", "x64" ->
       Ok(#(
         "_linux_amd64.tar.gz",
-        "005C9409272F98DF050C3A0687E8A80001E59E1F7ABF638E3BC32E880774F8AE",
+        "e47db21025595d7e77b1260b2f97b6793401a4cba047d42e635c347e8443b5f4",
       ))
 
     "win32", "amd64" | "win32", "x86_64" | "win32", "x64" ->
       Ok(#(
         "_windows_amd64.tar.gz",
-        "0B203324BA2995E60187943B344D2383DDA7C0A010C0CBD3C7C3DFC47B71A2D4",
+        "3fd5852bb05bd77d2bf4184984784844b55c1aa1f64ed69099d5fc528a10307e",
       ))
 
     _, _ -> Error(Nil)
@@ -362,7 +362,7 @@ fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError)
 fn check_sqlc_integrity(bin: BitArray, expected_hash: String) {
   let hash = crypto.hash(crypto.Sha256, bin)
   let hash_string = bit_array.base16_encode(hash)
-  case hash_string == expected_hash {
+  case string.lowercase(hash_string) == string.lowercase(expected_hash) {
     True -> Nil
     False -> panic as "sqlc binary hash did not match expected hash!"
   }
