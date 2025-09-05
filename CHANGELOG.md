@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.9] - 2025-09-05
+
+- Bug fix: parameter list types generate invalid gleam code (https://github.com/daniellionel01/parrot/pull/45)
+  Thank you Mike! (https://github.com/mbuhot)
+
 ## [1.2.8] - 2025-09-02
 
 - Handle case where cached sqlc version is outdated
