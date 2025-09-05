@@ -254,7 +254,6 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
       <> args
       |> list.map(fn(arg) {
         let arg_type = sqlc_col_to_gleam(arg.column, context)
-        let param = gleam_type_to_param(arg_type)
         let value = case arg_type {
           GleamEnum(name) -> {
             let name = string_case.snake_case(name)
@@ -262,7 +261,16 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
           }
           _ -> arg.column.name
         }
-        param <> "(" <> value <> ")"
+        case arg_type {
+          GleamList(sub_type) -> {
+            let sub_param = gleam_type_to_param(sub_type)
+            "dev.ParamList(list.map(" <> value <> ", " <> sub_param <> "))"
+          }
+          _ -> {
+            let param = gleam_type_to_param(arg_type)
+            param <> "(" <> value <> ")"
+          }
+        }
       })
       |> string.join(", ")
       <> "]"
@@ -379,13 +387,36 @@ pub fn gen_gleam_module(context: SQLC) {
             _ -> False
           }
         })
-
       bool.or(col_ts, param_ts)
+    })
+
+  let uses_list =
+    list.any(context.queries, fn(query) {
+      let col_list =
+        list.any(query.columns, fn(col) {
+          case sqlc_col_to_gleam(col, context) {
+            GleamList(_) -> True
+            _ -> False
+          }
+        })
+      let param_list =
+        list.any(query.params, fn(param) {
+          case sqlc_col_to_gleam(param.column, context) {
+            GleamList(_) -> True
+            _ -> False
+          }
+        })
+      bool.or(col_list, param_list)
     })
 
   let timestamp_import = case uses_timestamp {
     False -> ""
     True -> "import gleam/time/timestamp.{type Timestamp}\n"
+  }
+
+  let list_import = case uses_list {
+    False -> ""
+    True -> "import gleam/list\n"
   }
 
   let imports =
@@ -394,6 +425,7 @@ pub fn gen_gleam_module(context: SQLC) {
     <> "import gleam/option.{type Option}"
     <> "\n"
     <> timestamp_import
+    <> list_import
     <> "import parrot/dev"
 
   let enums =

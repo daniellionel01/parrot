@@ -2,6 +2,7 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/list
 import gleam/option.{type Option}
 import gleam/time/timestamp.{type Timestamp}
 import parrot/dev
@@ -212,4 +213,28 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
     role:,
     document:,
   ))
+}
+
+pub type SearchUsersByUsernamePattern {
+  SearchUsersByUsernamePattern(id: Int, username: String)
+}
+
+pub fn search_users_by_username_pattern(patterns patterns: List(String)) {
+  let sql =
+    "SELECT id, username
+FROM users
+WHERE username LIKE ANY($1::text[])"
+  #(
+    sql,
+    [dev.ParamList(list.map(patterns, dev.ParamString))],
+    search_users_by_username_pattern_decoder(),
+  )
+}
+
+pub fn search_users_by_username_pattern_decoder() -> decode.Decoder(
+  SearchUsersByUsernamePattern,
+) {
+  use id <- decode.field(0, decode.int)
+  use username <- decode.field(1, decode.string)
+  decode.success(SearchUsersByUsernamePattern(id:, username:))
 }
