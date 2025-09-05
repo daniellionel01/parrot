@@ -49,3 +49,8 @@ WHERE
   username = $1
 LIMIT
   1;
+
+-- name: SearchUsersByUsernamePattern :many
+SELECT id, username
+FROM users
+WHERE username LIKE ANY(sqlc.arg(patterns)::text[]);
