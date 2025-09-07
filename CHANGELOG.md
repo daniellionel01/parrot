@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.10] - 2025-09-07
+
+- Improvement: remove need for custom json plugin with built-in json-output from sqlc (https://github.com/daniellionel01/parrot/pull/46)<br />
+  Thank you Mike! (https://github.com/mbuhot)
+
 ## [1.2.9] - 2025-09-05
 
 - Bug fix: parameter list types generate invalid gleam code (https://github.com/daniellionel01/parrot/pull/45)<br />
