@@ -40,13 +40,6 @@ data types this can avoid confusion and bugs.
 $ gleam add parrot
 ```
 
-### If you target JavaScript
-
-So here is the catch: you can only execute parrot in an erlang gleam application.
-However the generated code will also run in a javascript environment.
-So if you need parrot for a javascript project, you can create a separate package and
-copy over the generated module and that will work.
-
 ### Define your Queries
 - Parrot will look for all *.sql files in any sql directory under your project's src directory.
 - Each *.sql file can contain as many SQL queries as you want.
@@ -85,16 +78,15 @@ $ gleam run -m parrot -- --sqlite <file_path>
 $ gleam run -m parrot help
 ```
 
-If you use MySQL, you also need [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes by default if you have a mysql client installed)
+If you use MySQL, you also need to have installed [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes by default if you have a mysql client installed)
 
-If you use PostgreSQL, you also need [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes by default if you have a postgresql client installed)
+If you use PostgreSQL, you also need to have installed [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes by default if you have a postgresql client installed)
 
 ### Run it!
 
-You now have type safe access to your sql queries. You might have to write 1-2 wrapper functions for the database client library
-of your choice.
+You now have type safe access to your sql queries.
 
-If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
+You might want to write wrapper functions for the database client library of your choice. If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
 You can find functions to copy & paste into your codebase here: [wrappers](./docs/wrappers.md)
 
 An example with [lpil/sqlight](https://github.com/lpil/sqlight):
@@ -166,6 +158,14 @@ There are a couple of complex data types that are explictly made `dynamic`
 since they are too complex to handle with the current implementation.
 There is a plan for a better and more flexible implementation. Until then,
 it will be wrapped in a dynamic type.
+
+
+### Targetting JavaScript
+
+So here is the catch: you can only execute parrot in an erlang gleam application.
+However the generated code will also run in a javascript environment.
+So if you need parrot for a javascript project, you can create a separate package and
+copy over the generated module and that will work.
 
 ## FAQ
 
