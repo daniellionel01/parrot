@@ -21,7 +21,7 @@
 
 *Most of the heavy lifting features are provided by / built into sqlc, so I do not aim to take credit for them.*
 
-✅ Supports Sqlite, PostgreSQL and MySQL.<br />
+✅ Supports SQlite, PostgreSQL and MySQL.<br />
 ✅ Named parameters.<sup>*1</sup> <br />
 ✅ Multiple queries per file.<br />
 ✅ Database client agnostic.<br />
@@ -55,7 +55,7 @@ copy over the generated module and that will work.
 Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
 - [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html#schema-and-queries)
 - [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html#schema-and-queries)
-- [Getting started with Sqlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html#schema-and-queries)
+- [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html#schema-and-queries)
 
 Here is an example of the file structure:
 ```sh
@@ -122,7 +122,7 @@ pub fn main() {
 If you want to see how this library works in action, take a look at the integration tests:
 - PostgreSQL: [./integration/psql](./integration/psql)
 - MySQL: [./integration/mysql](./integration/mysql)
-- Sqlite: [./integration/sqlite](./integration/sqlite)
+- SQlite: [./integration/sqlite](./integration/sqlite)
 
 ## Development
 
@@ -171,7 +171,7 @@ it will be wrapped in a dynamic type.
 
 ### What flavour of SQL does parrot support?
 This library supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
-would be MySQL, PostgreSQL and Sqlite.
+would be MySQL, PostgreSQL and SQlite.
 
 You can read more on language & SQL support here:
 https://docs.sqlc.dev/en/stable/reference/language-support.html
