@@ -29,9 +29,7 @@
 ✅ Automatically pulls schema of your database.<br />
 ✅ Automatically downloads [sqlc](https://sqlc.dev/) binary.
 
-<sup>*1</sup>: meaning that it infers the names of the parameters from your sql queries in the gleam function you
-call. f.e. `WHERE username = $1` can yield `sql.get_user(username:)`. if you have multiple parameters of the same
-data types this can avoid confusion and bugs.
+<sup>*1</sup>: Meaning that it infers the names of the parameters from your sql queries in the gleam function you call. for example for a query called `FindUser`, defined as `SELECT * FROM user WHERE username = $1`, parrot will produce a function where the arguments match those column names: `pub fn find_user(username: String) { ... }`. If you have multiple parameters of the same data types this can avoid confusion and bugs.
 
 ## Usage / Getting Started
 
