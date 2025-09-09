@@ -5,9 +5,9 @@
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
 ## Table of Contents
-- [🦜 Parrot / type-safe SQL in gleam](#---parrot---type-safe-sql-in-gleam)
+- [🦜 Parrot / type-safe SQL in gleam](#)
   * [Features](#features)
-  * [Usage / Getting Started](#usage---getting-started)
+  * [Usage / Getting Started](#usage--getting-started)
   * [Examples](#examples)
   * [Development](#development)
   * [Quirks](#quirks)
