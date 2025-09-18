@@ -1,4 +1,3 @@
-import gleam/dynamic/decode
 import gleam/int
 import gleam/list
 import gleam/option
@@ -7,7 +6,6 @@ import gleam/string
 import gleam/uri
 import parrot/internal/errors
 import parrot/internal/shellout
-import sqlight
 
 pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
   let assert Ok(conn) = uri.parse(db)
@@ -73,43 +71,21 @@ pub fn fetch_schema_postgresql(db: String) -> Result(String, errors.ParrotError)
   |> result.replace_error(errors.PgdumpError)
 }
 
-pub fn fetch_schema_sqlite(
-  db: String,
-) -> Result(List(String), errors.ParrotError) {
+pub fn fetch_schema_sqlite(db: String) -> Result(String, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db
     db -> db
   }
 
-  use conn <- sqlight.with_connection(db)
-
-  let schema_decoder = {
-    use sql <- decode.field(0, decode.string)
-    decode.success(sql)
-  }
-
-  let sql =
-    "
-SELECT sql
-  FROM sqlite_master
-  WHERE type IN ('table', 'view', 'index', 'trigger')
-    AND name NOT LIKE 'sqlite_%'
-    AND sql IS NOT NULL
-  ORDER BY
-      CASE type
-          WHEN 'table' THEN 1
-          WHEN 'view' THEN 2
-          WHEN 'index' THEN 3
-          WHEN 'trigger' THEN 4
-          ELSE 5
-      END,
-      name;
-  "
-
-  use result <- result.try(
-    sqlight.query(sql, on: conn, with: [], expecting: schema_decoder)
-    |> result.replace_error(errors.SqliteDBNotFound("")),
+  shellout.command(
+    run: "sqlite3",
+    with: [
+      db,
+      ".schema",
+    ],
+    in: ".",
+    opt: [],
   )
-  Ok(result)
+  |> result.replace_error(errors.SqliteDBNotFound(""))
 }
