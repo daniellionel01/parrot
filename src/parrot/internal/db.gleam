@@ -10,12 +10,6 @@ import parrot/internal/shellout
 import sqlight
 
 pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
-  let db = case db {
-    "sqlite://" <> db -> db
-    "sqlite:" <> db -> db
-    db -> db
-  }
-
   let assert Ok(conn) = uri.parse(db)
 
   let creds = case conn.userinfo {
@@ -82,6 +76,12 @@ pub fn fetch_schema_postgresql(db: String) -> Result(String, errors.ParrotError)
 pub fn fetch_schema_sqlite(
   db: String,
 ) -> Result(List(String), errors.ParrotError) {
+  let db = case db {
+    "sqlite://" <> db -> db
+    "sqlite:" <> db -> db
+    db -> db
+  }
+
   use conn <- sqlight.with_connection(db)
 
   let schema_decoder = {
