@@ -58,6 +58,12 @@ pub fn main() {
 }
 
 fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
+  let db = case db {
+    "sqlite://" <> db -> db
+    "sqlite:" <> db -> db
+    db -> db
+  }
+
   let files = lib.walk(project.src())
   let queries =
     files

@@ -76,12 +76,6 @@ pub fn fetch_schema_postgresql(db: String) -> Result(String, errors.ParrotError)
 pub fn fetch_schema_sqlite(
   db: String,
 ) -> Result(List(String), errors.ParrotError) {
-  let db = case db {
-    "sqlite://" <> db -> db
-    "sqlite:" <> db -> db
-    db -> db
-  }
-
   use conn <- sqlight.with_connection(db)
 
   let schema_decoder = {

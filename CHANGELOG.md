@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.12] - 2025-09-18
+
+- Bug Fix: `sqlite:` was not used consistently during codegen.
+
 ## [1.2.11] - 2025-09-18
 
 - Improvement: support `sqlite:` prefix for `DATABASE_URL`.
