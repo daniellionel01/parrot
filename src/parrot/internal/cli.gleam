@@ -67,7 +67,7 @@ pub fn engine_from_env(str: String) {
   case str {
     "postgres" <> _ -> Ok(PostgreSQL)
     "mysql" <> _ -> Ok(MySQL)
-    "file" <> _ -> Ok(SQlite)
+    "file" | "sqlite" <> _ -> Ok(SQlite)
     _ -> {
       Error(errors.UnknownEngine(str))
     }

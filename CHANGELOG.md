@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.11] - 2025-09-18
+
+- Improvement: support `slite:` prefix for `DATABASE_URL`.
+
 ## [1.2.10] - 2025-09-07
 
 - Improvement: remove need for custom json plugin with built-in json-output from sqlc (https://github.com/daniellionel01/parrot/pull/46)<br />
