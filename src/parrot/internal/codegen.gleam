@@ -237,10 +237,10 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
       case name {
         "" ->
           panic as {
-            "Parameter name for "
-            <> fn_name
-            <> " is empty! Please use a named parameter instead (f.e. \"sqlc.arg(name)\" or \"@arg\")"
-          }
+              "Parameter name for "
+              <> fn_name
+              <> " is empty! Please use a named parameter instead (f.e. \"sqlc.arg(name)\" or \"@arg\")"
+            }
         _ -> Nil
       }
       name <> " " <> name <> ": " <> gleam_type_to_string(gleam_type)
@@ -288,9 +288,9 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
     | sqlc.BatchOne
     | sqlc.CopyFrom ->
       panic as {
-        "parrot does not support this query annotation: "
-        <> sqlc.query_cmd_to_string(query.cmd)
-      }
+          "parrot does not support this query annotation: "
+          <> sqlc.query_cmd_to_string(query.cmd)
+        }
   }
   let def_return = "#(sql, " <> def_return_params <> ", " <> def_exp <> ")"
 
