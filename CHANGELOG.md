@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.11] - 2025-09-18
 
-- Improvement: support `slite:` prefix for `DATABASE_URL`.
+- Improvement: support `sqlite:` prefix for `DATABASE_URL`.
 
 ## [1.2.10] - 2025-09-07
 
