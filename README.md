@@ -76,6 +76,8 @@ $ gleam run -m parrot -- --sqlite <file_path>
 $ gleam run -m parrot help
 ```
 
+Id you use SQLite, you also need to have installed [sqlite3](https://sqlite.org/index.html)
+
 If you use MySQL, you also need to have installed [mysqldump](https://dev.mysql.com/doc/refman/9.0/en/mysqldump.html) (comes by default if you have a mysql client installed)
 
 If you use PostgreSQL, you also need to have installed [pg_dump](https://www.postgresql.org/docs/current/app-pgdump.html) (comes by default if you have a postgresql client installed)
