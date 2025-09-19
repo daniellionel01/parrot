@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Remove sqlight dependency in favor of local `sqlite3` binary.<br />
+  Thank you Ross! (https://github.com/ross-byrne/)
+
 ## [1.2.12] - 2025-09-18
 
 - Bug Fix: `sqlite:` was not used consistently during codegen.
