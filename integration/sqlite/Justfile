@@ -3,6 +3,9 @@ SQLITE_FILE := "file.db"
 run:
   gleam run
 
+parrot:
+  gleam run -m parrot -- --sqlite {{SQLITE_FILE}}
+
 test:
   #!/bin/bash
   rm -f src/app/sql.gleam

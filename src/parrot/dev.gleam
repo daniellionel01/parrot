@@ -1,5 +1,6 @@
 import gleam/dynamic/decode
 import gleam/float
+import gleam/option
 import gleam/time/calendar.{type Date, type TimeOfDay, Date}
 import gleam/time/timestamp.{type Timestamp}
 
@@ -12,6 +13,7 @@ pub type Param {
   ParamTimestamp(Timestamp)
   ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
+  ParamNullable(option.Option(Param))
 }
 
 pub fn bool_decoder() {
