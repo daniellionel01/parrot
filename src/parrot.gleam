@@ -128,11 +128,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     }
     cli.SQlite -> {
       use schema <- result.try(db.fetch_schema_sqlite(db))
-      let sql =
-        schema
-        |> list.map(string.trim)
-        |> list.map(fn(sql) { sql <> ";" })
-        |> string.join("\n")
+      let sql = string.trim(schema)
       Ok(sql)
     }
   })
