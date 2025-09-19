@@ -46,6 +46,7 @@ fn parrot_to_pog(param: dev.Param) -> pog.Value {
     dev.ParamString(x) -> pog.text(x)
     dev.ParamBitArray(x) -> pog.bytea(x)
     dev.ParamList(x) -> pog.array(parrot_to_pog, x)
+    dev.ParamNullable(x) -> pog.nullable(parrot_to_pog, x)
     dev.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"
     dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"

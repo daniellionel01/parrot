@@ -32,6 +32,21 @@ VALUES
   #(sql, [dev.ParamString(username)])
 }
 
+pub fn create_user_with_role(
+  username username: String,
+  role role: Option(String),
+) {
+  let sql =
+    "INSERT INTO
+  users (username, role)
+VALUES
+  (?, ?)"
+  #(sql, [
+    dev.ParamString(username),
+    dev.ParamNullable(option.map(role, fn(v) { dev.ParamString(v) })),
+  ])
+}
+
 pub fn update_user_username(username username: String, id id: Int) {
   let sql =
     "UPDATE users
@@ -49,6 +64,7 @@ pub type GetUserByUsername {
     created_at: Option(String),
     balance: Float,
     last_known_location: Option(Float),
+    role: Option(String),
     avatar: Option(BitArray),
   )
 }
@@ -56,7 +72,7 @@ pub type GetUserByUsername {
 pub fn get_user_by_username(username username: String) {
   let sql =
     "SELECT
-  id, username, created_at, balance, last_known_location, avatar
+  id, username, created_at, balance, last_known_location, role, avatar
 FROM
   users
 WHERE
@@ -72,13 +88,15 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use created_at <- decode.field(2, decode.optional(decode.string))
   use balance <- decode.field(3, decode.float)
   use last_known_location <- decode.field(4, decode.optional(decode.float))
-  use avatar <- decode.field(5, decode.optional(decode.bit_array))
+  use role <- decode.field(5, decode.optional(decode.string))
+  use avatar <- decode.field(6, decode.optional(decode.bit_array))
   decode.success(GetUserByUsername(
     id:,
     username:,
     created_at:,
     balance:,
     last_known_location:,
+    role:,
     avatar:,
   ))
 }

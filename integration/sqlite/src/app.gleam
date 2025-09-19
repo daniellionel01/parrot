@@ -27,6 +27,7 @@ pub fn main() {
       option.Some(_),
       0.0,
       option.None,
+      option.None,
       option.Some(<<31, 128>>),
     ),
   ]) = sqlight.query(sql, on:, with:, expecting:)
@@ -39,6 +40,7 @@ fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
     dev.ParamInt(x) -> sqlight.int(x)
     dev.ParamString(x) -> sqlight.text(x)
     dev.ParamBitArray(x) -> sqlight.blob(x)
+    dev.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
     dev.ParamList(_) -> panic as "sqlite does not implement lists"
     dev.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
     dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
