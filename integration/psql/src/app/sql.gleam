@@ -215,6 +215,58 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   ))
 }
 
+pub type GetUserByLowerUsername {
+  GetUserByLowerUsername(
+    id: Int,
+    username: String,
+    created_at: Option(Timestamp),
+    profile: Option(String),
+    extra_info: Option(String),
+    favorite_numbers: Option(List(Int)),
+    role: Option(UserRole),
+    document: Option(BitArray),
+  )
+}
+
+pub fn get_user_by_lower_username(lower lower: String) {
+  let sql =
+    "SELECT
+  id, username, created_at, profile, extra_info, favorite_numbers, role, document
+FROM
+  users
+WHERE
+  username = lower($1)
+LIMIT
+  1"
+  #(sql, [dev.ParamString(lower)], get_user_by_lower_username_decoder())
+}
+
+pub fn get_user_by_lower_username_decoder() -> decode.Decoder(
+  GetUserByLowerUsername,
+) {
+  use id <- decode.field(0, decode.int)
+  use username <- decode.field(1, decode.string)
+  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use profile <- decode.field(3, decode.optional(decode.string))
+  use extra_info <- decode.field(4, decode.optional(decode.string))
+  use favorite_numbers <- decode.field(
+    5,
+    decode.optional(decode.list(of: decode.int)),
+  )
+  use role <- decode.field(6, decode.optional(user_role_decoder()))
+  use document <- decode.field(7, decode.optional(decode.bit_array))
+  decode.success(GetUserByLowerUsername(
+    id:,
+    username:,
+    created_at:,
+    profile:,
+    extra_info:,
+    favorite_numbers:,
+    role:,
+    document:,
+  ))
+}
+
 pub type SearchUsersByUsernamePattern {
   SearchUsersByUsernamePattern(id: Int, username: String)
 }

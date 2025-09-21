@@ -50,6 +50,16 @@ WHERE
 LIMIT
   1;
 
+-- name: GetUserByLowerUsername :one
+SELECT
+  *
+FROM
+  users
+WHERE
+  username = lower($1)
+LIMIT
+  1;
+
 -- name: SearchUsersByUsernamePattern :many
 SELECT id, username
 FROM users
