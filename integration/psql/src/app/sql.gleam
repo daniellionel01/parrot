@@ -31,6 +31,20 @@ pub fn user_role_to_string(val: UserRole) {
   }
 }
 
+pub type Simple {
+  Simple(col_0: Int)
+}
+
+pub fn simple() {
+  let sql = "select 1"
+  #(sql, [], simple_decoder())
+}
+
+pub fn simple_decoder() -> decode.Decoder(Simple) {
+  use col_0 <- decode.field(0, decode.int)
+  decode.success(Simple(col_0:))
+}
+
 pub fn create_user_with_role(
   username username: String,
   role role: Option(UserRole),

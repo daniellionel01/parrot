@@ -1,3 +1,6 @@
+-- name: Simple :one
+select 1;
+
 -- name: CountUsers :many
 SELECT
   count(*)

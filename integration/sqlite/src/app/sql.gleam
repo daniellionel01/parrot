@@ -5,6 +5,20 @@ import gleam/dynamic/decode
 import gleam/option.{type Option}
 import parrot/dev
 
+pub type Simple {
+  Simple(col_0: Int)
+}
+
+pub fn simple() {
+  let sql = "select 1"
+  #(sql, [], simple_decoder())
+}
+
+pub fn simple_decoder() -> decode.Decoder(Simple) {
+  use col_0 <- decode.field(0, decode.int)
+  decode.success(Simple(col_0:))
+}
+
 pub type CountUsers {
   CountUsers(count: Int)
 }
