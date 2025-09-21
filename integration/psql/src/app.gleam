@@ -31,7 +31,6 @@ pub fn main() {
       ),
     ],
   )) = query(db.data, sql, params, expecting)
-  // echo query(db.data, sql, params, decode.dynamic)
 
   process.send_exit(db.pid)
 

@@ -31,6 +31,23 @@ pub fn user_role_to_string(val: UserRole) {
   }
 }
 
+pub fn create_user_with_role(
+  username username: String,
+  role role: Option(UserRole),
+) {
+  let sql =
+    "INSERT INTO
+  users (username, role)
+VALUES
+  ($1, $2)"
+  #(sql, [
+    dev.ParamString(username),
+    dev.ParamNullable(
+      option.map(role, fn(v) { dev.ParamString(user_role_to_string(v)) }),
+    ),
+  ])
+}
+
 pub type GetUser {
   GetUser(
     id: Int,

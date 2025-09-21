@@ -1,3 +1,9 @@
+-- name: CreateUserWithRole :exec
+INSERT INTO
+  users (username, role)
+VALUES
+  ($1, $2);
+
 -- name: GetUser :one
 SELECT
   *

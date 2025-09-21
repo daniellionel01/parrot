@@ -96,6 +96,7 @@ fn normalise_col_type(col: sqlc.TableColumn) {
   let type_ = col.type_ref.name
   case type_ {
     "pg_catalog." <> x -> x
+    "public." <> x -> x
     x -> x
   }
 }
@@ -133,6 +134,7 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
   let enum =
     schema.enums
     |> list.find(fn(e) { e.name == sqltype })
+
   use <- given.that(result.is_ok(enum), return: fn() {
     let assert Ok(enum) = enum
     GleamEnum(enum.name)
