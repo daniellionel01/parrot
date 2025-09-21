@@ -4,5 +4,6 @@ CREATE TABLE users (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   balance REAL NOT NULL DEFAULT 0.0,
   last_known_location DECIMAL(9, 6),
+  role TEXT,
   avatar BLOB
 );

@@ -10,6 +10,12 @@ INSERT INTO
 VALUES
   (?);
 
+-- name: CreateUserWithRole :exec
+INSERT INTO
+  users (username, role)
+VALUES
+  (?, ?);
+
 -- name: UpdateUserUsername :exec
 UPDATE users
 SET

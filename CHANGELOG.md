@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Remove sqlight dependency in favor of local `sqlite3` binary.<br />
+## [2.0.0] - 2025-09-20
+
+- **Bug Fix and Breaking Change:** nullable / optional columns did not get wrapped properly in an `Option`. (https://github.com/daniellionel01/parrot/pull/52)<br />
+  This fix introduces a new `dev.ParamNullable` that has to be added to your case statement. The wrappers for `pog` and `sqlight` have been updated.
+
+- Remove sqlight dependency in favor of local `sqlite3` binary. (https://github.com/daniellionel01/parrot/pull/49)<br />
   Thank you Ross! (https://github.com/ross-byrne/)
 
 ## [1.2.12] - 2025-09-18
