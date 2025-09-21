@@ -1,3 +1,6 @@
+-- name: Simple :one
+select 1;
+
 -- name: GetUser :one
 SELECT
   *

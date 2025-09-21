@@ -183,7 +183,11 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
   }
 }
 
-pub fn gen_column_name(query: sqlc.Query, col: sqlc.TableColumn) -> String {
+pub fn gen_column_name(
+  index: Int,
+  query: sqlc.Query,
+  col: sqlc.TableColumn,
+) -> String {
   let occ =
     query.columns
     |> list.count(fn(col2) { col.name == col2.name })
@@ -197,7 +201,10 @@ pub fn gen_column_name(query: sqlc.Query, col: sqlc.TableColumn) -> String {
       }
     }
   }
-  string_case.snake_case(result)
+  case string_case.snake_case(result) {
+    "" -> "col_" <> int.to_string(index)
+    x -> x
+  }
 }
 
 pub fn gen_query_type(query: sqlc.Query, context: SQLC) {
@@ -205,10 +212,10 @@ pub fn gen_query_type(query: sqlc.Query, context: SQLC) {
 
   let args =
     query.columns
-    |> list.map(fn(col) {
+    |> list.index_map(fn(col, index) {
       let gleam_type = sqlc_col_to_gleam(col, context)
       let col_type = gleam_type_to_string(gleam_type)
-      let col_name = gen_column_name(query, col)
+      let col_name = gen_column_name(index, query, col)
       col_name <> ": " <> col_type
     })
     |> list.map(fn(str) { "    " <> str })
@@ -348,7 +355,7 @@ pub fn gen_query_decoder(query: sqlc.Query, context: SQLC) {
           let col_type = sqlc_col_to_gleam(col, context)
           let decoder_type = gleam_type_to_decoder(col_type)
 
-          let col_name = gen_column_name(query, col)
+          let col_name = gen_column_name(index, query, col)
 
           "  use "
           <> col_name
@@ -362,7 +369,9 @@ pub fn gen_query_decoder(query: sqlc.Query, context: SQLC) {
 
       let constructor_args =
         query.columns
-        |> list.map(fn(col) { gen_column_name(query, col) <> ": " })
+        |> list.index_map(fn(col, index) {
+          gen_column_name(index, query, col) <> ": "
+        })
         |> string.join(", ")
 
       let success_line =
