@@ -4,8 +4,8 @@
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
-> 🚨 **Exciting News**
-> Parrot got listed a community project on the sqlc website! 🦜🎉
+> 🚨 **Exciting News**<br />
+> Parrot got listed a community project on the sqlc website! 🦜🎉<br />
 > Check it out here: https://docs.sqlc.dev/en/latest/reference/language-support.html
 
 ## Table of Contents
