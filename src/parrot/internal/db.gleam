@@ -68,7 +68,10 @@ pub fn fetch_schema_postgresql(db: String) -> Result(String, errors.ParrotError)
     in: ".",
     opt: [],
   )
-  |> result.replace_error(errors.PgdumpError)
+  |> result.map_error(fn(e) {
+    let #(_, err) = e
+    errors.PgdumpError(err)
+  })
 }
 
 pub fn fetch_schema_sqlite(db: String) -> Result(String, errors.ParrotError) {

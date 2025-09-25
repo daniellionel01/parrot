@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Improve surfacing of errors from `pg_dump` (https://github.com/daniellionel01/parrot/pull/57/)<br />
+  Thank you Ross! (https://github.com/ross-byrne/)
+
+- Remove fallback to system wide sqlc binary (introduced in `v1.2.0`).
+
 ## [2.0.1] - 2025-09-21
 
 - Support queries where no column name is available (f.e. `select 1`) (https://github.com/daniellionel01/parrot/pull/54)
