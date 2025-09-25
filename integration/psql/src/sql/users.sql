@@ -1,3 +1,12 @@
+-- name: RowJson :one
+SELECT row_to_json(t)
+FROM (
+  SELECT id, username, created_at
+  FROM users
+  WHERE id = 1
+) t;
+
+
 -- name: Simple :one
 select 1;
 

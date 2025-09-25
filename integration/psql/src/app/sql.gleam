@@ -31,6 +31,26 @@ pub fn user_role_to_string(val: UserRole) {
   }
 }
 
+pub type RowJson {
+  RowJson(row_to_json: String)
+}
+
+pub fn row_json() {
+  let sql =
+    "SELECT row_to_json(t)
+FROM (
+  SELECT id, username, created_at
+  FROM users
+  WHERE id = 1
+) t"
+  #(sql, [], row_json_decoder())
+}
+
+pub fn row_json_decoder() -> decode.Decoder(RowJson) {
+  use row_to_json <- decode.field(0, decode.string)
+  decode.success(RowJson(row_to_json:))
+}
+
 pub type Simple {
   Simple(col_0: Int)
 }
