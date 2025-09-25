@@ -49,7 +49,7 @@ pub fn main() {
           let result = cmd_gen(engine, db)
           case result {
             Error(e) ->
-              io.println(lib.red("Error: " <> errors.err_to_string(e)))
+              io.println(lib.red("\nError: " <> errors.err_to_string(e)))
             Ok(_) -> io.println(lib.green("SQL successfully generated!"))
           }
         }
@@ -85,24 +85,22 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let schema_file = filepath.join(sqlc_dir, "schema.sql")
   let sqlc_file = filepath.join(sqlc_dir, "sqlc.yaml")
   let queries_file = filepath.join(sqlc_dir, "queries.json")
-
   let _ = simplifile.create_directory_all(sqlc_dir)
 
   let spinner =
     spinner.new("downloading sqlc binary")
     |> spinner.start()
 
-  let download_res = sqlc.download_binary()
-  case download_res {
+  let _ = case sqlc.download_binary() {
     Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
     Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
   }
+
   let spinner =
     spinner.new("verifying sqlc binary")
     |> spinner.start()
 
-  let verify_res = sqlc.verify_binary()
-  case verify_res {
+  let _ = case sqlc.verify_binary() {
     Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
     Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
   }
@@ -140,15 +138,10 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     spinner.new("generating gleam code")
     |> spinner.start()
 
-  let gen_attempt =
+  let gen_result =
     shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
-  let gen_attempt = case gen_attempt {
-    Error(_) -> {
-      shellout.command(run: "sqlc", with: ["generate"], in: sqlc_dir, opt: [])
-    }
-    Ok(val) -> Ok(val)
-  }
-  use _ <- given.ok(gen_attempt, else_return: fn(err) {
+
+  use _ <- given.ok(gen_result, else_return: fn(err) {
     let #(_, err) = err
     Error(errors.SqlcGenerateError(err))
   })

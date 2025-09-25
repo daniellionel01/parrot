@@ -13,7 +13,7 @@ pub type ParrotError {
 
   NoQueriesFound
   MysqldumpError
-  PgdumpError
+  PgdumpError(String)
 
   CodegenError
 }
@@ -27,7 +27,7 @@ pub fn err_to_string(error: ParrotError) {
     SqlcDownloadError(e) -> "there was an error downloading sqlc: " <> e
     SqlcVersionError(e) -> "incompatible sqlc version found: " <> e
     SqlcGenerateError(e) -> "could not call `sqlc generate`:\n" <> e
-    PgdumpError -> "there was an error pg_dump"
+    PgdumpError(e) -> e
     NoQueriesFound -> "no queries were found to codegen"
     UnknownEngine(engine) -> "unknown engine: " <> engine
     CodegenError -> "there was an error during codegen"
