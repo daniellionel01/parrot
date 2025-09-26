@@ -37,6 +37,10 @@ INSERT INTO
 VALUES
   ($1, to_timestamp(@created_at::float));
 
+-- name: CreateUserWithDateOfBirth :exec
+INSERT INTO users (username, created_at, date_of_birth)
+VALUES (@username, CURRENT_TIMESTAMP, TO_TIMESTAMP(@date_of_birth::text, 'YYYY-MM-DDZ'));
+
 -- name: UpdateUserUsername :exec
 UPDATE users
 SET

@@ -11,6 +11,7 @@ pub type Param {
   ParamBool(Bool)
   ParamBitArray(BitArray)
   ParamTimestamp(Timestamp)
+  ParamDate(Date)
   ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
   ParamNullable(option.Option(Param))
@@ -43,6 +44,18 @@ fn timestamp_decoder() -> decode.Decoder(Timestamp) {
   let seconds = microseconds / 1_000_000
   let nanoseconds = { microseconds % 1_000_000 } * 1000
   timestamp.from_unix_seconds_and_nanoseconds(seconds, nanoseconds)
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L873
+pub fn calendar_date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(1, decode.int)
+  use day <- decode.field(2, decode.int)
+  case calendar.month_from_int(month) {
+    Ok(month) -> decode.success(calendar.Date(year:, month:, day:))
+    Error(_) ->
+      decode.failure(calendar.Date(0, calendar.January, 1), "Calendar date")
+  }
 }
 
 fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
