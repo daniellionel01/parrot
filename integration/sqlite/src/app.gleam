@@ -42,6 +42,7 @@ fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
     dev.ParamBitArray(x) -> sqlight.blob(x)
     dev.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
     dev.ParamList(_) -> panic as "sqlite does not implement lists"
+    dev.ParamDate(_) -> panic as "date parameter needs to be implemented"
     dev.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
     dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
   }
