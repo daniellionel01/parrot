@@ -70,6 +70,7 @@ pub type GleamType {
   GleamFloat
   GleamBool
   GleamTimestamp
+  GleamDate
   GleamBitArray
   GleamList(GleamType)
   GleamEnum(String)
@@ -84,6 +85,7 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamInt -> "Int"
     GleamString -> "String"
     GleamTimestamp -> "Timestamp"
+    GleamDate -> "Date"
     GleamBitArray -> "BitArray"
     GleamList(sub) -> "List(" <> gleam_type_to_string(sub) <> ")"
     GleamOption(sub) -> "Option(" <> gleam_type_to_string(sub) <> ")"
@@ -177,7 +179,8 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     | "binary"
     | "varbinary"
     | "byte" <> _ -> GleamBitArray
-    "date" <> _ | "time" <> _ -> GleamTimestamp
+    "datetime" <> _ | "time" <> _ -> GleamTimestamp
+    "date" <> _ -> GleamDate
     "bool" <> _ -> GleamBool
     _ -> GleamDynamic
   }
@@ -232,6 +235,7 @@ fn gleam_type_to_param(gtype: GleamType) -> String {
     GleamFloat -> "dev.ParamFloat"
     GleamBool -> "dev.ParamBool"
     GleamTimestamp -> "dev.ParamTimestamp"
+    GleamDate -> "dev.ParamDate"
     GleamBitArray -> "dev.ParamBitArray"
     GleamDynamic -> "dev.ParamDynamic"
     GleamEnum(_) -> "dev.ParamString"
@@ -331,6 +335,7 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
     GleamBool -> "dev.bool_decoder()"
     GleamFloat -> "decode.float"
     GleamTimestamp -> "dev.datetime_decoder()"
+    GleamDate -> "dev.calendar_date_decoder()"
     GleamBitArray -> "decode.bit_array"
     GleamOption(x) -> "decode.optional(" <> gleam_type_to_decoder(x) <> ")"
     GleamList(x) -> "decode.list(of: " <> gleam_type_to_decoder(x) <> ")"
@@ -390,53 +395,58 @@ pub fn gen_query_decoder(query: sqlc.Query, context: SQLC) {
   }
 }
 
+fn uses_gleam_type(case_fn: fn(sqlc.TableColumn) -> Bool, context: SQLC) -> Bool {
+  list.any(context.queries, fn(query) {
+    let col_ts = list.any(query.columns, fn(col) { case_fn(col) })
+    let param_ts = list.any(query.params, fn(param) { case_fn(param.column) })
+    bool.or(col_ts, param_ts)
+  })
+}
+
 pub fn gen_gleam_module(context: SQLC) {
   let queries =
     context.queries
     |> list.map(gen_query(_, context))
     |> string.join("\n\n")
 
+  // check if Timestamps used
   let uses_timestamp =
-    list.any(context.queries, fn(query) {
-      let col_ts =
-        list.any(query.columns, fn(col) {
-          case sqlc_col_to_gleam(col, context) {
-            GleamOption(GleamTimestamp) | GleamTimestamp -> True
-            _ -> False
-          }
-        })
-      let param_ts =
-        list.any(query.params, fn(param) {
-          case sqlc_col_to_gleam(param.column, context) {
-            GleamOption(GleamTimestamp) | GleamTimestamp -> True
-            _ -> False
-          }
-        })
-      bool.or(col_ts, param_ts)
-    })
+    fn(col: sqlc.TableColumn) {
+      case sqlc_col_to_gleam(col, context) {
+        GleamOption(GleamTimestamp) | GleamTimestamp -> True
+        _ -> False
+      }
+    }
+    |> uses_gleam_type(context)
 
+  // check if Dates are used
+  let uses_date =
+    fn(col: sqlc.TableColumn) {
+      case sqlc_col_to_gleam(col, context) {
+        GleamOption(GleamDate) | GleamDate -> True
+        _ -> False
+      }
+    }
+    |> uses_gleam_type(context)
+
+  // checks if Lists are used
   let uses_list =
-    list.any(context.queries, fn(query) {
-      let col_list =
-        list.any(query.columns, fn(col) {
-          case sqlc_col_to_gleam(col, context) {
-            GleamOption(GleamList(_)) | GleamList(_) -> True
-            _ -> False
-          }
-        })
-      let param_list =
-        list.any(query.params, fn(param) {
-          case sqlc_col_to_gleam(param.column, context) {
-            GleamOption(GleamList(_)) | GleamList(_) -> True
-            _ -> False
-          }
-        })
-      bool.or(col_list, param_list)
-    })
+    fn(col: sqlc.TableColumn) {
+      case sqlc_col_to_gleam(col, context) {
+        GleamOption(GleamList(_)) | GleamList(_) -> True
+        _ -> False
+      }
+    }
+    |> uses_gleam_type(context)
 
   let timestamp_import = case uses_timestamp {
     False -> ""
     True -> "import gleam/time/timestamp.{type Timestamp}\n"
+  }
+
+  let date_import = case uses_date {
+    False -> ""
+    True -> "import gleam/time/calendar.{type Date}\n"
   }
 
   let list_import = case uses_list {
@@ -449,6 +459,7 @@ pub fn gen_gleam_module(context: SQLC) {
     <> "\n"
     <> "import gleam/option.{type Option}"
     <> "\n"
+    <> date_import
     <> timestamp_import
     <> list_import
     <> "import parrot/dev"

@@ -33,6 +33,7 @@ fn parrot_to_shork(param: dev.Param) {
       panic as "shork does not support nullable parameters"
     dev.ParamList(_) -> panic as "shork does not support lists"
     dev.ParamBitArray(_) -> panic as "shork does not support bit arrays"
+    dev.ParamDate(_) -> panic as "date parameter needs to be implemented"
     dev.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"
     dev.ParamDynamic(_) -> panic as "dynamic parameter need to implemented"

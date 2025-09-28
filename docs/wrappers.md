@@ -18,6 +18,7 @@ pub fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
     dev.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
     dev.ParamList(_) -> panic as "sqlite does not implement lists"
     dev.ParamBool(_) -> panic as "sqlite does not support booleans"
+    dev.ParamDate(_) -> panic as "sqlite does not support dates"
     dev.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
     dev.ParamDynamic(_) -> todo
   }
@@ -40,23 +41,8 @@ pub fn parrot_to_pog(param: dev.Param) -> pog.Value {
     dev.ParamBitArray(x) -> pog.bytea(x)
     dev.ParamList(x) -> pog.array(parrot_to_pog, x)
     dev.ParamNullable(x) -> pog.nullable(fn(a) { parrot_to_pog(a) }, x)
-    dev.ParamTimestamp(x) -> {
-      let #(date, time) = timestamp.to_calendar(x, calendar.utc_offset)
-
-      pog.timestamp(pog.Timestamp(
-        pog.Date(
-          year: date.year,
-          month: calendar.month_to_int(date.month),
-          day: date.day,
-        ),
-        pog.Time(
-          hours: time.hours,
-          minutes: time.minutes,
-          seconds: time.seconds,
-          microseconds: time.nanoseconds / 1000,
-        ),
-      ))
-    }
+    dev.ParamDate(x) -> pog.calendar_date(x)
+    dev.ParamTimestamp(x) -> pog.timestamp(x)
   }
 }
 ```
