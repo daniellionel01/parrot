@@ -75,11 +75,13 @@ pub fn engine_from_env(str: String) {
 }
 
 pub fn parse_env(env: String) -> Result(#(Engine, String), String) {
-  use env_var <- given.ok(envoy.get(env), else_return: fn(_) {
+  let env_result = envoy.get(env)
+  use env_var <- given.error(in: env_result, return: fn(_) {
     Error("Environment Variable \"DATABASE_URL\" is empty!")
   })
 
-  use engine <- given.ok(engine_from_env(env_var), else_return: fn(_) {
+  let engine_result = engine_from_env(env_var)
+  use engine <- given.error(in: engine_result, return: fn(_) {
     Error(
       "\"DATABASE_URL\" does not match any of the supported formats (MySQL, PostgreSQL, SQlite)",
     )
