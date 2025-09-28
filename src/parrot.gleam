@@ -141,7 +141,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let gen_result =
     shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
 
-  use _ <- given.ok(gen_result, else_return: fn(err) {
+  use _ <- given.error(gen_result, return: fn(err) {
     let #(_, err) = err
     Error(errors.SqlcGenerateError(err))
   })
@@ -172,7 +172,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       in: project.root(),
       opt: [],
     )
-  use _ <- given.ok(stdout_format, else_return: fn(err) {
+  use _ <- given.error(stdout_format, return: fn(err) {
     let #(_, err) = err
     Error(errors.GleamFormatError(err))
   })
