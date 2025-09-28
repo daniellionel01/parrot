@@ -10,6 +10,9 @@ FROM (
 -- name: Simple :one
 select 1;
 
+-- name: CreatedAtAsText :one
+SELECT created_at::text FROM users WHERE id = $1;
+
 -- name: CreateUserWithRole :exec
 INSERT INTO
   users (username, role)

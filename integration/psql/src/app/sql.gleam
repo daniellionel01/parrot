@@ -65,6 +65,20 @@ pub fn simple_decoder() -> decode.Decoder(Simple) {
   decode.success(Simple(col_0:))
 }
 
+pub type CreatedAtAsText {
+  CreatedAtAsText(created_at: String)
+}
+
+pub fn created_at_as_text(id id: Int) {
+  let sql = "SELECT created_at::text FROM users WHERE id = $1"
+  #(sql, [dev.ParamInt(id)], created_at_as_text_decoder())
+}
+
+pub fn created_at_as_text_decoder() -> decode.Decoder(CreatedAtAsText) {
+  use created_at <- decode.field(0, decode.string)
+  decode.success(CreatedAtAsText(created_at:))
+}
+
 pub fn create_user_with_role(
   username username: String,
   role role: Option(UserRole),
