@@ -179,8 +179,8 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     | "binary"
     | "varbinary"
     | "byte" <> _ -> GleamBitArray
-    "date" -> GleamDate
-    "date" <> _ | "time" <> _ -> GleamTimestamp
+    "datetime" <> _ | "time" <> _ -> GleamTimestamp
+    "date" <> _ -> GleamDate
     "bool" <> _ -> GleamBool
     _ -> GleamDynamic
   }
