@@ -7,13 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Improve surfacing of errors from `pg_dump` (https://github.com/daniellionel01/parrot/pull/57/)<br />
+## [2.1.0] - 2025-09-28
+
+- Improve surfacing of errors from `pg_dump`. (https://github.com/daniellionel01/parrot/pull/57/)<br />
   Thank you Ross! (https://github.com/ross-byrne/)
 
 - Remove fallback to system wide sqlc binary (introduced in `v1.2.0`).
 
-- Add support for `Date` values (https://github.com/daniellionel01/parrot/pull/60)<br />
+- Add support for `Date` values. (https://github.com/daniellionel01/parrot/pull/60)<br />
   Thank you Ross! (https://github.com/ross-byrne/)
+
+- Updated the `given` dependency to >= 6.0.0 and < 7.0.0. (https://github.com/daniellionel01/parrot/pull/61)<br />
+  Thank you inoas! (https://github.com/inoas)
 
 ## [2.0.1] - 2025-09-21
 
