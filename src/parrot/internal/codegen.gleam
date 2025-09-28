@@ -118,7 +118,7 @@ fn find_col_schema(col: sqlc.TableColumn, context: SQLC) {
 }
 
 pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
-  use <- given.that(!col.not_null, return: fn() {
+  use <- given.not(col.not_null, return: fn() {
     let col = sqlc.TableColumn(..col, not_null: True)
     let type_ = sqlc_col_to_gleam(col, context)
     GleamOption(type_)
