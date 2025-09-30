@@ -306,8 +306,10 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
       <> "]"
   }
 
+  let text = string.replace(query.text, each: "\"", with: "\\\"")
+
   let def_fn = "pub fn " <> fn_name <> "(" <> def_fn_args <> ")"
-  let def_sql = "let sql = \"" <> query.text <> "\""
+  let def_sql = "let sql = \"" <> text <> "\""
   let def_exp = case query.cmd {
     sqlc.Exec | sqlc.ExecResult -> ""
     sqlc.Many | sqlc.One -> fn_name <> "_decoder()"
