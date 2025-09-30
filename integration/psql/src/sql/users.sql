@@ -101,3 +101,15 @@ where user_id = (
   from users
   where username = $1
 );
+
+-- name: PostsByAdmins :many
+select
+  id,
+  title,
+  user_id
+from posts
+where user_id in (
+  select id
+  from users
+  where users.role = 'admin'
+);

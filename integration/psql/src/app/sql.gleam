@@ -416,3 +416,29 @@ pub fn posts_by_username_decoder() -> decode.Decoder(PostsByUsername) {
   use user_id <- decode.field(2, decode.int)
   decode.success(PostsByUsername(id:, title:, user_id:))
 }
+
+pub type PostsByAdmins {
+  PostsByAdmins(id: Int, title: String, user_id: Int)
+}
+
+pub fn posts_by_admins() {
+  let sql =
+    "select
+  id,
+  title,
+  user_id
+from posts
+where user_id in (
+  select id
+  from users
+  where users.role = 'admin'
+)"
+  #(sql, [], posts_by_admins_decoder())
+}
+
+pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
+  use id <- decode.field(0, decode.int)
+  use title <- decode.field(1, decode.string)
+  use user_id <- decode.field(2, decode.int)
+  decode.success(PostsByAdmins(id:, title:, user_id:))
+}
