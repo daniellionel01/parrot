@@ -1,9 +1,9 @@
-CREATE TABLE users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT NOT NULL UNIQUE,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-  balance REAL NOT NULL DEFAULT 0.0,
-  last_known_location DECIMAL(9, 6),
-  role TEXT,
-  avatar BLOB
+create table users (
+  id integer primary key autoincrement,
+  username text not null unique,
+  created_at text default current_timestamp,
+  balance real not null default 0.0,
+  last_known_location decimal(9, 6),
+  role text,
+  avatar blob
 );

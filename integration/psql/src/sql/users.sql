@@ -89,3 +89,15 @@ LIMIT
 SELECT id, username
 FROM users
 WHERE username LIKE ANY(sqlc.arg(patterns)::text[]);
+
+-- name: PostsByUsername :many
+select
+  id,
+  title,
+  user_id
+from posts
+where user_id = (
+  select id
+  from users
+  where username = $1
+);
