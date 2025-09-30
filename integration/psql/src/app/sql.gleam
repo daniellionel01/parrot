@@ -431,7 +431,7 @@ from posts
 where user_id in (
   select id
   from users
-  where users.role = 'admin'
+  where users.\"role\" = 'admin'
 )"
   #(sql, [], posts_by_admins_decoder())
 }

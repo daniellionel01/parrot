@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2025-09-30
+
 ## [2.1.0] - 2025-09-28
 
 - Improve surfacing of errors from `pg_dump`. (https://github.com/daniellionel01/parrot/pull/57/)<br />
