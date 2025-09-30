@@ -161,3 +161,55 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use admin <- decode.field(4, dev.bool_decoder())
   decode.success(GetUserByUsername(id:, username:, created_at:, status:, admin:))
 }
+
+pub type PostsByUsername {
+  PostsByUsername(id: Int, title: String, user_id: Int)
+}
+
+pub fn posts_by_username(username username: String) {
+  let sql =
+    "select
+  id,
+  title,
+  user_id
+from posts
+where user_id = (
+  select id
+  from users
+  where username = ?
+)"
+  #(sql, [dev.ParamString(username)], posts_by_username_decoder())
+}
+
+pub fn posts_by_username_decoder() -> decode.Decoder(PostsByUsername) {
+  use id <- decode.field(0, decode.int)
+  use title <- decode.field(1, decode.string)
+  use user_id <- decode.field(2, decode.int)
+  decode.success(PostsByUsername(id:, title:, user_id:))
+}
+
+pub type PostsByAdmins {
+  PostsByAdmins(id: Int, title: String, user_id: Int)
+}
+
+pub fn posts_by_admins() {
+  let sql =
+    "select
+  id,
+  title,
+  user_id
+from posts
+where user_id in (
+  select id
+  from users
+  where users.role = 'admin'
+)"
+  #(sql, [], posts_by_admins_decoder())
+}
+
+pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
+  use id <- decode.field(0, decode.int)
+  use title <- decode.field(1, decode.string)
+  use user_id <- decode.field(2, decode.int)
+  decode.success(PostsByAdmins(id:, title:, user_id:))
+}

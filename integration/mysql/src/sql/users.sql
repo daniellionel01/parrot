@@ -46,3 +46,28 @@ WHERE
   username = ?
 LIMIT
   1;
+
+
+-- name: PostsByUsername :many
+select
+  id,
+  title,
+  user_id
+from posts
+where user_id = (
+  select id
+  from users
+  where username = ?
+);
+
+-- name: PostsByAdmins :many
+select
+  id,
+  title,
+  user_id
+from posts
+where user_id in (
+  select id
+  from users
+  where users.role = 'admin'
+);

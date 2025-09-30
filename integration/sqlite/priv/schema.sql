@@ -7,3 +7,13 @@ create table users (
   role text,
   avatar blob
 );
+
+create table posts (
+  id integer primary key autoincrement,
+  created_at text default current_timestamp,
+  title text not null unique,
+
+  user_id integer not null,
+
+  foreign key (user_id) references users(id) on delete cascade
+);
