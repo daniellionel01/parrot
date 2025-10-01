@@ -37,15 +37,6 @@
 
 ## Showcase
 
-<table>
-<tr>
-<td>SQL</td>
-<td>Gleam</td>
-</tr>
-
-<tr>
-<td>
-
 ```sql
 -- name: CreateUserWithRole :exec
 insert into
@@ -53,9 +44,6 @@ insert into
 values
   ($1, $2);
 ```
-
-</td>
-<td>
 
 ```gleam
 pub type CreateUserWithRole {
@@ -85,10 +73,6 @@ pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
   decode.success(CreateUserWithRole(id:))
 }
 ```
-
-</td>
-</tr>
-</table>
 
 If you want to see more code how this lirbary works in action, take a look at the integration tests:
 - PostgreSQL: [./integration/psql](./integration/psql)
