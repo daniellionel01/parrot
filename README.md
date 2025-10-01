@@ -40,8 +40,8 @@
 
 <table>
 <tr>
-<td>SQL</td>
-<td>Gleam</td>
+<td width="50%">SQL</td>
+<td width="50%">Gleam</td>
 </tr>
 
 <tr>
