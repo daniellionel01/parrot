@@ -23,7 +23,7 @@
 
 ## Features
 
-*Most of the heavy lifting features are provided by / built into sqlc, so I do not aim to take credit for them.*
+*Most of the heavy lifting features are provided by / built into sqlc, I do not aim to take credit for them.*
 
 ☑️ Supports SQlite, PostgreSQL and MySQL.<br />
 ☑️ Named parameters.<sup>*1</sup> <br />
