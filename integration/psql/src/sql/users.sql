@@ -17,7 +17,8 @@ SELECT created_at::text FROM users WHERE id = $1;
 INSERT INTO
   users (username, role)
 VALUES
-  ($1, $2);
+  ($1, $2)
+RETURNING id;
 
 -- name: GetUser :one
 SELECT
@@ -67,7 +68,15 @@ WHERE
 
 -- name: GetUserByUsername :one
 SELECT
-  *
+  id,
+  username,
+  created_at,
+  date_of_birth,
+  profile,
+  extra_info,
+  favorite_numbers,
+  role,
+  document
 FROM
   users
 WHERE
