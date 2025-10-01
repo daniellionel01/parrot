@@ -38,10 +38,10 @@
 ## Showcase
 
 
-<table>
+<table width="100%">
 <tr>
-<td width="50%">SQL</td>
-<td width="50%">Gleam</td>
+<td>SQL</td>
+<td>Gleam</td>
 </tr>
 
 <tr>
