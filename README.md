@@ -41,7 +41,7 @@
 <table>
 <tr>
 <td>SQL</td>
-<td>Gleam<td>
+<td>Gleam</td>
 </tr>
 
 <tr>
