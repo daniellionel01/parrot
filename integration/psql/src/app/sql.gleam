@@ -80,6 +80,10 @@ pub fn created_at_as_text_decoder() -> decode.Decoder(CreatedAtAsText) {
   decode.success(CreatedAtAsText(created_at:))
 }
 
+pub type CreateUserWithRole {
+  CreateUserWithRole(id: Int)
+}
+
 pub fn create_user_with_role(
   username username: String,
   role role: Option(UserRole),
@@ -88,13 +92,19 @@ pub fn create_user_with_role(
     "INSERT INTO
   users (username, role)
 VALUES
-  ($1, $2)"
+  ($1, $2)
+RETURNING id"
   #(sql, [
     dev.ParamString(username),
     dev.ParamNullable(
       option.map(role, fn(v) { dev.ParamString(user_role_to_string(v)) }),
     ),
   ])
+}
+
+pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
+  use id <- decode.field(0, decode.int)
+  decode.success(CreateUserWithRole(id:))
 }
 
 pub type GetUser {

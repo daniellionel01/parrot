@@ -37,8 +37,7 @@
 
 ## Showcase
 
-
-<table style="width:100%">
+<table>
 <tr>
 <td>SQL</td>
 <td>Gleam</td>
@@ -48,19 +47,42 @@
 <td>
 
 ```sql
--- name: FindUserByEmail :one
-select id, email
-from user
-where email = $1
-limit 1;
+-- name: CreateUserWithRole :exec
+insert into
+  users (username, role)
+values
+  ($1, $2);
 ```
 
 </td>
 <td>
 
 ```gleam
-pub fn test() {
-  todo
+pub type CreateUserWithRole {
+  CreateUserWithRole(id: Int)
+}
+
+pub fn create_user_with_role(
+  username username: String,
+  role role: Option(UserRole),
+) {
+  let sql =
+    "insert into
+  users (username, role)
+values
+  ($1, $2)
+returning id"
+  #(sql, [
+    dev.ParamString(username),
+    dev.ParamNullable(
+      option.map(role, fn(v) { dev.ParamString(user_role_to_string(v)) }),
+    ),
+  ])
+}
+
+pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
+  use id <- decode.field(0, decode.int)
+  decode.success(CreateUserWithRole(id:))
 }
 ```
 
