@@ -44,7 +44,26 @@ Given this SQL:
 insert into
   users (username, role)
 values
-  ($1, $2);
+  ($1, $2)
+returning id;
+
+-- name: GetUserByUsername :one
+select
+  id,
+  username,
+  created_at,
+  date_of_birth,
+  profile,
+  extra_info,
+  favorite_numbers,
+  role,
+  document
+from
+  users
+where
+  username = $1
+limit
+  1;
 ```
 
 Parrot generates the following code:
@@ -75,6 +94,70 @@ returning id"
 pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
   use id <- decode.field(0, decode.int)
   decode.success(CreateUserWithRole(id:))
+}
+
+pub type GetUserByUsername {
+  GetUserByUsername(
+    id: Int,
+    username: String,
+    created_at: Option(Timestamp),
+    date_of_birth: Option(Date),
+    profile: Option(String),
+    extra_info: Option(String),
+    favorite_numbers: Option(List(Int)),
+    role: Option(UserRole),
+    document: Option(BitArray),
+  )
+}
+
+pub fn get_user_by_username(username username: String) {
+  let sql =
+    "select
+  id,
+  username,
+  created_at,
+  date_of_birth,
+  profile,
+  extra_info,
+  favorite_numbers,
+  role,
+  document
+from
+  users
+where
+  username = $1
+limit
+  1"
+  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
+}
+
+pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
+  use id <- decode.field(0, decode.int)
+  use username <- decode.field(1, decode.string)
+  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use date_of_birth <- decode.field(
+    3,
+    decode.optional(dev.calendar_date_decoder()),
+  )
+  use profile <- decode.field(4, decode.optional(decode.string))
+  use extra_info <- decode.field(5, decode.optional(decode.string))
+  use favorite_numbers <- decode.field(
+    6,
+    decode.optional(decode.list(of: decode.int)),
+  )
+  use role <- decode.field(7, decode.optional(user_role_decoder()))
+  use document <- decode.field(8, decode.optional(decode.bit_array))
+  decode.success(GetUserByUsername(
+    id:,
+    username:,
+    created_at:,
+    date_of_birth:,
+    profile:,
+    extra_info:,
+    favorite_numbers:,
+    role:,
+    document:,
+  ))
 }
 ```
 

@@ -68,7 +68,15 @@ WHERE
 
 -- name: GetUserByUsername :one
 SELECT
-  *
+  id,
+  username,
+  created_at,
+  date_of_birth,
+  profile,
+  extra_info,
+  favorite_numbers,
+  role,
+  document
 FROM
   users
 WHERE

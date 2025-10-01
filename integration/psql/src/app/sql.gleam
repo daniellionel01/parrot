@@ -280,7 +280,15 @@ pub type GetUserByUsername {
 pub fn get_user_by_username(username username: String) {
   let sql =
     "SELECT
-  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
+  id,
+  username,
+  created_at,
+  date_of_birth,
+  profile,
+  extra_info,
+  favorite_numbers,
+  role,
+  document
 FROM
   users
 WHERE
