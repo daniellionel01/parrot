@@ -38,7 +38,7 @@
 ## Showcase
 
 
-<table width="100%">
+<table style="width:100%">
 <tr>
 <td>SQL</td>
 <td>Gleam</td>
