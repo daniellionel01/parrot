@@ -37,15 +37,36 @@
 
 ## Showcase
 
-| SQL | Gleam |
-|--------|------------|
-| <pre><code class="language-sql">select id, email
+
+<table>
+<tr>
+<td>SQL</td>
+<td>Gleam<td>
+</tr>
+
+<tr>
+<td>
+
+```sql
+-- name: FindUserByEmail :one
+select id, email
 from user
-where user = $1
-limit 1;</code></pre> | <pre><code class="language-gleam">pub fn test() {
+where email = $1
+limit 1;
+```
+
+</td>
+<td>
+
+```gleam
+pub fn test() {
   todo
 }
-</code></pre> |
+```
+
+</td>
+</tr>
+</table>
 
 If you want to see more code how this lirbary works in action, take a look at the integration tests:
 - PostgreSQL: [./integration/psql](./integration/psql)
