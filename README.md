@@ -37,6 +37,8 @@
 
 ## Showcase
 
+Given this SQL:
+
 ```sql
 -- name: CreateUserWithRole :exec
 insert into
@@ -45,7 +47,7 @@ values
   ($1, $2);
 ```
 
-🪄🪄🪄
+Parrot generates the following code:
 
 ```gleam
 pub type CreateUserWithRole {
