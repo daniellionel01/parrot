@@ -11,8 +11,8 @@
 ## Table of Contents
 - [🦜 Parrot / type-safe SQL in gleam](#)
   * [Features](#features)
+  * [Showcase](#showcase)
   * [Usage / Getting Started](#usage--getting-started)
-  * [Examples](#examples)
   * [Development](#development)
   * [Quirks](#quirks)
   * [FAQ](#faq)
@@ -34,6 +34,25 @@
 ☑️ Named parameters.<sup>*1</sup> <br />
 
 <sup>*1</sup>: Meaning that it infers the names of the parameters from your sql queries in the gleam function you call. for example for a query called `FindUser`, defined as `SELECT * FROM user WHERE username = $1`, parrot will produce a function where the arguments match those column names: `pub fn find_user(username: String) { ... }`. If you have multiple parameters of the same data types this can avoid confusion and bugs.
+
+## Showcase
+
+| SQL | Gleam |
+|--------|------------|
+| ```sql
+select id, email
+from user
+where user = $1
+limit 1;``` | ```gleam
+pub fn test() {
+  todo
+}
+``` |
+
+If you want to see more code how this lirbary works in action, take a look at the integration tests:
+- PostgreSQL: [./integration/psql](./integration/psql)
+- MySQL: [./integration/mysql](./integration/mysql)
+- SQlite: [./integration/sqlite](./integration/sqlite)
 
 ## Usage / Getting Started
 
@@ -112,13 +131,6 @@ pub fn main() {
   // ...
 }
 ```
-
-## Examples
-
-If you want to see how this library works in action, take a look at the integration tests:
-- PostgreSQL: [./integration/psql](./integration/psql)
-- MySQL: [./integration/mysql](./integration/mysql)
-- SQlite: [./integration/sqlite](./integration/sqlite)
 
 ## Development
 
