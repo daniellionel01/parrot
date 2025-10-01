@@ -26,12 +26,12 @@
 **Most of the heavy lifting features are provided by / built into sqlc, I do not aim to take credit for them.**
 
 ☑️ Supports SQlite, PostgreSQL and MySQL.<br />
-☑️ Named parameters.<sup>*1</sup> <br />
 ☑️ Multiple queries per file.<br />
 ☑️ Database client agnostic.<br />
 ☑️ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
 ☑️ Automatically pulls the schema of your database.<br />
 ☑️ Automatically downloads [sqlc](https://sqlc.dev/) binary.<br />
+☑️ Named parameters.<sup>*1</sup> <br />
 
 <sup>*1</sup>: Meaning that it infers the names of the parameters from your sql queries in the gleam function you call. for example for a query called `FindUser`, defined as `SELECT * FROM user WHERE username = $1`, parrot will produce a function where the arguments match those column names: `pub fn find_user(username: String) { ... }`. If you have multiple parameters of the same data types this can avoid confusion and bugs.
 
