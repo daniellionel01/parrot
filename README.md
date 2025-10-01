@@ -39,12 +39,10 @@
 
 | SQL | Gleam |
 |--------|------------|
-| <pre><code class="language-sql">
-select id, email
+| <pre><code class="language-sql">select id, email
 from user
 where user = $1
-limit 1;</code></pre> | <pre><code class="language-gleam">
-pub fn test() {
+limit 1;</code></pre> | <pre><code class="language-gleam">pub fn test() {
   todo
 }
 </code></pre> |
