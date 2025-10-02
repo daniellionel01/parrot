@@ -15,7 +15,6 @@ import gleam/string
 import parrot/internal/errors
 import parrot/internal/project
 import parrot/internal/shellout
-import parrot/internal/sqlc_config
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 // SQLC Configuration types
