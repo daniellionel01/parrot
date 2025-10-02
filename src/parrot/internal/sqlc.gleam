@@ -7,14 +7,14 @@ import gleam/bit_array
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
-import gleam/option.{type Option}
+import gleam/option.{type Option, Some}
 import gleam/result
 import gleam/set
 import gleam/string
-import parrot/internal/cli
 import parrot/internal/errors
 import parrot/internal/project
 import parrot/internal/shellout
+import parrot/internal/sqlc_config
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 pub type TypeRef {
@@ -266,29 +266,28 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
   decode.run(data, decoder)
 }
 
-pub fn gen_sqlc_yaml(engine: cli.Engine, queries: List(String)) {
-  let result = "
-version: \"2\"
-sql:
-  - schema: schema.sql
-    queries: [" <> string.join(queries, ", ") <> "]
-    engine: " <> engine_to_sqlc_string(engine) <> "
-    gen:
-      json:
-        out: .
-        indent: \"  \"
-        filename: queries.json
-  "
-
-  string.trim(result)
-}
-
-fn engine_to_sqlc_string(engine: cli.Engine) {
-  case engine {
-    cli.MySQL -> "mysql"
-    cli.PostgreSQL -> "postgresql"
-    cli.SQlite -> "sqlite"
-  }
+pub fn gen_sqlc_json(
+  engine: sqlc_config.Engine,
+  queries: List(String),
+) -> String {
+  let config =
+    sqlc_config.Config(version: sqlc_config.version_2, sql: [
+      sqlc_config.Sql(
+        schema: Some("schema.sql"),
+        queries: Some(sqlc_config.Queries(queries)),
+        engine:,
+        gen: Some(
+          sqlc_config.Gen(
+            json: Some(sqlc_config.GenJson(
+              out: Some("."),
+              indent: Some("  "),
+              filename: Some("queries.json"),
+            )),
+          ),
+        ),
+      ),
+    ])
+  sqlc_config.config_to_json_string(config)
 }
 
 pub fn sqlc_binary_path() {
