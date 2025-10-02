@@ -108,9 +108,7 @@ pub opaque type Version {
 
 fn version_to_json(version: Version) -> json.Json {
   let Version(version) = version
-  json.object([
-    #("version", json.string(version)),
-  ])
+  json.string(version)
 }
 
 pub type Config {
