@@ -8,16 +8,8 @@ pub type Queries {
 
 fn queries_to_json(queries: Queries) -> json.Json {
   case queries {
-    Query(query) ->
-      json.object([
-        #("type", json.string("query")),
-        #("query", json.string(query)),
-      ])
-    Queries(queries) ->
-      json.object([
-        #("type", json.string("queries")),
-        #("queries", json.array(queries, json.string)),
-      ])
+    Query(query) -> json.string(query)
+    Queries(queries) -> json.array(queries, json.string)
   }
 }
 
