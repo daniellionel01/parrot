@@ -55,7 +55,7 @@ pub type Config {
 }
 
 // SQLC Configuration version constants
-pub const version_2: Version = Version("2")
+pub const config_version_2: Version = Version("2")
 
 // SQLC Configuration to-JSON functions
 fn queries_to_json(queries: Queries) -> json.Json {
@@ -391,7 +391,7 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
 
 pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
   let config =
-    Config(version: version_2, sql: [
+    Config(version: config_version_2, sql: [
       Sql(
         schema: Some("schema.sql"),
         queries: Some(QueryMultiple(queries)),
