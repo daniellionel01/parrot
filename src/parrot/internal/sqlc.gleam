@@ -390,7 +390,7 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
 
 pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
   let config =
-    Config(version: Version("2"), sql: [
+    Config(version: Version2, sql: [
       Sql(
         schema: Some("schema.sql"),
         queries: Some(QueryMultiple(queries)),
