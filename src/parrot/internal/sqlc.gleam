@@ -18,7 +18,7 @@ import parrot/internal/shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 // SQLC Configuration types
-pub type Queries {
+type Queries {
   QuerySingle(String)
   QueryMultiple(List(String))
 }
@@ -29,15 +29,15 @@ pub type Engine {
   PostgreSQL
 }
 
-pub type GenJson {
+type GenJson {
   GenJson(out: Option(String), indent: Option(String), filename: Option(String))
 }
 
-pub type Gen {
+type Gen {
   Gen(json: Option(GenJson))
 }
 
-pub type Sql {
+type Sql {
   Sql(
     schema: Option(String),
     queries: Option(Queries),
@@ -46,16 +46,13 @@ pub type Sql {
   )
 }
 
-pub opaque type Version {
+type Version {
   Version(String)
 }
 
-pub type Config {
+type Config {
   Config(version: Version, sql: List(Sql))
 }
-
-// SQLC Configuration version constants
-pub const config_version_2: Version = Version("2")
 
 // SQLC Configuration to-JSON functions
 fn queries_to_json(queries: Queries) -> json.Json {
@@ -136,7 +133,7 @@ fn config_to_json(config: Config) -> json.Json {
   ])
 }
 
-pub fn config_to_json_string(config: Config) -> String {
+fn config_to_json_string(config: Config) -> String {
   config_to_json(config) |> json.to_string
 }
 
@@ -391,7 +388,7 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
 
 pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
   let config =
-    Config(version: config_version_2, sql: [
+    Config(version: Version("2"), sql: [
       Sql(
         schema: Some("schema.sql"),
         queries: Some(QueryMultiple(queries)),
