@@ -47,7 +47,7 @@ type Sql {
 }
 
 type Version {
-  Version(String)
+  Version2
 }
 
 type Config {
@@ -121,7 +121,9 @@ fn gen_to_json(gen: Gen) -> json.Json {
 }
 
 fn version_to_json(version: Version) -> json.Json {
-  let Version(version) = version
+  let version = case version {
+    Version2 -> "2"
+  }
   json.string(version)
 }
 
