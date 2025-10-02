@@ -63,11 +63,12 @@ fn queries_to_json(queries: Queries) -> json.Json {
 }
 
 fn engine_to_json(engine: Engine) -> json.Json {
-  case engine {
-    SQLite -> json.string("sqlite")
-    MySQL -> json.string("mysql")
-    PostgreSQL -> json.string("postgresql")
+  let engine = case engine {
+    SQLite -> "sqlite"
+    MySQL -> "mysql"
+    PostgreSQL -> "postgresql"
   }
+  json.string(engine)
 }
 
 fn gen_json_to_json(gen_json: GenJson) -> json.Json {
