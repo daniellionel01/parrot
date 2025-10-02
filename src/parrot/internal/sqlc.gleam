@@ -7,6 +7,7 @@ import gleam/bit_array
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/json
 import gleam/option.{type Option, Some}
 import gleam/result
 import gleam/set
@@ -16,6 +17,129 @@ import parrot/internal/project
 import parrot/internal/shellout
 import parrot/internal/sqlc_config
 import simplifile.{Execute, FilePermissions, Read, Write}
+
+// SQLC Configuration types
+pub type Queries {
+  QuerySingle(String)
+  QueryMultiple(List(String))
+}
+
+pub type Engine {
+  SQLite
+  MySQL
+  PostgreSQL
+}
+
+pub type GenJson {
+  GenJson(out: Option(String), indent: Option(String), filename: Option(String))
+}
+
+pub type Gen {
+  Gen(json: Option(GenJson))
+}
+
+pub type Sql {
+  Sql(
+    schema: Option(String),
+    queries: Option(Queries),
+    engine: Engine,
+    gen: Option(Gen),
+  )
+}
+
+pub opaque type Version {
+  Version(String)
+}
+
+pub type Config {
+  Config(version: Version, sql: List(Sql))
+}
+
+// SQLC Configuration version constants
+pub const version_2: Version = Version("2")
+
+// SQLC Configuration to-JSON functions
+fn queries_to_json(queries: Queries) -> json.Json {
+  case queries {
+    QuerySingle(query) -> json.string(query)
+    QueryMultiple(queries) -> json.array(queries, json.string)
+  }
+}
+
+fn engine_to_json(engine: Engine) -> json.Json {
+  case engine {
+    SQLite -> json.string("sqlite")
+    MySQL -> json.string("mysql")
+    PostgreSQL -> json.string("postgresql")
+  }
+}
+
+fn gen_json_to_json(gen_json: GenJson) -> json.Json {
+  let GenJson(out:, indent:, filename:) = gen_json
+  let json_object = case out {
+    option.None -> []
+    option.Some(out) -> [#("out", json.string(out))]
+  }
+  let json_object = case indent {
+    option.None -> json_object
+    option.Some(indent) -> [#("indent", json.string(indent)), ..json_object]
+  }
+  let json_object = case filename {
+    option.None -> json_object
+    option.Some(filename) -> [
+      #("filename", json.string(filename)),
+      ..json_object
+    ]
+  }
+  json.object(json_object)
+}
+
+fn sql_to_json(sql: Sql) -> json.Json {
+  let Sql(schema:, queries:, engine:, gen:) = sql
+  let json_object = [#("engine", engine_to_json(engine))]
+  let json_object = case schema {
+    option.None -> json_object
+    option.Some(schema) -> [#("schema", json.string(schema)), ..json_object]
+  }
+  let json_object = case queries {
+    option.None -> json_object
+    option.Some(queries) -> [
+      #("queries", queries_to_json(queries)),
+      ..json_object
+    ]
+  }
+  let json_object = case gen {
+    option.None -> json_object
+    option.Some(gen) -> [#("gen", gen_to_json(gen)), ..json_object]
+  }
+  json.object(json_object)
+}
+
+fn gen_to_json(gen: Gen) -> json.Json {
+  let Gen(json:) = gen
+  let json_object = case json {
+    option.None -> []
+    option.Some(json) -> [#("json", gen_json_to_json(json))]
+  }
+  json.object(json_object)
+}
+
+fn version_to_json(version: Version) -> json.Json {
+  let Version(version) = version
+  json.string(version)
+}
+
+fn config_to_json(config: Config) -> json.Json {
+  let Config(version:, sql:) = config
+  json.object([
+    #("version", version_to_json(version)),
+    #("sql", json.array(sql, sql_to_json)),
+  ])
+}
+
+pub fn config_to_json_string(config: Config) -> String {
+  config_to_json(config) |> json.to_string
+}
 
 pub type TypeRef {
   TypeRef(catalog: String, schema: String, name: String)
@@ -266,19 +390,16 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
   decode.run(data, decoder)
 }
 
-pub fn gen_sqlc_json(
-  engine: sqlc_config.Engine,
-  queries: List(String),
-) -> String {
+pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
   let config =
-    sqlc_config.Config(version: sqlc_config.version_2, sql: [
-      sqlc_config.Sql(
+    Config(version: version_2, sql: [
+      Sql(
         schema: Some("schema.sql"),
-        queries: Some(sqlc_config.Queries(queries)),
+        queries: Some(QueryMultiple(queries)),
         engine:,
         gen: Some(
-          sqlc_config.Gen(
-            json: Some(sqlc_config.GenJson(
+          Gen(
+            json: Some(GenJson(
               out: Some("."),
               indent: Some("  "),
               filename: Some("queries.json"),
@@ -287,7 +408,7 @@ pub fn gen_sqlc_json(
         ),
       ),
     ])
-  sqlc_config.config_to_json_string(config)
+  config_to_json_string(config)
 }
 
 pub fn sqlc_binary_path() {

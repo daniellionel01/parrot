@@ -17,7 +17,6 @@ import parrot/internal/project
 import parrot/internal/shellout
 import parrot/internal/spinner
 import parrot/internal/sqlc
-import parrot/internal/sqlc_config
 import simplifile
 
 pub fn main() {
@@ -35,7 +34,7 @@ pub fn main() {
       |> result.map(fn(a) { cli.Generate(a.0, a.1) })
     }
     ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc_config.SQLite, file_path))
+      Ok(cli.Generate(sqlc.SQLite, file_path))
     }
     ["help"] -> Ok(cli.Usage)
     _ -> Ok(cli.Usage)
@@ -58,10 +57,7 @@ pub fn main() {
   }
 }
 
-fn cmd_gen(
-  engine: sqlc_config.Engine,
-  db: String,
-) -> Result(Nil, errors.ParrotError) {
+fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db
@@ -117,18 +113,18 @@ fn cmd_gen(
     |> spinner.start()
 
   use schema_sql <- result.try(case engine {
-    sqlc_config.MySQL -> {
+    sqlc.MySQL -> {
       use schema <- result.try(db.fetch_schema_mysql(db))
       Ok(schema)
     }
-    sqlc_config.PostgreSQL -> {
+    sqlc.PostgreSQL -> {
       use schema <- result.try(db.fetch_schema_postgresql(db))
       let assert Ok(re) =
         regexp.from_string("(?m)^\\\\restrict.*\n|^\\\\unrestrict.*\n")
       let schema = regexp.replace(re, schema, "")
       Ok(schema)
     }
-    sqlc_config.SQLite -> {
+    sqlc.SQLite -> {
       use schema <- result.try(db.fetch_schema_sqlite(db))
       let sql = string.trim(schema)
       Ok(sql)
