@@ -19,8 +19,8 @@ import simplifile.{Execute, FilePermissions, Read, Write}
 
 // SQLC Configuration types
 type Queries {
-  QuerySingle(String)
-  QueryMultiple(List(String))
+  QueriesSingle(String)
+  QueriesMultiple(List(String))
 }
 
 pub type Engine {
@@ -57,8 +57,8 @@ type Config {
 // SQLC Configuration to-JSON functions
 fn queries_to_json(queries: Queries) -> json.Json {
   case queries {
-    QuerySingle(query) -> json.string(query)
-    QueryMultiple(queries) -> json.array(queries, json.string)
+    QueriesSingle(query) -> json.string(query)
+    QueriesMultiple(queries) -> json.array(queries, json.string)
   }
 }
 
@@ -394,7 +394,7 @@ pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
     Config(version: Version2, sql: [
       Sql(
         schema: Some("schema.sql"),
-        queries: Some(QueryMultiple(queries)),
+        queries: Some(QueriesMultiple(queries)),
         engine:,
         gen: Some(
           Gen(
