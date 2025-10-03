@@ -55,7 +55,7 @@ pub const usage = "
 
 pub type Command {
   Usage
-  Generate(engine: sqlc.Engine, db: String)
+  Generate(engine: sqlc.V2Engine, db: String)
 }
 
 pub fn engine_from_env(str: String) {
@@ -67,7 +67,7 @@ pub fn engine_from_env(str: String) {
   }
 }
 
-pub fn parse_env(env: String) -> Result(#(sqlc.Engine, String), String) {
+pub fn parse_env(env: String) -> Result(#(sqlc.V2Engine, String), String) {
   let env_result = envoy.get(env)
   use env_var <- given.error(in: env_result, return: fn(_) {
     Error("Environment Variable \"DATABASE_URL\" is empty!")

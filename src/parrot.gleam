@@ -57,7 +57,7 @@ pub fn main() {
   }
 }
 
-fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
+fn cmd_gen(engine: sqlc.V2Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db

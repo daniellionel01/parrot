@@ -17,52 +17,60 @@ import parrot/internal/project
 import parrot/internal/shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
 
-// SQLC Configuration types
-type Queries {
-  QueriesSingle(String)
-  QueriesMultiple(List(String))
-}
-
-pub type Engine {
+// SQLC Configuration v2 types
+pub type V2Engine {
   SQLite
   MySQL
   PostgreSQL
 }
 
-type GenJson {
-  GenJson(out: Option(String), indent: Option(String), filename: Option(String))
+type V2Queries {
+  V2Query(String)
+  V2Queries(List(String))
 }
 
-type Gen {
-  Gen(json: Option(GenJson))
-}
-
-type Sql {
-  Sql(
-    schema: Option(String),
-    queries: Option(Queries),
-    engine: Engine,
-    gen: Option(Gen),
+type V2GenJson {
+  V2GenJson(
+    out: Option(String),
+    indent: Option(String),
+    filename: Option(String),
   )
 }
 
-type Version {
+type V2Gen {
+  V2Gen(json: Option(V2GenJson))
+}
+
+type V2Sql {
+  V2Sql(
+    schema: Option(String),
+    queries: Option(V2Queries),
+    engine: V2Engine,
+    gen: Option(V2Gen),
+  )
+}
+
+type Version2 {
   Version2
 }
 
+/// If needed, we can create a separate type for Version 1 in the future and
+/// use it in a separate Config variant.
+/// This will prevent us from mixing structures of different versions in the
+/// same config.
 type Config {
-  Config(version: Version, sql: List(Sql))
+  ConfigV2(version: Version2, sql: List(V2Sql))
 }
 
-// SQLC Configuration to-JSON functions
-fn queries_to_json(queries: Queries) -> json.Json {
+// SQLC Configuration v2 to-JSON functions
+fn v2_queries_to_json(queries: V2Queries) -> json.Json {
   case queries {
-    QueriesSingle(query) -> json.string(query)
-    QueriesMultiple(queries) -> json.array(queries, json.string)
+    V2Query(query) -> json.string(query)
+    V2Queries(queries) -> json.array(queries, json.string)
   }
 }
 
-fn engine_to_json(engine: Engine) -> json.Json {
+fn v2_engine_to_json(engine: V2Engine) -> json.Json {
   let engine = case engine {
     SQLite -> "sqlite"
     MySQL -> "mysql"
@@ -71,8 +79,8 @@ fn engine_to_json(engine: Engine) -> json.Json {
   json.string(engine)
 }
 
-fn gen_json_to_json(gen_json: GenJson) -> json.Json {
-  let GenJson(out:, indent:, filename:) = gen_json
+fn v2_gen_json_to_json(gen_json: V2GenJson) -> json.Json {
+  let V2GenJson(out:, indent:, filename:) = gen_json
   let json_object = case out {
     option.None -> []
     option.Some(out) -> [#("out", json.string(out))]
@@ -91,9 +99,9 @@ fn gen_json_to_json(gen_json: GenJson) -> json.Json {
   json.object(json_object)
 }
 
-fn sql_to_json(sql: Sql) -> json.Json {
-  let Sql(schema:, queries:, engine:, gen:) = sql
-  let json_object = [#("engine", engine_to_json(engine))]
+fn v2_sql_to_json(sql: V2Sql) -> json.Json {
+  let V2Sql(schema:, queries:, engine:, gen:) = sql
+  let json_object = [#("engine", v2_engine_to_json(engine))]
   let json_object = case schema {
     option.None -> json_object
     option.Some(schema) -> [#("schema", json.string(schema)), ..json_object]
@@ -101,27 +109,27 @@ fn sql_to_json(sql: Sql) -> json.Json {
   let json_object = case queries {
     option.None -> json_object
     option.Some(queries) -> [
-      #("queries", queries_to_json(queries)),
+      #("queries", v2_queries_to_json(queries)),
       ..json_object
     ]
   }
   let json_object = case gen {
     option.None -> json_object
-    option.Some(gen) -> [#("gen", gen_to_json(gen)), ..json_object]
+    option.Some(gen) -> [#("gen", v2_gen_to_json(gen)), ..json_object]
   }
   json.object(json_object)
 }
 
-fn gen_to_json(gen: Gen) -> json.Json {
-  let Gen(json:) = gen
+fn v2_gen_to_json(gen: V2Gen) -> json.Json {
+  let V2Gen(json:) = gen
   let json_object = case json {
     option.None -> []
-    option.Some(json) -> [#("json", gen_json_to_json(json))]
+    option.Some(json) -> [#("json", v2_gen_json_to_json(json))]
   }
   json.object(json_object)
 }
 
-fn version_to_json(version: Version) -> json.Json {
+fn version2_to_json(version: Version2) -> json.Json {
   let version = case version {
     Version2 -> "2"
   }
@@ -129,11 +137,13 @@ fn version_to_json(version: Version) -> json.Json {
 }
 
 fn config_to_json(config: Config) -> json.Json {
-  let Config(version:, sql:) = config
-  json.object([
-    #("version", version_to_json(version)),
-    #("sql", json.array(sql, sql_to_json)),
-  ])
+  case config {
+    ConfigV2(version:, sql:) ->
+      json.object([
+        #("version", version2_to_json(version)),
+        #("sql", json.array(sql, v2_sql_to_json)),
+      ])
+  }
 }
 
 fn config_to_json_string(config: Config) -> String {
@@ -389,16 +399,16 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
   decode.run(data, decoder)
 }
 
-pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
+pub fn gen_sqlc_json(engine: V2Engine, queries: List(String)) -> String {
   let config =
-    Config(version: Version2, sql: [
-      Sql(
+    ConfigV2(version: Version2, sql: [
+      V2Sql(
         schema: Some("schema.sql"),
-        queries: Some(QueriesMultiple(queries)),
+        queries: Some(V2Queries(queries)),
         engine:,
         gen: Some(
-          Gen(
-            json: Some(GenJson(
+          V2Gen(
+            json: Some(V2GenJson(
               out: Some("."),
               indent: Some("  "),
               filename: Some("queries.json"),
