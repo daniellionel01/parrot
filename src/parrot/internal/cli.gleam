@@ -1,6 +1,7 @@
 import envoy
 import given
 import parrot/internal/errors
+import parrot/internal/sqlc
 
 pub const usage = "
   🦜 Parrot - type-safe SQL in gleam for sqlite, postgresql & mysql
@@ -54,27 +55,19 @@ pub const usage = "
 
 pub type Command {
   Usage
-  Generate(engine: Engine, db: String)
-}
-
-pub type Engine {
-  SQlite
-  MySQL
-  PostgreSQL
+  Generate(engine: sqlc.Engine, db: String)
 }
 
 pub fn engine_from_env(str: String) {
   case str {
-    "postgres" <> _ -> Ok(PostgreSQL)
-    "mysql" <> _ -> Ok(MySQL)
-    "file" | "sqlite" <> _ -> Ok(SQlite)
-    _ -> {
-      Error(errors.UnknownEngine(str))
-    }
+    "postgres" <> _ -> Ok(sqlc.V2PostgreSQL)
+    "mysql" <> _ -> Ok(sqlc.V2MySQL)
+    "file" | "sqlite" <> _ -> Ok(sqlc.V2SQLite)
+    _ -> Error(errors.UnknownEngine(str))
   }
 }
 
-pub fn parse_env(env: String) -> Result(#(Engine, String), String) {
+pub fn parse_env(env: String) -> Result(#(sqlc.V2Engine, String), String) {
   let env_result = envoy.get(env)
   use env_var <- given.error(in: env_result, return: fn(_) {
     Error("Environment Variable \"DATABASE_URL\" is empty!")
