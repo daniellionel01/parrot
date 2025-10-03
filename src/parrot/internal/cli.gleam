@@ -55,14 +55,14 @@ pub const usage = "
 
 pub type Command {
   Usage
-  Generate(engine: sqlc.V2Engine, db: String)
+  Generate(engine: sqlc.Engine, db: String)
 }
 
 pub fn engine_from_env(str: String) {
   case str {
-    "postgres" <> _ -> Ok(sqlc.PostgreSQL)
-    "mysql" <> _ -> Ok(sqlc.MySQL)
-    "file" | "sqlite" <> _ -> Ok(sqlc.SQLite)
+    "postgres" <> _ -> Ok(sqlc.V2PostgreSQL)
+    "mysql" <> _ -> Ok(sqlc.V2MySQL)
+    "file" | "sqlite" <> _ -> Ok(sqlc.V2SQLite)
     _ -> Error(errors.UnknownEngine(str))
   }
 }

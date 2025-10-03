@@ -23,18 +23,18 @@ pub fn main() {
   let cmd: Result(cli.Command, String) = case argv.load().arguments {
     [] -> {
       cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(sqlc.V2Engine(a.0), a.1) })
     }
     ["--env-var", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(sqlc.V2Engine(a.0), a.1) })
     }
     ["-e", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(sqlc.V2Engine(a.0), a.1) })
     }
     ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
+      Ok(cli.Generate(sqlc.V2Engine(sqlc.V2SQLite), file_path))
     }
     ["help"] -> Ok(cli.Usage)
     _ -> Ok(cli.Usage)
@@ -57,7 +57,7 @@ pub fn main() {
   }
 }
 
-fn cmd_gen(engine: sqlc.V2Engine, db: String) -> Result(Nil, errors.ParrotError) {
+fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db
@@ -113,18 +113,18 @@ fn cmd_gen(engine: sqlc.V2Engine, db: String) -> Result(Nil, errors.ParrotError)
     |> spinner.start()
 
   use schema_sql <- result.try(case engine {
-    sqlc.MySQL -> {
+    sqlc.V2Engine(sqlc.V2MySQL) -> {
       use schema <- result.try(db.fetch_schema_mysql(db))
       Ok(schema)
     }
-    sqlc.PostgreSQL -> {
+    sqlc.V2Engine(sqlc.V2PostgreSQL) -> {
       use schema <- result.try(db.fetch_schema_postgresql(db))
       let assert Ok(re) =
         regexp.from_string("(?m)^\\\\restrict.*\n|^\\\\unrestrict.*\n")
       let schema = regexp.replace(re, schema, "")
       Ok(schema)
     }
-    sqlc.SQLite -> {
+    sqlc.V2Engine(sqlc.V2SQLite) -> {
       use schema <- result.try(db.fetch_schema_sqlite(db))
       let sql = string.trim(schema)
       Ok(sql)

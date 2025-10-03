@@ -17,11 +17,18 @@ import parrot/internal/project
 import parrot/internal/shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
 
-// SQLC Configuration v2 types
+/// Different versions of sqlc support different sets of engines.
+/// Thanks to this type, we can generate different versions of the config based
+/// on user input if we decide to create a parameter for this.
+/// For now, V2 is the only choice, of course.
+pub type Engine {
+  V2Engine(V2Engine)
+}
+
 pub type V2Engine {
-  SQLite
-  MySQL
-  PostgreSQL
+  V2SQLite
+  V2MySQL
+  V2PostgreSQL
 }
 
 type V2Queries {
@@ -62,7 +69,6 @@ type Config {
   ConfigV2(version: Version2, sql: List(V2Sql))
 }
 
-// SQLC Configuration v2 to-JSON functions
 fn v2_queries_to_json(queries: V2Queries) -> json.Json {
   case queries {
     V2Query(query) -> json.string(query)
@@ -72,9 +78,9 @@ fn v2_queries_to_json(queries: V2Queries) -> json.Json {
 
 fn v2_engine_to_json(engine: V2Engine) -> json.Json {
   let engine = case engine {
-    SQLite -> "sqlite"
-    MySQL -> "mysql"
-    PostgreSQL -> "postgresql"
+    V2SQLite -> "sqlite"
+    V2MySQL -> "mysql"
+    V2PostgreSQL -> "postgresql"
   }
   json.string(engine)
 }
@@ -396,24 +402,27 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
   decode.run(data, decoder)
 }
 
-pub fn gen_sqlc_json(engine: V2Engine, queries: List(String)) -> String {
-  let config =
-    ConfigV2(version: Version2, sql: [
-      V2Sql(
-        schema: Some("schema.sql"),
-        queries: Some(V2Queries(queries)),
-        engine:,
-        gen: Some(
-          V2Gen(
-            json: Some(V2GenJson(
-              out: Some("."),
-              indent: Some("  "),
-              filename: Some("queries.json"),
-            )),
+pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
+  let config = case engine {
+    V2Engine(engine) ->
+      ConfigV2(version: Version2, sql: [
+        V2Sql(
+          schema: Some("schema.sql"),
+          queries: Some(V2Queries(queries)),
+          engine:,
+          gen: Some(
+            V2Gen(
+              json: Some(V2GenJson(
+                out: Some("."),
+                indent: Some("  "),
+                filename: Some("queries.json"),
+              )),
+            ),
           ),
         ),
-      ),
-    ])
+      ])
+  }
+
   config_to_json_string(config)
 }
 
