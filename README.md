@@ -6,10 +6,7 @@
 
 > 🚨 **Exciting News**<br />
 > Parrot got listed a community project on the sqlc website! 🦜🎉<br />
-> Check it out here: https://docs.sqlc.dev/en/latest/reference/language-support.html<br />
-> <br />
-> Oh and we got featured on hackernews!<br />
-> https://news.ycombinator.com/item?id=45478033
+> Check it out here: https://docs.sqlc.dev/en/latest/reference/language-support.html
 
 ## Table of Contents
 - [🦜 Parrot / type-safe SQL in gleam](#)
