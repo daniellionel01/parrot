@@ -18,7 +18,7 @@ pub const usage = "
     MySQL, or SQLite) by reading the DATABASE_URL environment variable.
 
   OPTIONS:
-    --sqlite <file_path>
+    --sqlite <FILE_PATH>
       Directly specify the path to a SQLite database file. When this
       option is used, it bypasses the DATABASE_URL environment
       variable entirely.
