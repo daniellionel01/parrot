@@ -139,7 +139,12 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     |> spinner.start()
 
   let gen_result =
-    shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    shellout.command(
+      run: "./sqlc",
+      with: ["generate", "--file", "sqlc.json"],
+      in: sqlc_dir,
+      opt: [],
+    )
 
   use _ <- given.error(gen_result, return: fn(err) {
     let #(_, err) = err
