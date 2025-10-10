@@ -163,7 +163,7 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
 }
 
 pub type PostsByUsername {
-  PostsByUsername(id: Int, title: String, user_id: Int)
+  PostsByUsername(id: Int, title: String, user_id: Option(Int))
 }
 
 pub fn posts_by_username(username username: String) {
@@ -184,12 +184,12 @@ where user_id = (
 pub fn posts_by_username_decoder() -> decode.Decoder(PostsByUsername) {
   use id <- decode.field(0, decode.int)
   use title <- decode.field(1, decode.string)
-  use user_id <- decode.field(2, decode.int)
+  use user_id <- decode.field(2, decode.optional(decode.int))
   decode.success(PostsByUsername(id:, title:, user_id:))
 }
 
 pub type PostsByAdmins {
-  PostsByAdmins(id: Int, title: String, user_id: Int)
+  PostsByAdmins(id: Int, title: String, user_id: Option(Int))
 }
 
 pub fn posts_by_admins() {
@@ -210,6 +210,6 @@ where user_id in (
 pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
   use id <- decode.field(0, decode.int)
   use title <- decode.field(1, decode.string)
-  use user_id <- decode.field(2, decode.int)
+  use user_id <- decode.field(2, decode.optional(decode.int))
   decode.success(PostsByAdmins(id:, title:, user_id:))
 }

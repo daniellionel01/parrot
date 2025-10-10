@@ -6,6 +6,7 @@ run:
 
 test:
   #!/bin/bash
+  rm -rf build/.parrot
   rm -f src/app/sql.gleam
   ../../bin/mysql.sh
   ./priv/reset.sh

@@ -1,5 +1,5 @@
-drop table if exists users;
 drop table if exists posts;
+drop table if exists users;
 
 create table users (
   id int auto_increment primary key,
@@ -14,7 +14,7 @@ create table posts (
   created_at timestamp default current_timestamp,
   title varchar(255) not null unique,
 
-  user_id integer not null,
+  user_id integer,
 
   foreign key (user_id) references users(id) on delete cascade
 );
