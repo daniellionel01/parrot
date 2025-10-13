@@ -537,7 +537,7 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
   }
 
   let exists = binary_exists(path)
-  use <- bool.guard(when: exists, return: {
+  use <- bool.lazy_guard(when: exists, return: fn() {
     use bin <- result.try(
       simplifile.read_bits(path)
       |> result.map_error(fn(_) { errors.SqlcDownloadError("could not verify") }),
