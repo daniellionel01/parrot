@@ -146,7 +146,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     )
 
   use _ <- result.try(case gen_result {
-    Ok(value) -> Ok(value)
+    Ok(_) -> Ok(Nil)
     Error(error) -> {
       let #(_, error) = error
       Error(errors.SqlcGenerateError(error))
@@ -181,7 +181,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       opt: [],
     )
   use _ <- result.try(case stdout_format {
-    Ok(value) -> Ok(value)
+    Ok(_) -> Ok(Nil)
     Error(error) -> {
       let #(_, error) = error
       Error(errors.GleamFormatError(error))
