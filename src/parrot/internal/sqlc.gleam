@@ -2,8 +2,8 @@
 //// decodes the JSON that sqlc generates.
 
 import filepath
-import given
 import gleam/bit_array
+import gleam/bool
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
@@ -460,11 +460,10 @@ fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError)
     _, _ -> Error(Nil)
   }
 
-  use #(platform, hash) <- given.ok(platform, else_return: fn(_) {
-    Error(errors.SqlcDownloadError(
-      "unsupported platform: " <> os <> ", " <> cpu,
-    ))
-  })
+  use #(platform, hash) <- result.try(result.replace_error(
+    platform,
+    errors.SqlcDownloadError("unsupported platform: " <> os <> ", " <> cpu),
+  ))
 
   Ok(#(base <> platform, hash))
 }
@@ -538,7 +537,7 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
   }
 
   let exists = binary_exists(path)
-  use <- given.that(exists, return: fn() {
+  use <- bool.guard(when: exists, return: {
     use bin <- result.try(
       simplifile.read_bits(path)
       |> result.map_error(fn(_) { errors.SqlcDownloadError("could not verify") }),
