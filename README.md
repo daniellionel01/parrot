@@ -66,7 +66,7 @@ limit
   1;
 ```
 
-Parrot generates the following code:
+Parrot will generate gleam code with matching types, decoders and argument names for you:
 
 ```gleam
 pub type CreateUserWithRole {
