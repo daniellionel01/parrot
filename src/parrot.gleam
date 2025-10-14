@@ -1,6 +1,5 @@
 import argv
 import filepath
-import given
 import gleam/dict
 import gleam/io
 import gleam/list
@@ -146,9 +145,12 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       opt: [],
     )
 
-  use _ <- given.error(gen_result, return: fn(err) {
-    let #(_, err) = err
-    Error(errors.SqlcGenerateError(err))
+  use _ <- result.try(case gen_result {
+    Ok(_) -> Ok(Nil)
+    Error(error) -> {
+      let #(_, error) = error
+      Error(errors.SqlcGenerateError(error))
+    }
   })
 
   let project_name = project.project_name()
@@ -158,9 +160,10 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       json_file_path: queries_file,
     )
   let gen_result = codegen.codegen_from_config(config)
-  use gen_result <- given.ok(gen_result, else_return: fn(_) {
-    Error(errors.CodegenError)
-  })
+  use gen_result <- result.try(result.replace_error(
+    gen_result,
+    errors.CodegenError,
+  ))
 
   spinner.complete_current(spinner, spinner.green_checkmark())
 
@@ -177,9 +180,12 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       in: project.root(),
       opt: [],
     )
-  use _ <- given.error(stdout_format, return: fn(err) {
-    let #(_, err) = err
-    Error(errors.GleamFormatError(err))
+  use _ <- result.try(case stdout_format {
+    Ok(_) -> Ok(Nil)
+    Error(error) -> {
+      let #(_, error) = error
+      Error(errors.GleamFormatError(error))
+    }
   })
 
   spinner.complete_current(spinner, spinner.green_checkmark())

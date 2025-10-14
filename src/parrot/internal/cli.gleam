@@ -1,5 +1,5 @@
 import envoy
-import given
+import gleam/result
 import parrot/internal/errors
 import parrot/internal/sqlc
 
@@ -69,16 +69,18 @@ pub fn engine_from_env(str: String) {
 
 pub fn parse_env(env: String) -> Result(#(sqlc.Engine, String), String) {
   let env_result = envoy.get(env)
-  use env_var <- given.error(in: env_result, return: fn(_) {
-    Error("Environment Variable \"DATABASE_URL\" is empty!")
-  })
+  use env_var <- result.try(result.replace_error(
+    env_result,
+    "Environment Variable \"" <> env <> "\" is empty!",
+  ))
 
   let engine_result = engine_from_env(env_var)
-  use engine <- given.error(in: engine_result, return: fn(_) {
-    Error(
-      "\"DATABASE_URL\" does not match any of the supported formats (MySQL, PostgreSQL, SQlite)",
-    )
-  })
+  use engine <- result.try(result.replace_error(
+    engine_result,
+    "\""
+      <> env
+      <> "\" does not match any of the supported formats (MySQL, PostgreSQL, SQLite)",
+  ))
 
   Ok(#(engine, env_var))
 }
