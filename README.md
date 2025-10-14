@@ -35,7 +35,13 @@
 
 <sup>*1</sup>: Meaning that it infers the names of the parameters from your sql queries in the gleam function you call. for example for a query called `FindUser`, defined as `SELECT * FROM user WHERE username = $1`, parrot will produce a function where the arguments match those column names: `pub fn find_user(username: String) { ... }`. If you have multiple parameters of the same data types this can avoid confusion and bugs.
 
+<details>
+
+<summary>
+
 ## Showcase
+
+</summary>
 
 Given this SQL:
 
@@ -165,6 +171,8 @@ If you want to see more code how this lirbary works in action, take a look at th
 - PostgreSQL: [./integration/psql](./integration/psql)
 - MySQL: [./integration/mysql](./integration/mysql)
 - SQlite: [./integration/sqlite](./integration/sqlite)
+
+</details>
 
 ## Usage / Getting Started
 
