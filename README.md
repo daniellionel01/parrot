@@ -11,7 +11,7 @@
 ## Table of Contents
 - [🦜 Parrot / type-safe SQL in gleam](#)
   * [Features](#features)
-  * [Showcase](#showcase)
+  * [Code Showcase](#code-showcase)
   * [Usage / Getting Started](#usage--getting-started)
   * [Development](#development)
   * [Quirks](#quirks)
@@ -39,7 +39,7 @@
 
 <summary>
 
-## Showcase
+## Code Showcase
 
 </summary>
 
