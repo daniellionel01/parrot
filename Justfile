@@ -1,4 +1,27 @@
 
+find-unused:
+  #!/bin/bash
+  dependencies=$(awk '/^\[dependencies\]/{flag=1;next}/^\[/{flag=0}flag' gleam.toml | grep -E '^[a-z_]+ =' | cut -d' ' -f1)
+  unused=()
+  for dep in $dependencies; do
+    if [[ $dep == gleam_* ]]; then
+      # gleam_stdlib -> gleam/
+      # gleam_json -> gleam/json
+      import_pattern="gleam/"
+      if [ "$dep" != "gleam_stdlib" ]; then
+          suffix="${dep#gleam_}"
+          import_pattern="gleam/$suffix"
+      fi
+    else
+        import_pattern="$dep"
+    fi
+
+    if ! grep -rq "import $import_pattern" src/ --include="*.gleam" 2>/dev/null; then
+        unused+=("$dep")
+    fi
+  done
+  echo $unused
+
 default:
   @just --choose
 

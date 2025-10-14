@@ -8,6 +8,7 @@ parrot:
 
 test:
   #!/bin/bash
+  rm -rf build/.parrot
   rm -f src/app/sql.gleam
   rm -f {{SQLITE_FILE}}
   sqlite3 {{SQLITE_FILE}} < ./priv/schema.sql

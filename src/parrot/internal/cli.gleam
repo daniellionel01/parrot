@@ -1,6 +1,7 @@
 import envoy
-import given
+import gleam/result
 import parrot/internal/errors
+import parrot/internal/sqlc
 
 pub const usage = "
   🦜 Parrot - type-safe SQL in gleam for sqlite, postgresql & mysql
@@ -18,7 +19,7 @@ pub const usage = "
     MySQL, or SQLite) by reading the DATABASE_URL environment variable.
 
   OPTIONS:
-    --sqlite <file_path>
+    --sqlite <FILE_PATH>
       Directly specify the path to a SQLite database file. When this
       option is used, it bypasses the DATABASE_URL environment
       variable entirely.
@@ -54,38 +55,32 @@ pub const usage = "
 
 pub type Command {
   Usage
-  Generate(engine: Engine, db: String)
-}
-
-pub type Engine {
-  SQlite
-  MySQL
-  PostgreSQL
+  Generate(engine: sqlc.Engine, db: String)
 }
 
 pub fn engine_from_env(str: String) {
   case str {
-    "postgres" <> _ -> Ok(PostgreSQL)
-    "mysql" <> _ -> Ok(MySQL)
-    "file" | "sqlite" <> _ -> Ok(SQlite)
-    _ -> {
-      Error(errors.UnknownEngine(str))
-    }
+    "postgres" <> _ -> Ok(sqlc.PostgreSQL)
+    "mysql" <> _ -> Ok(sqlc.MySQL)
+    "file" | "sqlite" <> _ -> Ok(sqlc.SQLite)
+    _ -> Error(errors.UnknownEngine(str))
   }
 }
 
-pub fn parse_env(env: String) -> Result(#(Engine, String), String) {
+pub fn parse_env(env: String) -> Result(#(sqlc.Engine, String), String) {
   let env_result = envoy.get(env)
-  use env_var <- given.error(in: env_result, return: fn(_) {
-    Error("Environment Variable \"DATABASE_URL\" is empty!")
-  })
+  use env_var <- result.try(result.replace_error(
+    env_result,
+    "Environment Variable \"" <> env <> "\" is empty!",
+  ))
 
   let engine_result = engine_from_env(env_var)
-  use engine <- given.error(in: engine_result, return: fn(_) {
-    Error(
-      "\"DATABASE_URL\" does not match any of the supported formats (MySQL, PostgreSQL, SQlite)",
-    )
-  })
+  use engine <- result.try(result.replace_error(
+    engine_result,
+    "\""
+      <> env
+      <> "\" does not match any of the supported formats (MySQL, PostgreSQL, SQLite)",
+  ))
 
   Ok(#(engine, env_var))
 }

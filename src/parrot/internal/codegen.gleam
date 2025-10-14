@@ -1,4 +1,3 @@
-import given
 import gleam/bool
 import gleam/dynamic/decode as d
 import gleam/int
@@ -118,13 +117,13 @@ fn find_col_schema(col: sqlc.TableColumn, context: SQLC) {
 }
 
 pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
-  use <- given.not(col.not_null, return: fn() {
+  use <- bool.lazy_guard(when: !col.not_null, return: fn() {
     let col = sqlc.TableColumn(..col, not_null: True)
     let type_ = sqlc_col_to_gleam(col, context)
     GleamOption(type_)
   })
 
-  use <- given.that(col.is_array, return: fn() {
+  use <- bool.lazy_guard(when: col.is_array, return: fn() {
     let col = sqlc.TableColumn(..col, is_array: False)
     let type_ = sqlc_col_to_gleam(col, context)
     GleamList(type_)
@@ -137,7 +136,7 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     schema.enums
     |> list.find(fn(e) { e.name == sqltype })
 
-  use <- given.that(result.is_ok(enum), return: fn() {
+  use <- bool.lazy_guard(when: result.is_ok(enum), return: fn() {
     let assert Ok(enum) = enum
     GleamEnum(enum.name)
   })

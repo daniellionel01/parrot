@@ -1,15 +1,22 @@
 //// Basically a scratch pad to test out different functions while developing them
 
 import gleam/io
-import gleam/regexp
+import gleam/list
+import gleam/string
 
 pub fn main() {
   io.println(schema)
   echo "divider"
 
-  let assert Ok(re) =
-    regexp.from_string("(?m)^\\\\restrict.*\n|^\\\\unrestrict.*\n")
-  let schema = regexp.replace(re, schema, "")
+  let schema =
+    schema
+    |> string.split("\n")
+    |> list.filter(fn(line) {
+      !string.starts_with(line, "\\restrict")
+      && !string.starts_with(line, "\\unrestrict")
+    })
+    |> string.join("\n")
+
   io.println(schema)
 }
 

@@ -1,4 +1,4 @@
-# 🦜 Parrot / type-safe SQL in gleam
+# 🦜 Parrot / type-safe SQL in gleam (https://gleam.run/)
 
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
@@ -222,7 +222,7 @@ If you use PostgreSQL, you also need to have installed [pg_dump](https://www.pos
 You now have type safe access to your sql queries.
 
 You might want to write wrapper functions for the database client library of your choice. If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
-You can find functions to copy & paste into your codebase here: [wrappers](./docs/wrappers.md)
+You can find functions to copy & paste into your codebase here: [wrappers](https://github.com/daniellionel01/parrot/blob/main/docs/wrappers.md)
 
 An example with [lpil/sqlight](https://github.com/lpil/sqlight):
 ```gleam
@@ -244,6 +244,13 @@ pub fn main() {
 }
 ```
 
+## Examples
+
+If you want to see how this library works in action, take a look at the integration tests:
+- PostgreSQL: [integration/psql](https://github.com/daniellionel01/parrot/blob/main/integration/psql)
+- MySQL: [integration/mysql](https://github.com/daniellionel01/parrot/blob/main/integration/mysql)
+- SQlite: [integration/sqlite](https://github.com/daniellionel01/parrot/blob/main/integration/sqlite)
+
 ## Development
 
 [just](https://github.com/casey/just) is used to run project commands.
@@ -251,8 +258,8 @@ pub fn main() {
 ### Database
 
 There are scripts to spawn a MySQL or PostgreSQL docker container:
--  [MySQL Script](./bin/mysql.sh)
--  [PostgreSQL Script](./bin/psql.sh)
+-  [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
+-  [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
 
 For example:
 ```sh

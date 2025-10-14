@@ -1,10 +1,8 @@
 import argv
 import filepath
-import given
 import gleam/dict
 import gleam/io
 import gleam/list
-import gleam/regexp
 import gleam/result
 import gleam/string
 import parrot/internal/cli
@@ -34,7 +32,7 @@ pub fn main() {
       |> result.map(fn(a) { cli.Generate(a.0, a.1) })
     }
     ["--sqlite", file_path] -> {
-      Ok(cli.Generate(cli.SQlite, file_path))
+      Ok(cli.Generate(sqlc.SQLite, file_path))
     }
     ["help"] -> Ok(cli.Usage)
     _ -> Ok(cli.Usage)
@@ -57,7 +55,7 @@ pub fn main() {
   }
 }
 
-fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
+fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db
@@ -83,7 +81,7 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let sqlc_binary = sqlc.sqlc_binary_path()
   let sqlc_dir = filepath.directory_name(sqlc_binary)
   let schema_file = filepath.join(sqlc_dir, "schema.sql")
-  let sqlc_file = filepath.join(sqlc_dir, "sqlc.yaml")
+  let sqlc_file = filepath.join(sqlc_dir, "sqlc.json")
   let queries_file = filepath.join(sqlc_dir, "queries.json")
   let _ = simplifile.create_directory_all(sqlc_dir)
 
@@ -105,26 +103,35 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
   }
 
-  let sqlc_yaml = sqlc.gen_sqlc_yaml(engine, queries)
-  let _ = simplifile.write(sqlc_file, sqlc_yaml)
+  let sqlc_json = sqlc.gen_sqlc_json(engine, queries)
+  let _ = simplifile.write(sqlc_file, sqlc_json)
 
   let spinner =
     spinner.new("fetching schema")
     |> spinner.start()
 
   use schema_sql <- result.try(case engine {
-    cli.MySQL -> {
+    sqlc.MySQL -> {
       use schema <- result.try(db.fetch_schema_mysql(db))
       Ok(schema)
     }
-    cli.PostgreSQL -> {
+    sqlc.PostgreSQL -> {
       use schema <- result.try(db.fetch_schema_postgresql(db))
-      let assert Ok(re) =
-        regexp.from_string("(?m)^\\\\restrict.*\n|^\\\\unrestrict.*\n")
-      let schema = regexp.replace(re, schema, "")
+
+      // this is an edge case with the postgres schema dump.
+      // sqlc does not like those lines from postgres 17.
+      let schema =
+        schema
+        |> string.split("\n")
+        |> list.filter(fn(line) {
+          !string.starts_with(line, "\\restrict")
+          && !string.starts_with(line, "\\unrestrict")
+        })
+        |> string.join("\n")
+
       Ok(schema)
     }
-    cli.SQlite -> {
+    sqlc.SQLite -> {
       use schema <- result.try(db.fetch_schema_sqlite(db))
       let sql = string.trim(schema)
       Ok(sql)
@@ -139,11 +146,19 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     |> spinner.start()
 
   let gen_result =
-    shellout.command(run: "./sqlc", with: ["generate"], in: sqlc_dir, opt: [])
+    shellout.command(
+      run: "./sqlc",
+      with: ["generate", "--file", "sqlc.json"],
+      in: sqlc_dir,
+      opt: [],
+    )
 
-  use _ <- given.error(gen_result, return: fn(err) {
-    let #(_, err) = err
-    Error(errors.SqlcGenerateError(err))
+  use _ <- result.try(case gen_result {
+    Ok(_) -> Ok(Nil)
+    Error(error) -> {
+      let #(_, error) = error
+      Error(errors.SqlcGenerateError(error))
+    }
   })
 
   let project_name = project.project_name()
@@ -153,9 +168,10 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       json_file_path: queries_file,
     )
   let gen_result = codegen.codegen_from_config(config)
-  use gen_result <- given.ok(gen_result, else_return: fn(_) {
-    Error(errors.CodegenError)
-  })
+  use gen_result <- result.try(result.replace_error(
+    gen_result,
+    errors.CodegenError,
+  ))
 
   spinner.complete_current(spinner, spinner.green_checkmark())
 
@@ -172,9 +188,12 @@ fn cmd_gen(engine: cli.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       in: project.root(),
       opt: [],
     )
-  use _ <- given.error(stdout_format, return: fn(err) {
-    let #(_, err) = err
-    Error(errors.GleamFormatError(err))
+  use _ <- result.try(case stdout_format {
+    Ok(_) -> Ok(Nil)
+    Error(error) -> {
+      let #(_, error) = error
+      Error(errors.GleamFormatError(error))
+    }
   })
 
   spinner.complete_current(spinner, spinner.green_checkmark())
