@@ -11,8 +11,8 @@
 ## Table of Contents
 - [🦜 Parrot / type-safe SQL in gleam](#)
   * [Features](#features)
+  * [Code Showcase](#code-showcase)
   * [Usage / Getting Started](#usage--getting-started)
-  * [Examples](#examples)
   * [Development](#development)
   * [Quirks](#quirks)
   * [FAQ](#faq)
@@ -34,6 +34,145 @@
 ☑️ Named parameters.<sup>*1</sup> <br />
 
 <sup>*1</sup>: Meaning that it infers the names of the parameters from your sql queries in the gleam function you call. for example for a query called `FindUser`, defined as `SELECT * FROM user WHERE username = $1`, parrot will produce a function where the arguments match those column names: `pub fn find_user(username: String) { ... }`. If you have multiple parameters of the same data types this can avoid confusion and bugs.
+
+<details>
+
+<summary>
+
+## Code Showcase
+
+</summary>
+
+Given this SQL:
+
+```sql
+-- name: CreateUserWithRole :exec
+insert into
+  users (username, role)
+values
+  ($1, $2)
+returning id;
+
+-- name: GetUserByUsername :one
+select
+  id,
+  username,
+  created_at,
+  date_of_birth,
+  profile,
+  extra_info,
+  favorite_numbers,
+  role,
+  document
+from
+  users
+where
+  username = $1
+limit
+  1;
+```
+
+Parrot will generate gleam code with matching types, decoders and argument names for you:
+
+```gleam
+pub type CreateUserWithRole {
+  CreateUserWithRole(id: Int)
+}
+
+pub fn create_user_with_role(
+  username username: String,
+  role role: Option(UserRole),
+) {
+  let sql =
+    "insert into
+  users (username, role)
+values
+  ($1, $2)
+returning id"
+  #(sql, [
+    dev.ParamString(username),
+    dev.ParamNullable(
+      option.map(role, fn(v) { dev.ParamString(user_role_to_string(v)) }),
+    ),
+  ])
+}
+
+pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
+  use id <- decode.field(0, decode.int)
+  decode.success(CreateUserWithRole(id:))
+}
+
+pub type GetUserByUsername {
+  GetUserByUsername(
+    id: Int,
+    username: String,
+    created_at: Option(Timestamp),
+    date_of_birth: Option(Date),
+    profile: Option(String),
+    extra_info: Option(String),
+    favorite_numbers: Option(List(Int)),
+    role: Option(UserRole),
+    document: Option(BitArray),
+  )
+}
+
+pub fn get_user_by_username(username username: String) {
+  let sql =
+    "select
+  id,
+  username,
+  created_at,
+  date_of_birth,
+  profile,
+  extra_info,
+  favorite_numbers,
+  role,
+  document
+from
+  users
+where
+  username = $1
+limit
+  1"
+  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
+}
+
+pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
+  use id <- decode.field(0, decode.int)
+  use username <- decode.field(1, decode.string)
+  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use date_of_birth <- decode.field(
+    3,
+    decode.optional(dev.calendar_date_decoder()),
+  )
+  use profile <- decode.field(4, decode.optional(decode.string))
+  use extra_info <- decode.field(5, decode.optional(decode.string))
+  use favorite_numbers <- decode.field(
+    6,
+    decode.optional(decode.list(of: decode.int)),
+  )
+  use role <- decode.field(7, decode.optional(user_role_decoder()))
+  use document <- decode.field(8, decode.optional(decode.bit_array))
+  decode.success(GetUserByUsername(
+    id:,
+    username:,
+    created_at:,
+    date_of_birth:,
+    profile:,
+    extra_info:,
+    favorite_numbers:,
+    role:,
+    document:,
+  ))
+}
+```
+
+If you want to see more code how this lirbary works in action, take a look at the integration tests:
+- PostgreSQL: [./integration/psql](./integration/psql)
+- MySQL: [./integration/mysql](./integration/mysql)
+- SQlite: [./integration/sqlite](./integration/sqlite)
+
+</details>
 
 ## Usage / Getting Started
 
