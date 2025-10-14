@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove `given` dependency (sorry inoas <3). (https://github.com/daniellionel01/parrot/pull/72)<br />
   Thank you szelbi! (https://github.com/sz3lbi)
 
+- Remove `gleam_regexp` dependency.
+
 ## [2.1.1] - 2025-09-30
 
 - Bug Fix: quotes are escaped properly in generated gleam code. (https://github.com/daniellionel01/parrot/pull/65)

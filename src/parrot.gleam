@@ -3,7 +3,6 @@ import filepath
 import gleam/dict
 import gleam/io
 import gleam/list
-import gleam/regexp
 import gleam/result
 import gleam/string
 import parrot/internal/cli
@@ -118,9 +117,18 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     }
     sqlc.PostgreSQL -> {
       use schema <- result.try(db.fetch_schema_postgresql(db))
-      let assert Ok(re) =
-        regexp.from_string("(?m)^\\\\restrict.*\n|^\\\\unrestrict.*\n")
-      let schema = regexp.replace(re, schema, "")
+
+      // this is an edge case with the postgres schema dump.
+      // sqlc does not like those lines from postgres 17.
+      let schema =
+        schema
+        |> string.split("\n")
+        |> list.filter(fn(line) {
+          !string.starts_with(line, "\\restrict")
+          && !string.starts_with(line, "\\unrestrict")
+        })
+        |> string.join("\n")
+
       Ok(schema)
     }
     sqlc.SQLite -> {
