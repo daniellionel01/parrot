@@ -29,6 +29,7 @@ pub fn main() {
       option.None,
       option.None,
       option.Some(<<31, 128>>),
+      option.None,
     ),
   ]) = sqlight.query(sql, on:, with:, expecting:)
 }

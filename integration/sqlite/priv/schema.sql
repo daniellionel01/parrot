@@ -5,7 +5,9 @@ create table users (
   balance real not null default 0.0,
   last_known_location decimal(9, 6),
   role text,
-  avatar blob
+  avatar blob,
+
+  type text
 );
 
 create table posts (

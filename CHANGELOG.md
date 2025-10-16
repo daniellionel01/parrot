@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.2] - 2025-10-16
+
 - Parrot now generates a `sqlc.json` instead of a yaml configuration. (https://github.com/daniellionel01/parrot/pull/71)<br />
   Thank you szelbi! (https://github.com/sz3lbi)
 
@@ -14,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Thank you szelbi! (https://github.com/sz3lbi)
 
 - Remove `gleam_regexp` dependency.
+
+- Support column names that collide with keywords built into Gleam. (https://github.com/daniellionel01/parrot/issues/74)
 
 ## [2.1.1] - 2025-09-30
 
