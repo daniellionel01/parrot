@@ -80,13 +80,14 @@ pub type GetUserByUsername {
     last_known_location: Option(Float),
     role: Option(String),
     avatar: Option(BitArray),
+    type_: Option(String),
   )
 }
 
 pub fn get_user_by_username(username username: String) {
   let sql =
     "SELECT
-  id, username, created_at, balance, last_known_location, role, avatar
+  id, username, created_at, balance, last_known_location, role, avatar, type
 FROM
   users
 WHERE
@@ -104,6 +105,7 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use last_known_location <- decode.field(4, decode.optional(decode.float))
   use role <- decode.field(5, decode.optional(decode.string))
   use avatar <- decode.field(6, decode.optional(decode.bit_array))
+  use type_ <- decode.field(7, decode.optional(decode.string))
   decode.success(GetUserByUsername(
     id:,
     username:,
@@ -112,6 +114,7 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
     last_known_location:,
     role:,
     avatar:,
+    type_:,
   ))
 }
 

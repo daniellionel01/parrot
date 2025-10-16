@@ -102,6 +102,35 @@ fn normalise_col_type(col: sqlc.TableColumn) {
   }
 }
 
+///Keywords built into gleam
+fn built_into_gleam(value: String) {
+  case value {
+    "as"
+    | "assert"
+    | "auto"
+    | "case"
+    | "const"
+    | "delegate"
+    | "derive"
+    | "echo"
+    | "else"
+    | "fn"
+    | "if"
+    | "implement"
+    | "import"
+    | "let"
+    | "macro"
+    | "opaque"
+    | "panic"
+    | "pub"
+    | "test"
+    | "todo"
+    | "type"
+    | "use" -> True
+    _ -> False
+  }
+}
+
 fn find_col_schema(col: sqlc.TableColumn, context: SQLC) {
   let schema_name = col.type_ref.schema
 
@@ -203,9 +232,13 @@ pub fn gen_column_name(
       }
     }
   }
-  case string_case.snake_case(result) {
+  let result = case string_case.snake_case(result) {
     "" -> "col_" <> int.to_string(index)
     x -> x
+  }
+  case built_into_gleam(result) {
+    False -> result
+    True -> result <> "_"
   }
 }
 
