@@ -71,6 +71,19 @@ WHERE
   #(sql, [dev.ParamString(username), dev.ParamInt(id)])
 }
 
+pub fn update_user_type(type_ type_: Option(String), id id: Int) {
+  let sql =
+    "UPDATE users
+SET
+  type = ?
+WHERE
+  id = ?"
+  #(sql, [
+    dev.ParamNullable(option.map(type_, fn(v) { dev.ParamString(v) })),
+    dev.ParamInt(id),
+  ])
+}
+
 pub type GetUserByUsername {
   GetUserByUsername(
     id: Int,

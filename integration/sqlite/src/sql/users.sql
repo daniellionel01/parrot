@@ -26,6 +26,13 @@ SET
 WHERE
   id = ?;
 
+-- name: UpdateUserType :exec
+UPDATE users
+SET
+  type = ?
+WHERE
+  id = ?;
+
 -- name: GetUserByUsername :one
 SELECT
   *

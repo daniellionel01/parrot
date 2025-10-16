@@ -277,6 +277,11 @@ fn gleam_type_to_param(gtype: GleamType) -> String {
 }
 
 fn gleam_type_to_return_type(variable: String, gt: GleamType, context: SQLC) {
+  let variable = case built_into_gleam(variable) {
+    False -> variable
+    True -> variable <> "_"
+  }
+
   let value = case gt {
     GleamEnum(name) -> {
       let name = string_case.snake_case(name)
@@ -311,6 +316,10 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
     |> list.map(fn(p) {
       let gleam_type = sqlc_col_to_gleam(p.column, context)
       let name = p.column.name
+      let name = case built_into_gleam(name) {
+        False -> name
+        True -> name <> "_"
+      }
 
       case name {
         "" ->
