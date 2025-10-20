@@ -276,7 +276,7 @@ fn gleam_type_to_param(gtype: GleamType) -> String {
   }
 }
 
-fn gleam_type_to_return_type(variable: String, gt: GleamType, context: SQLC) {
+fn gleam_type_to_return_type(variable: String, gt: GleamType) {
   let variable = case built_into_gleam(variable) {
     False -> variable
     True -> variable <> "_"
@@ -298,7 +298,7 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType, context: SQLC) {
       "dev.ParamNullable(option.map("
       <> value
       <> ", fn (v) { "
-      <> gleam_type_to_return_type("v", sub_type, context)
+      <> gleam_type_to_return_type("v", sub_type)
       <> " }))"
     }
     _ -> {
@@ -324,10 +324,10 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
       case name {
         "" ->
           panic as {
-              "Parameter name for "
-              <> fn_name
-              <> " is empty! Please use a named parameter instead (f.e. \"sqlc.arg(name)\" or \"@arg\")"
-            }
+            "Parameter name for "
+            <> fn_name
+            <> " is empty! Please use a named parameter instead (f.e. \"sqlc.arg(name)\" or \"@arg\")"
+          }
         _ -> Nil
       }
       name <> " " <> name <> ": " <> gleam_type_to_string(gleam_type)
@@ -341,7 +341,7 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
       <> args
       |> list.map(fn(arg) {
         let arg_type = sqlc_col_to_gleam(arg.column, context)
-        gleam_type_to_return_type(arg.column.name, arg_type, context)
+        gleam_type_to_return_type(arg.column.name, arg_type)
       })
       |> string.join(", ")
       <> "]"
@@ -361,9 +361,9 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
     | sqlc.BatchOne
     | sqlc.CopyFrom ->
       panic as {
-          "parrot does not support this query annotation: "
-          <> sqlc.query_cmd_to_string(query.cmd)
-        }
+        "parrot does not support this query annotation: "
+        <> sqlc.query_cmd_to_string(query.cmd)
+      }
   }
   let def_return = "#(sql, " <> def_return_params <> ", " <> def_exp <> ")"
 
