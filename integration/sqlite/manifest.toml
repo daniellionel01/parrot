@@ -18,7 +18,7 @@ packages = [
   { name = "parrot", version = "2.1.2", build_tools = ["gleam"], requirements = ["argv", "envoy", "filepath", "gleam_crypto", "gleam_httpc", "gleam_json", "gleam_stdlib", "gleam_time", "glearray", "repeatedly", "simplifile", "tom"], source = "local", path = "../.." },
   { name = "repeatedly", version = "2.1.2", build_tools = ["gleam"], requirements = [], otp_app = "repeatedly", source = "hex", outer_checksum = "93AE1938DDE0DC0F7034F32C1BF0D4E89ACEBA82198A1FE21F604E849DA5F589" },
   { name = "simplifile", version = "2.3.0", build_tools = ["gleam"], requirements = ["filepath", "gleam_stdlib"], otp_app = "simplifile", source = "hex", outer_checksum = "0A868DAC6063D9E983477981839810DC2E553285AB4588B87E3E9C96A7FB4CB4" },
-  { name = "sqlight", version = "1.0.2", build_tools = ["gleam"], requirements = ["esqlite", "gleam_stdlib"], otp_app = "sqlight", source = "hex", outer_checksum = "74327861946FD2DA2313F80FD0130DBB38A70F262869C783C58F8600C8675E7D" },
+  { name = "sqlight", version = "1.0.3", build_tools = ["gleam"], requirements = ["esqlite", "gleam_stdlib"], otp_app = "sqlight", source = "hex", outer_checksum = "CADD79663C9B61D4BAC960A47CC2D42CA8F48EAF5804DBEB79977287750F4B16" },
   { name = "tom", version = "2.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "gleam_time"], otp_app = "tom", source = "hex", outer_checksum = "74D0C5A3761F7A7D06994755D4D5AD854122EF8E9F9F76A3E7547606D8C77091" },
 ]
 
