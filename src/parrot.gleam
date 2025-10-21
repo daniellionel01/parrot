@@ -21,18 +21,28 @@ pub fn main() {
   let cmd: Result(cli.Command, String) = case argv.load().arguments {
     [] -> {
       cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, cli.Database(a.1)) })
     }
     ["--env-var", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, cli.Database(a.1)) })
     }
     ["-e", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, cli.Database(a.1)) })
     }
     ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
+      Ok(cli.Generate(sqlc.SQLite, cli.Database(file_path)))
+    }
+    ["--schema", engine_specifier, path_to_schema] -> {
+      let engine = 
+        engine_specifier 
+        |> string.lowercase
+        |> cli.engine_from_env
+      case engine {
+        Error(e) -> Error(errors.err_to_string(e))
+        Ok(engine) -> Ok(cli.Generate(engine, cli.SQLFile(path_to_schema)))
+      }
     }
     ["help"] -> Ok(cli.Usage)
     _ -> Ok(cli.Usage)
@@ -43,8 +53,8 @@ pub fn main() {
     Ok(cmd) ->
       case cmd {
         cli.Usage -> io.println(cli.usage)
-        cli.Generate(engine:, db:) -> {
-          let result = cmd_gen(engine, db)
+        cli.Generate(engine:, schema:) -> {
+          let result = cmd_gen(engine, schema)
           case result {
             Error(e) ->
               io.println(lib.red("\nError: " <> errors.err_to_string(e)))
@@ -55,12 +65,7 @@ pub fn main() {
   }
 }
 
-fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
-  let db = case db {
-    "sqlite://" <> db -> db
-    "sqlite:" <> db -> db
-    db -> db
-  }
+fn cmd_gen(engine: sqlc.Engine, schema_source: cli.SchemaSource) -> Result(Nil, errors.ParrotError) {
 
   let files = lib.walk(project.src())
   let queries =
@@ -110,35 +115,51 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     spinner.new("fetching schema")
     |> spinner.start()
 
-  use schema_sql <- result.try(case engine {
-    sqlc.MySQL -> {
-      use schema <- result.try(db.fetch_schema_mysql(db))
-      Ok(schema)
-    }
-    sqlc.PostgreSQL -> {
-      use schema <- result.try(db.fetch_schema_postgresql(db))
+  use schema_sql <- result.try(case schema_source {
+    cli.Database(url) -> {
+      let db = case url {
+        "sqlite://" <> db -> db
+        "sqlite:" <> db -> db
+        db -> db
+      }
 
-      // this is an edge case with the postgres schema dump.
-      // sqlc does not like those lines from postgres 17.
-      let schema =
-        schema
-        |> string.split("\n")
-        |> list.filter(fn(line) {
-          !string.starts_with(line, "\\restrict")
-          && !string.starts_with(line, "\\unrestrict")
-        })
-        |> string.join("\n")
+      case engine {
+        sqlc.MySQL -> {
+          use schema <- result.try(db.fetch_schema_mysql(db))
+          Ok(schema)
+        }
+        sqlc.PostgreSQL -> {
+          use schema <- result.try(db.fetch_schema_postgresql(db))
 
-      Ok(schema)
+          // this is an edge case with the postgres schema dump.
+          // sqlc does not like those lines from postgres 17.
+          let schema =
+            schema
+            |> string.split("\n")
+            |> list.filter(fn(line) {
+              !string.starts_with(line, "\\restrict")
+              && !string.starts_with(line, "\\unrestrict")
+            })
+            |> string.join("\n")
+
+          Ok(schema)
+        }
+        sqlc.SQLite -> {
+          use schema <- result.try(db.fetch_schema_sqlite(db))
+          let sql = string.trim(schema)
+          Ok(sql)
+        }
+      }
     }
-    sqlc.SQLite -> {
-      use schema <- result.try(db.fetch_schema_sqlite(db))
-      let sql = string.trim(schema)
-      Ok(sql)
+    cli.SQLFile(path) -> {
+      case simplifile.read(path) {
+        Ok(content) -> Ok(string.trim(content))
+        Error(_) -> Error(errors.SchemaFileError)
+      }
     }
   })
-  let _ = simplifile.write(schema_file, schema_sql)
 
+  let _ = simplifile.write(schema_file, schema_sql)
   spinner.complete_current(spinner, spinner.green_checkmark())
 
   let spinner =
