@@ -52,8 +52,11 @@ pub const usage = "
     # 3. Different environment variable
     $ export STAGING_DB_URL=\"mysql://staging:pass@remote/db\"
     $ gleam run -m parrot -- --env-var STAGING_DB_URL
+    
+    # 4. Using a schema file directly.
+    $ gleam run -m parrot -- --schema postgres src/schema.sql
 
-    # 4. Get help
+    # 5. Get help
     $ gleam run -m parrot help
 "
 
