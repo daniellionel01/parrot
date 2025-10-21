@@ -30,7 +30,7 @@ pub const usage = "
       Defaults to 'DATABASE_URL'.
 
     --schema <ENGINE> <FILE_PATH>
-      Load database schema directly from a sql file. The database engine 
+      Load a database schema directly from a sql file. The database engine 
       must be specified. The options are postgres, mysql, and sqlite.
 
   DATABASE_URL:
