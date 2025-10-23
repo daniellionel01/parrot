@@ -1,4 +1,5 @@
 import argv
+import glint
 import filepath
 import gleam/dict
 import gleam/io
@@ -17,42 +18,92 @@ import parrot/internal/spinner
 import parrot/internal/sqlc
 import simplifile
 
-pub fn main() {
-  let cmd: Result(cli.Command, String) = case argv.load().arguments {
-    [] -> {
-      cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
-    }
-    ["--env-var", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
-    }
-    ["-e", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
-    }
-    ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
-    }
-    ["help"] -> Ok(cli.Usage)
-    _ -> Ok(cli.Usage)
-  }
+fn sqlite_flag() -> glint.Flag(String) {
+  glint.string_flag(named: "sqlite")
+  |> glint.flag_help("path to an SQLite database")
+}
 
-  case cmd {
-    Error(e) -> io.println(lib.red("Error: " <> e))
-    Ok(cmd) ->
-      case cmd {
-        cli.Usage -> io.println(cli.usage)
-        cli.Generate(engine:, db:) -> {
-          let result = cmd_gen(engine, db)
-          case result {
-            Error(e) ->
-              io.println(lib.red("\nError: " <> errors.err_to_string(e)))
-            Ok(_) -> io.println(lib.green("SQL successfully generated!"))
-          }
-        }
+fn env_var_flag() -> glint.Flag(String) {
+  glint.string_flag(named: "env-var")
+  |> glint.flag_help("environment variable to use instead of `DATABASE_URL`")
+}
+
+fn cmd(
+  no_args no_args: Bool,
+) -> glint.Command(Nil) {
+  use <- glint.command_help("")
+
+  use sqlite <- glint.flag(sqlite_flag())
+  use env_var <- glint.flag(env_var_flag())
+
+  use _, _, flags <- glint.command()
+
+  let sqlite = sqlite(flags) |> result.map_error(string.inspect)
+  let env_var = env_var(flags) |> result.map_error(string.inspect)
+
+  case build_gen(sqlite:, env_var:), no_args {
+    Error(_), True ->
+      io.println(cli.usage)
+
+    Error(err), False ->
+      io.println(lib.red("\nError: " <> err))
+
+    Ok(cli.Usage), _ ->
+      io.println(cli.usage)
+
+    Ok(cli.Generate(engine:, db:)), _ ->
+      case cmd_gen(engine, db) {
+        Error(err) ->
+          io.println(lib.red("\nError: " <> errors.err_to_string(err)))
+        Ok(_) ->
+          io.println(lib.green("SQL successfully generated!"))
       }
   }
+}
+
+fn build_gen(
+  sqlite sqlite: Result(String, String),
+  env_var env_var: Result(String, String),
+) -> Result(cli.Command, String) {
+  result.or(
+    build_gen_sqlite(sqlite),
+    build_gen_non_sqlite(env_var),
+  )
+}
+
+fn build_gen_sqlite(
+  sqlite sqlite: Result(String, String),
+) -> Result(cli.Command, String) {
+  sqlite
+  |> result.map(fn(file_path) {
+    cli.Generate(sqlc.SQLite, file_path)
+  })
+}
+
+fn build_gen_non_sqlite(
+  env_var env_var: Result(String, String),
+) -> Result(cli.Command, String) {
+  let env_var =
+    env_var
+    |> result.unwrap("DATABASE_URL")
+
+  cli.parse_env(env_var)
+  |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+}
+
+fn help_cmd() -> glint.Command(Nil) {
+  use _, _, _ <- glint.command()
+
+  io.println(cli.usage)
+}
+
+pub fn main() {
+  let args = argv.load().arguments
+
+  glint.new()
+  |> glint.add(at: [], do: cmd(no_args: args |> list.is_empty))
+  |> glint.add(at: ["help"], do: help_cmd())
+  |> glint.run(args)
 }
 
 fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {

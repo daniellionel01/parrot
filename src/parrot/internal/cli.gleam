@@ -24,7 +24,7 @@ pub const usage = "
       option is used, it bypasses the DATABASE_URL environment
       variable entirely.
 
-    -e, --env-var <VAR_NAME>
+    --env-var <VAR_NAME>
       Specify the name of an alternative environment variable to use
       for the database connection URL.
       Defaults to 'DATABASE_URL'.
@@ -43,11 +43,11 @@ pub const usage = "
     $ gleam run -m parrot
 
     # 2. Using Sqlite: directly point to a database file.
-    $ gleam run -m parrot -- --sqlite ./priv/app.db
+    $ gleam run -m parrot -- --sqlite=./priv/app.db
 
     # 3. Different environment variable
     $ export STAGING_DB_URL=\"mysql://staging:pass@remote/db\"
-    $ gleam run -m parrot -- --env-var STAGING_DB_URL
+    $ gleam run -m parrot -- --env-var=STAGING_DB_URL
 
     # 4. Get help
     $ gleam run -m parrot help
@@ -55,7 +55,10 @@ pub const usage = "
 
 pub type Command {
   Usage
-  Generate(engine: sqlc.Engine, db: String)
+  Generate(
+    engine: sqlc.Engine,
+    db: String,
+  )
 }
 
 pub fn engine_from_env(str: String) {
