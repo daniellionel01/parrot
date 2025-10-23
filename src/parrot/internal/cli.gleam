@@ -19,15 +19,19 @@ pub const usage = "
     MySQL, or SQLite) by reading the DATABASE_URL environment variable.
 
   OPTIONS:
-    --sqlite <FILE_PATH>
+    --sqlite=<FILE_PATH>
       Directly specify the path to a SQLite database file. When this
       option is used, it bypasses the DATABASE_URL environment
       variable entirely.
 
-    --env-var <VAR_NAME>
+    --env-var=<VAR_NAME>
       Specify the name of an alternative environment variable to use
       for the database connection URL.
       Defaults to 'DATABASE_URL'.
+
+    --sqlc=<ABSOLUTE_FILE_PATH>
+      Specify the absolute path to an `sqlc` binary
+      Defaults to downloading and using `build/.parrot/sqlc`
 
   DATABASE_URL:
     Parrot automatically detects the driver from the URL scheme.
