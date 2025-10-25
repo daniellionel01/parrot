@@ -41,7 +41,12 @@ pub fn main() {
         |> cli.engine_from_env
       case engine {
         Error(e) -> Error(errors.err_to_string(e))
-        Ok(engine) -> Ok(cli.Generate(engine, cli.SQLFile(path_to_schema)))
+        Ok(engine) -> {
+          case filepath.expand(path_to_schema) {
+            Ok(expanded_path) -> Ok(cli.Generate(engine, cli.SQLFile(expanded_path)))
+            Error(_) -> Error(errors.err_to_string(errors.SchemaFileError))
+          }
+        }
       }
     }
     ["help"] -> Ok(cli.Usage)
@@ -67,21 +72,18 @@ pub fn main() {
 
 fn cmd_gen(engine: sqlc.Engine, schema_source: cli.SchemaSource) -> Result(Nil, errors.ParrotError) {
 
-  let files = lib.walk(project.src())
-  let queries =
-    files
-    |> dict.to_list
-    |> list.map(fn(file) {
-      let #(_, files) = file
-      list.map(files, fn(file) {
-        let file = case file {
-          "./" <> rest -> rest
-          x -> x
-        }
-        filepath.join("../..", file)
-      })
+  let assert Ok(files) = lib.walk(project.src())
+  let queries = case schema_source {
+    cli.Database(_) -> files
+    cli.SQLFile(path) -> list.filter_map(files, fn(f) {
+      case f == path {
+        True -> Error(Nil)
+        False -> Ok(f)
+      }
     })
-    |> list.flatten()
+  } |> list.map(fn(file) {
+    filepath.join("../..", file)
+  })
 
   let sqlc_binary = sqlc.sqlc_binary_path()
   let sqlc_dir = filepath.directory_name(sqlc_binary)
