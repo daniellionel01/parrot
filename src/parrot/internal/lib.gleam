@@ -3,7 +3,6 @@
 
 import filepath
 import gleam/bool
-import gleam/dict.{type Dict}
 import gleam/list
 import gleam/result
 import simplifile
