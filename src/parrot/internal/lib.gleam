@@ -20,14 +20,12 @@ pub fn try_nil(
 /// files inside each one.
 /// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
 ///
-
 pub fn walk(from: String) -> Result(List(String), Nil) {
   use expanded <- result.try(filepath.expand(from))
   Ok(walk_recur(expanded))
 }
 
 fn walk_recur(from: String) -> List(String) {
-
   case filepath.base_name(from) {
     "sql" -> {
       let assert Ok(files) = simplifile.read_directory(from)
