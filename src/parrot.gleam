@@ -78,13 +78,7 @@ fn cmd_gen(
   let queries =
     case schema_source {
       cli.Database(_) -> files
-      cli.SQLFile(path) ->
-        list.filter_map(files, fn(f) {
-          case f == path {
-            True -> Error(Nil)
-            False -> Ok(f)
-          }
-        })
+      cli.SQLFile(path) -> list.filter(files, fn(f) { f != path })
     }
     |> list.map(fn(file) { filepath.join("../..", file) })
 
