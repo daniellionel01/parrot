@@ -10,6 +10,7 @@ INSERT INTO users (
   extra_info,
   favorite_numbers,
   role,
+  permission,
   document
 ) VALUES (
   'alice',
@@ -17,5 +18,6 @@ INSERT INTO users (
   '{"c": 3}',
   ARRAY[3, 11],
   'user',
+  'readonly',
   decode('DEADBEEF', 'hex')
 );
