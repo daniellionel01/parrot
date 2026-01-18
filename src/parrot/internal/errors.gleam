@@ -16,6 +16,9 @@ pub type ParrotError {
   PgdumpError(String)
 
   CodegenError
+  DuplicateDefinitionError(String, String)
+  EmptyEnumError(String)
+  DuplicateEnumValueError(String, String, String)
 }
 
 pub fn err_to_string(error: ParrotError) {
@@ -33,5 +36,29 @@ pub fn err_to_string(error: ParrotError) {
     CodegenError -> "there was an error during codegen"
     GleamFormatError(err) ->
       "there was an error formatting the generated code:" <> err
+    DuplicateDefinitionError(name, _) ->
+      "duplicate definition found: '"
+      <> name
+      <> "' is defined both as an enum and as a query. "
+      <> "Consider renaming your query (e.g., to 'Get"
+      <> name
+      <> "' or 'List"
+      <> name
+      <> "') to avoid the collision."
+    EmptyEnumError(name) ->
+      "enum '"
+      <> name
+      <> "' has no variants. "
+      <> "Empty enums cannot be represented in Gleam. "
+      <> "Please add values to the enum or remove it from your schema."
+    DuplicateEnumValueError(val_name, enum1, enum2) ->
+      "duplicate enum value '"
+      <> val_name
+      <> "' found in both '"
+      <> enum1
+      <> "' and '"
+      <> enum2
+      <> "'. "
+      <> "Enum values must be unique across all enums to avoid naming conflicts in generated Gleam code."
   }
 }

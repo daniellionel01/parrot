@@ -167,11 +167,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       gleam_module_out_path: project_name <> "/sql.gleam",
       json_file_path: queries_file,
     )
-  let gen_result = codegen.codegen_from_config(config)
-  use gen_result <- result.try(result.replace_error(
-    gen_result,
-    errors.CodegenError,
-  ))
+  use gen_result <- result.try(codegen.codegen_from_config(config))
 
   spinner.complete_current(spinner, spinner.green_checkmark())
 
