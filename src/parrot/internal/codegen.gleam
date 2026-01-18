@@ -215,21 +215,41 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
         Ok(#(name, _)) -> Error(errors.EmptyEnumError(name))
         Error(_) -> {
           let all_enum_values =
-            list.flat_map(enums_for_duplicate_check, fn(#(enum_name, vals)) {
-              list.map(vals, fn(val) {
-                #(string_case.pascal_case(val), enum_name)
-              })
+            list.flat_map(enums_for_duplicate_check, fn(item) {
+              case item {
+                #(enum_name, vals) ->
+                  list.map(vals, fn(val) {
+                    #(string_case.pascal_case(val), enum_name)
+                  })
+              }
             })
 
-          case list.find(all_enum_values, fn(#(val_name, _)) {
-            list.count(all_enum_values, fn(#(v, _)) { v == val_name }) > 1
-          }) {
+          case
+            list.find(all_enum_values, fn(item) {
+              case item {
+                #(val_name, _) -> {
+                  list.count(all_enum_values, fn(i) {
+                    case i {
+                      #(v, _) -> v == val_name
+                    }
+                  })
+                  > 1
+                }
+              }
+            })
+          {
             Ok(#(val_name, first_enum)) -> {
               let assert Ok(#(_, second_enum)) =
-                list.find(all_enum_values, fn(#(v, enum)) {
-                  v == val_name && enum != first_enum
+                list.find(all_enum_values, fn(item) {
+                  case item {
+                    #(v, enum) -> v == val_name && enum != first_enum
+                  }
                 })
-              Error(errors.DuplicateEnumValueError(val_name, first_enum, second_enum))
+              Error(errors.DuplicateEnumValueError(
+                val_name,
+                first_enum,
+                second_enum,
+              ))
             }
             Error(_) -> Ok(Nil)
           }

@@ -18,6 +18,7 @@ pub type ParrotError {
   CodegenError
   DuplicateDefinitionError(String, String)
   EmptyEnumError(String)
+  DuplicateEnumValueError(String, String, String)
 }
 
 pub fn err_to_string(error: ParrotError) {
@@ -50,5 +51,14 @@ pub fn err_to_string(error: ParrotError) {
       <> "' has no variants. "
       <> "Empty enums cannot be represented in Gleam. "
       <> "Please add values to the enum or remove it from your schema."
+    DuplicateEnumValueError(val_name, enum1, enum2) ->
+      "duplicate enum value '"
+      <> val_name
+      <> "' found in both '"
+      <> enum1
+      <> "' and '"
+      <> enum2
+      <> "'. "
+      <> "Enum values must be unique across all enums to avoid naming conflicts in generated Gleam code."
   }
 }

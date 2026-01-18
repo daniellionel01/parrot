@@ -32,27 +32,6 @@ pub fn user_role_to_string(val: UserRole) {
   }
 }
 
-pub type Permission {
-  User
-  Readonly
-}
-
-pub fn permission_decoder() {
-  use variant <- decode.then(decode.string)
-  case variant {
-    "user" -> decode.success(User)
-    "readonly" -> decode.success(Readonly)
-    _ -> decode.failure(User, "Permission")
-  }
-}
-
-pub fn permission_to_string(val: Permission) {
-  case val {
-    User -> "user"
-    Readonly -> "readonly"
-  }
-}
-
 pub type RowJson {
   RowJson(row_to_json: String)
 }
@@ -138,7 +117,6 @@ pub type GetUser {
     extra_info: Option(String),
     favorite_numbers: Option(List(Int)),
     role: Option(UserRole),
-    permission: Option(Permission),
     document: Option(BitArray),
   )
 }
@@ -146,7 +124,7 @@ pub type GetUser {
 pub fn get_user(id id: Int) {
   let sql =
     "SELECT
-  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, permission, document
+  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 WHERE
@@ -171,8 +149,7 @@ pub fn get_user_decoder() -> decode.Decoder(GetUser) {
     decode.optional(decode.list(of: decode.int)),
   )
   use role <- decode.field(7, decode.optional(user_role_decoder()))
-  use permission <- decode.field(8, decode.optional(permission_decoder()))
-  use document <- decode.field(9, decode.optional(decode.bit_array))
+  use document <- decode.field(8, decode.optional(decode.bit_array))
   decode.success(GetUser(
     id:,
     username:,
@@ -182,7 +159,6 @@ pub fn get_user_decoder() -> decode.Decoder(GetUser) {
     extra_info:,
     favorite_numbers:,
     role:,
-    permission:,
     document:,
   ))
 }
@@ -197,7 +173,6 @@ pub type ListUsers {
     extra_info: Option(String),
     favorite_numbers: Option(List(Int)),
     role: Option(UserRole),
-    permission: Option(Permission),
     document: Option(BitArray),
   )
 }
@@ -205,7 +180,7 @@ pub type ListUsers {
 pub fn list_users() {
   let sql =
     "SELECT
-  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, permission, document
+  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 ORDER BY
@@ -228,8 +203,7 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
     decode.optional(decode.list(of: decode.int)),
   )
   use role <- decode.field(7, decode.optional(user_role_decoder()))
-  use permission <- decode.field(8, decode.optional(permission_decoder()))
-  use document <- decode.field(9, decode.optional(decode.bit_array))
+  use document <- decode.field(8, decode.optional(decode.bit_array))
   decode.success(ListUsers(
     id:,
     username:,
@@ -239,7 +213,6 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
     extra_info:,
     favorite_numbers:,
     role:,
-    permission:,
     document:,
   ))
 }
@@ -364,7 +337,6 @@ pub type GetUserByLowerUsername {
     extra_info: Option(String),
     favorite_numbers: Option(List(Int)),
     role: Option(UserRole),
-    permission: Option(Permission),
     document: Option(BitArray),
   )
 }
@@ -372,7 +344,7 @@ pub type GetUserByLowerUsername {
 pub fn get_user_by_lower_username(lower lower: String) {
   let sql =
     "SELECT
-  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, permission, document
+  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 WHERE
@@ -399,8 +371,7 @@ pub fn get_user_by_lower_username_decoder() -> decode.Decoder(
     decode.optional(decode.list(of: decode.int)),
   )
   use role <- decode.field(7, decode.optional(user_role_decoder()))
-  use permission <- decode.field(8, decode.optional(permission_decoder()))
-  use document <- decode.field(9, decode.optional(decode.bit_array))
+  use document <- decode.field(8, decode.optional(decode.bit_array))
   decode.success(GetUserByLowerUsername(
     id:,
     username:,
@@ -410,7 +381,6 @@ pub fn get_user_by_lower_username_decoder() -> decode.Decoder(
     extra_info:,
     favorite_numbers:,
     role:,
-    permission:,
     document:,
   ))
 }
