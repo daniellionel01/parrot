@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-01-18
+
+- Improvement: dedicated error message for duplicate enum definitions. (https://github.com/daniellionel01/parrot/issues/82)
+- Improvement: dedicated error message for empty enum values. (https://github.com/daniellionel01/parrot/issues/84)
+
 ## [2.1.2] - 2025-10-16
 
 - Parrot now generates a `sqlc.json` instead of a yaml configuration. (https://github.com/daniellionel01/parrot/pull/71)<br />
