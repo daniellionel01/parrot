@@ -5,11 +5,12 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
+import gleam/set
 import gleam/string
 import parrot/internal/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
 }
-import parrot/internal/lib
+import parrot/internal/errors
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_case
 import simplifile
@@ -18,15 +19,21 @@ pub type Codegen {
   Codegen(unknown_types: List(String))
 }
 
-pub fn codegen_from_config(config: Config) -> Result(Codegen, Nil) {
-  use json_string <- lib.try_nil(get_json_file(config))
+pub fn codegen_from_config(
+  config: Config,
+) -> Result(Codegen, errors.ParrotError) {
+  use json_string <- result.try(
+    get_json_file(config)
+    |> result.map_error(fn(_) { errors.CodegenError }),
+  )
 
-  use dyn_json <- lib.try_nil(json.parse(from: json_string, using: d.dynamic))
+  use dyn_json <- result.try(
+    json.parse(from: json_string, using: d.dynamic)
+    |> result.map_error(fn(_) { errors.CodegenError }),
+  )
 
   let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
 
-  // we check for any dynamically mapped types to alert the user that
-  // they might have to contribute to this library to cover this case
   let unknowns =
     list.flat_map(context.queries, fn(query) {
       list.map(query.columns, fn(col) {
@@ -41,13 +48,17 @@ pub fn codegen_from_config(config: Config) -> Result(Codegen, Nil) {
     |> list.filter(option.is_some)
     |> list.map(option.unwrap(_, ""))
 
-  let module_contents = gen_gleam_module(context)
+  use module_contents <- result.try(gen_gleam_module(context))
 
-  let _ =
+  use _ <- result.try(
     get_module_directory(config)
     |> simplifile.create_directory_all()
-  let _ =
+    |> result.map_error(fn(_) { errors.CodegenError }),
+  )
+  use _ <- result.try(
     simplifile.write(to: get_module_path(config), contents: module_contents)
+    |> result.map_error(fn(_) { errors.CodegenError }),
+  )
 
   Ok(Codegen(unknowns))
 }
@@ -128,6 +139,63 @@ fn built_into_gleam(value: String) {
     | "type"
     | "use" -> True
     _ -> False
+  }
+}
+
+fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
+  let enum_names =
+    list.flat_map(context.queries, fn(query) {
+      list.filter_map(query.columns, fn(col) {
+        case sqlc_col_to_gleam(col, context) {
+          GleamOption(GleamEnum(_)) | GleamEnum(_) -> {
+            let type_ = normalise_col_type(col)
+            let schema = find_col_schema(col, context)
+            case list.find(schema.enums, fn(e) { e.name == type_ }) {
+              Ok(enum) -> Ok(string_case.pascal_case(enum.name))
+              Error(_) -> Error(Nil)
+            }
+          }
+          _ -> Error(Nil)
+        }
+      })
+      |> list.append(
+        list.filter_map(query.params, fn(param) {
+          case sqlc_col_to_gleam(param.column, context) {
+            GleamOption(GleamEnum(_)) | GleamEnum(_) -> {
+              let type_ = normalise_col_type(param.column)
+              let schema = find_col_schema(param.column, context)
+              case list.find(schema.enums, fn(e) { e.name == type_ }) {
+                Ok(enum) -> Ok(string_case.pascal_case(enum.name))
+                Error(_) -> Error(Nil)
+              }
+            }
+            _ -> Error(Nil)
+          }
+        }),
+      )
+    })
+    |> set.from_list
+    |> set.to_list
+
+  let query_names =
+    list.map(context.queries, fn(q) { string_case.pascal_case(q.name) })
+    |> set.from_list
+    |> set.to_list
+
+  let duplicates =
+    list.filter(enum_names, fn(enum_name) {
+      list.any(query_names, fn(query_name) { enum_name == query_name })
+    })
+
+  case duplicates {
+    [] -> Ok(Nil)
+    [first, ..] -> {
+      let assert Ok(query) =
+        list.find(context.queries, fn(q) {
+          string_case.pascal_case(q.name) == first
+        })
+      Error(errors.DuplicateDefinitionError(first, query.name))
+    }
   }
 }
 
@@ -446,7 +514,9 @@ fn uses_gleam_type(case_fn: fn(sqlc.TableColumn) -> Bool, context: SQLC) -> Bool
   })
 }
 
-pub fn gen_gleam_module(context: SQLC) {
+pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
+  use _ <- result.try(find_duplicates(context))
+
   let queries =
     context.queries
     |> list.map(gen_query(_, context))
@@ -572,7 +642,6 @@ pub fn gen_gleam_module(context: SQLC) {
       <> " {\n"
       <> string.join(values, "\n")
       <> "\n}\n\n"
-      //
       <> "pub fn "
       <> fn_name
       <> "_decoder() {\n"
@@ -586,7 +655,6 @@ pub fn gen_gleam_module(context: SQLC) {
       <> "\")\n"
       <> "  }\n"
       <> "}\n\n"
-      //
       <> "pub fn "
       <> fn_name
       <> "_to_string(val: "
@@ -599,13 +667,15 @@ pub fn gen_gleam_module(context: SQLC) {
     })
     |> string.join("\n\n")
 
-  comment_dont_edit()
-  <> "\n\n"
-  <> imports
-  <> "\n\n"
-  <> enums
-  <> "\n\n"
-  <> queries
+  Ok(
+    comment_dont_edit()
+    <> "\n\n"
+    <> imports
+    <> "\n\n"
+    <> enums
+    <> "\n\n"
+    <> queries,
+  )
 }
 
 pub fn comment_dont_edit() {
