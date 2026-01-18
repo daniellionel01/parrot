@@ -24,7 +24,7 @@ These options allow you to configure what binaries Parrot uses as part of the bu
 
   Default: `undefined`. Parrot will download and manage its own sqlc version.
 
-- **`sqlc_version = "latest" | string`**: choose the version of sqlc that Parrot will download
+- **`sqlc_version = string`**: choose the version of sqlc that Parrot will download
   and manage, when no sqlc binary is specified.
 
   Versions are specified like this: `v1.30.0`. A list of all available sqlc versions can be found
