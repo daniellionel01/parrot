@@ -79,7 +79,7 @@ jobs:
       - name: Run MySQL Integration Tests
         working-directory: integration/mysql
         env:
-          DATABASE_URL: mysql://root:daniel@127.0.0.1:3309/parrot
+          DATABASE_URL: mysql://root:daniel@mysql:3306/parrot
         run: |
           rm -f src/app/sql.gleam
           ./priv/reset.sh
@@ -119,17 +119,16 @@ jobs:
           rebar3-version: "3"
       - name: Install PostgreSQL 16 Client
         run: |
-          # Add PostgreSQL apt repository
-          sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+          apt-get install -y lsb-release wget gnupg
+          CODENAME=$(lsb_release -cs)
+          echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt ${CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
           apt-get update
-
-          # Install PostgreSQL 16 client tools
           apt-get install -y postgresql-16 postgresql-client-16
       - name: Run PostgreSQL Integration Tests
         working-directory: integration/psql
         env:
-          DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
+          DATABASE_URL: postgresql://daniel:parrot@postgres:5432/parrot
           PGBIN: /usr/lib/postgresql/16/bin
         run: |
           # Ensure PostgreSQL 16 binaries are used
@@ -176,17 +175,16 @@ jobs:
           rebar3-version: "3"
       - name: Install PostgreSQL 17 Client
         run: |
-          # Add PostgreSQL apt repository
-          sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+          apt-get install -y lsb-release wget gnupg
+          CODENAME=$(lsb_release -cs)
+          echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt ${CODENAME}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
           apt-get update
-
-          # Install PostgreSQL 17 client tools
           apt-get install -y postgresql-17 postgresql-client-17
       - name: Run PostgreSQL Integration Tests
         working-directory: integration/psql
         env:
-          DATABASE_URL: postgresql://daniel:parrot@127.0.0.1:5432/parrot
+          DATABASE_URL: postgresql://daniel:parrot@postgres:5432/parrot
           PGBIN: /usr/lib/postgresql/17/bin
         run: |
           # Ensure PostgreSQL 17 binaries are used
