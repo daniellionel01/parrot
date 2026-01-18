@@ -1,12 +1,16 @@
 #!/bin/bash
 CONTAINER_NAME="parrot-psql"
 
-if [ -n "$(docker ps -q -f name=^${CONTAINER_NAME}$)" ]; then
+if [ -n "$(podman ps -q -f name=^${CONTAINER_NAME}$)" ]; then
   echo "Container '${CONTAINER_NAME}' is already running."
 else
+  if [ -n "$(podman ps -aq -f name=^${CONTAINER_NAME}$)" ]; then
+    echo "Container '${CONTAINER_NAME}' exists but is stopped. Removing it..."
+    podman rm -f ${CONTAINER_NAME}
+  fi
   echo "Container '${CONTAINER_NAME}' not found. Starting it..."
   # postgresql://daniel:parrot@127.0.0.1:5432/parrot
-  docker run \
+  podman run \
     --rm -d \
     --name ${CONTAINER_NAME} \
     -e POSTGRES_USER=daniel \
