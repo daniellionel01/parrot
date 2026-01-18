@@ -143,7 +143,7 @@ fn built_into_gleam(value: String) {
 }
 
 fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
-  let enum_names =
+  let enums_for_duplicate_check =
     list.flat_map(context.queries, fn(query) {
       list.filter_map(query.columns, fn(col) {
         case sqlc_col_to_gleam(col, context) {
@@ -151,7 +151,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
             let type_ = normalise_col_type(col)
             let schema = find_col_schema(col, context)
             case list.find(schema.enums, fn(e) { e.name == type_ }) {
-              Ok(enum) -> Ok(string_case.pascal_case(enum.name))
+              Ok(enum) -> Ok(#(string_case.pascal_case(enum.name), enum.vals))
               Error(_) -> Error(Nil)
             }
           }
@@ -165,7 +165,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
               let type_ = normalise_col_type(param.column)
               let schema = find_col_schema(param.column, context)
               case list.find(schema.enums, fn(e) { e.name == type_ }) {
-                Ok(enum) -> Ok(string_case.pascal_case(enum.name))
+                Ok(enum) -> Ok(#(string_case.pascal_case(enum.name), enum.vals))
                 Error(_) -> Error(Nil)
               }
             }
@@ -174,27 +174,67 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
         }),
       )
     })
-    |> set.from_list
-    |> set.to_list
+    |> list.unique()
 
   let query_names =
     list.map(context.queries, fn(q) { string_case.pascal_case(q.name) })
     |> set.from_list
     |> set.to_list
 
-  let duplicates =
-    list.filter(enum_names, fn(enum_name) {
-      list.any(query_names, fn(query_name) { enum_name == query_name })
+  let has_duplicate =
+    list.any(enums_for_duplicate_check, fn(item) {
+      case item {
+        #(enum_name, _) ->
+          list.any(query_names, fn(query_name) { enum_name == query_name })
+      }
     })
 
-  case duplicates {
-    [] -> Ok(Nil)
-    [first, ..] -> {
+  case has_duplicate {
+    True -> {
+      let assert Ok(#(first, _)) =
+        list.find(enums_for_duplicate_check, fn(item) {
+          case item {
+            #(enum_name, _) ->
+              list.any(query_names, fn(query_name) { enum_name == query_name })
+          }
+        })
       let assert Ok(query) =
         list.find(context.queries, fn(q) {
           string_case.pascal_case(q.name) == first
         })
       Error(errors.DuplicateDefinitionError(first, query.name))
+    }
+    False -> {
+      case
+        list.find(enums_for_duplicate_check, fn(item) {
+          case item {
+            #(_, vals) -> list.is_empty(vals)
+          }
+        })
+      {
+        Ok(#(name, _)) -> Error(errors.EmptyEnumError(name))
+        Error(_) -> {
+          let all_enum_values =
+            list.flat_map(enums_for_duplicate_check, fn(#(enum_name, vals)) {
+              list.map(vals, fn(val) {
+                #(string_case.pascal_case(val), enum_name)
+              })
+            })
+
+          case list.find(all_enum_values, fn(#(val_name, _)) {
+            list.count(all_enum_values, fn(#(v, _)) { v == val_name }) > 1
+          }) {
+            Ok(#(val_name, first_enum)) -> {
+              let assert Ok(#(_, second_enum)) =
+                list.find(all_enum_values, fn(#(v, enum)) {
+                  v == val_name && enum != first_enum
+                })
+              Error(errors.DuplicateEnumValueError(val_name, first_enum, second_enum))
+            }
+            Error(_) -> Ok(Nil)
+          }
+        }
+      }
     }
   }
 }
@@ -615,7 +655,9 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
       list.append(columns, params)
     })
     |> list.unique()
-    |> list.map(fn(enum) {
+
+  let enums =
+    list.map(enums, fn(enum) {
       let record_name = string_case.pascal_case(enum.name)
       let fn_name = string_case.snake_case(enum.name)
 

@@ -17,6 +17,7 @@ pub type ParrotError {
 
   CodegenError
   DuplicateDefinitionError(String, String)
+  EmptyEnumError(String)
 }
 
 pub fn err_to_string(error: ParrotError) {
@@ -43,5 +44,11 @@ pub fn err_to_string(error: ParrotError) {
       <> "' or 'List"
       <> name
       <> "') to avoid the collision."
+    EmptyEnumError(name) ->
+      "enum '"
+      <> name
+      <> "' has no variants. "
+      <> "Empty enums cannot be represented in Gleam. "
+      <> "Please add values to the enum or remove it from your schema."
   }
 }

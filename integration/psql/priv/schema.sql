@@ -6,9 +6,7 @@ drop type if exists user_role;
 
 create type user_role as enum ('admin', 'user', 'guest');
 
-create type permission as enum ('admin', 'readonly');
-
-create type Simple as enum ();
+create type permission as enum ('user', 'readonly');
 
 create table users (
   id serial primary key,
@@ -22,9 +20,7 @@ create table users (
   favorite_numbers integer[],
   role user_role,
   permission permission,
-  document bytea,
-
-  simple Simple
+  document bytea
 );
 
 create table posts (
