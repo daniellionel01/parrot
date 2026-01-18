@@ -265,7 +265,7 @@ If you want to see how this library works in action, take a look at the integrat
 
 ### Database
 
-There are scripts to spawn a MySQL or PostgreSQL docker container:
+There are scripts to spawn a MySQL or PostgreSQL Podman container:
 -  [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
 -  [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
 
