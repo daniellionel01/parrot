@@ -322,7 +322,9 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
 
-- Certain query annotations are not supported and will panic the process: `:execrows`, `:execlastid`, `:batchexec`, `:batchone`, `:batchmany`, `:copyfrom`. You can read more about it here: https://docs.sqlc.dev/en/stable/reference/query-annotations.html
+- Certain query annotations are not supported and will panic the process: `:execrows`, `:execlastid`, `:batchexec`, `:batchone`, `:batchmany`, `:copyfrom`.
+  You can read more about those operations here: https://docs.sqlc.dev/en/stable/reference/query-annotations.html.
+  Most of those operations are only supported when outputting Go code and are simply not necessary in Gleam.
 
 ## Future Work
 
