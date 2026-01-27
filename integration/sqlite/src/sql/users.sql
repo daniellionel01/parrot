@@ -66,3 +66,28 @@ where user_id in (
   from users
   where users.role = 'admin'
 );
+
+-- name: PostsByIds :many
+select id
+from posts
+where user_id in (sqlc.slice('ids'));
+
+-- name: PostsByIdsAndTitle :many
+select id
+from posts
+where user_id in (sqlc.slice('ids')) and title = ?;
+
+-- name: PostsByIdsAndStatus :many
+select id
+from posts
+where title = ? and user_id in (sqlc.slice('ids'));
+
+-- name: MultipleSlices :many
+select id
+from posts
+where title in (sqlc.slice('titles')) and user_id in (sqlc.slice('ids'));
+
+-- name: MultipleSlicesAndArgument :many
+select id
+from posts
+where user_id = ? and title in (sqlc.slice('titles')) and user_id in (sqlc.slice('ids'));

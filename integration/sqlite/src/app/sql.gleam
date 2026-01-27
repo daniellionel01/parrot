@@ -2,7 +2,9 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/list
 import gleam/option.{type Option}
+import gleam/string
 import parrot/dev
 
 pub type Simple {
@@ -181,4 +183,123 @@ pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
   use title <- decode.field(1, decode.string)
   use user_id <- decode.field(2, decode.int)
   decode.success(PostsByAdmins(id:, title:, user_id:))
+}
+
+pub type PostsByIds {
+  PostsByIds(id: Int)
+}
+
+pub fn posts_by_ids(ids ids: List(Int)) {
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where user_id in (" <> ids_slice <> ")"
+  #(sql, list.flatten([list.map(ids, dev.ParamInt)]), posts_by_ids_decoder())
+}
+
+pub fn posts_by_ids_decoder() -> decode.Decoder(PostsByIds) {
+  use id <- decode.field(0, decode.int)
+  decode.success(PostsByIds(id:))
+}
+
+pub type PostsByIdsAndTitle {
+  PostsByIdsAndTitle(id: Int)
+}
+
+pub fn posts_by_ids_and_title(ids ids: List(Int), title title: String) {
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where user_id in (" <> ids_slice <> ") and title = ?"
+  #(
+    sql,
+    list.new()
+      |> list.append(list.map(ids, dev.ParamInt))
+      |> list.append([dev.ParamString(title)]),
+    posts_by_ids_and_title_decoder(),
+  )
+}
+
+pub fn posts_by_ids_and_title_decoder() -> decode.Decoder(PostsByIdsAndTitle) {
+  use id <- decode.field(0, decode.int)
+  decode.success(PostsByIdsAndTitle(id:))
+}
+
+pub type PostsByIdsAndStatus {
+  PostsByIdsAndStatus(id: Int)
+}
+
+pub fn posts_by_ids_and_status(title title: String, ids ids: List(Int)) {
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where title = ? and user_id in (" <> ids_slice <> ")"
+  #(
+    sql,
+    list.new()
+      |> list.append([dev.ParamString(title)])
+      |> list.append(list.map(ids, dev.ParamInt)),
+    posts_by_ids_and_status_decoder(),
+  )
+}
+
+pub fn posts_by_ids_and_status_decoder() -> decode.Decoder(PostsByIdsAndStatus) {
+  use id <- decode.field(0, decode.int)
+  decode.success(PostsByIdsAndStatus(id:))
+}
+
+pub type MultipleSlices {
+  MultipleSlices(id: Int)
+}
+
+pub fn multiple_slices(titles titles: List(String), ids ids: List(Int)) {
+  let titles_slice = string.repeat(",?", list.length(titles))
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"
+  #(
+    sql,
+    list.flatten([
+      list.map(titles, dev.ParamString),
+      list.map(ids, dev.ParamInt),
+    ]),
+    multiple_slices_decoder(),
+  )
+}
+
+pub fn multiple_slices_decoder() -> decode.Decoder(MultipleSlices) {
+  use id <- decode.field(0, decode.int)
+  decode.success(MultipleSlices(id:))
+}
+
+pub type MultipleSlicesAndArgument {
+  MultipleSlicesAndArgument(id: Int)
+}
+
+pub fn multiple_slices_and_argument(
+  user_id user_id: Int,
+  titles titles: List(String),
+  ids ids: List(Int),
+) {
+  let titles_slice = string.repeat(",?", list.length(titles))
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where user_id = ? and title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"
+  #(
+    sql,
+    list.new()
+      |> list.append([dev.ParamInt(user_id)])
+      |> list.append(list.map(titles, dev.ParamString))
+      |> list.append(list.map(ids, dev.ParamInt)),
+    multiple_slices_and_argument_decoder(),
+  )
+}
+
+pub fn multiple_slices_and_argument_decoder() -> decode.Decoder(
+  MultipleSlicesAndArgument,
+) {
+  use id <- decode.field(0, decode.int)
+  decode.success(MultipleSlicesAndArgument(id:))
 }

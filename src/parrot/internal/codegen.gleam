@@ -286,6 +286,12 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     GleamList(type_)
   })
 
+  use <- bool.lazy_guard(when: col.is_sqlc_slice, return: fn() {
+    let col = sqlc.TableColumn(..col, is_sqlc_slice: False)
+    let type_ = sqlc_col_to_gleam(col, context)
+    GleamList(type_)
+  })
+
   let sqltype = normalise_col_type(col)
   let schema = find_col_schema(col, context)
 
@@ -404,6 +410,13 @@ fn gleam_type_to_param(gtype: GleamType) -> String {
   }
 }
 
+fn gleam_type_to_slice_param(gtype: GleamType) -> String {
+  case gtype {
+    GleamList(sub) -> gleam_type_to_param(sub)
+    _ -> gleam_type_to_param(gtype)
+  }
+}
+
 fn gleam_type_to_return_type(variable: String, gt: GleamType) {
   let variable = case built_into_gleam(variable) {
     False -> variable
@@ -462,23 +475,130 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
     })
     |> string.join(", ")
 
-  let def_return_params = case query.params {
-    [] -> "[]"
-    args ->
-      "["
-      <> args
-      |> list.map(fn(arg) {
-        let arg_type = sqlc_col_to_gleam(arg.column, context)
-        gleam_type_to_return_type(arg.column.name, arg_type)
+  let has_slices = list.any(query.params, fn(p) { p.column.is_sqlc_slice })
+
+  let slice_decls = case has_slices {
+    True ->
+      query.params
+      |> list.filter(fn(p) { p.column.is_sqlc_slice })
+      |> list.map(fn(p) {
+        let name = p.column.name
+        let safe_name = case built_into_gleam(name) {
+          False -> name
+          True -> name <> "_"
+        }
+        "let "
+        <> safe_name
+        <> "_slice = string.repeat(\",?\", list.length("
+        <> safe_name
+        <> "))"
       })
-      |> string.join(", ")
-      <> "]"
+      |> string.join("\n  ")
+    False -> ""
   }
 
-  let text = string.replace(query.text, each: "\"", with: "\\\"")
+  let text = case has_slices {
+    True -> {
+      let escaped = string.replace(query.text, each: "\"", with: "\\\"")
+      list.fold(query.params, escaped, fn(acc, p) {
+        case p.column.is_sqlc_slice {
+          True -> {
+            let name = p.column.name
+            let safe_name = case built_into_gleam(name) {
+              False -> name
+              True -> name <> "_"
+            }
+            string.replace(
+              in: acc,
+              each: "/*SLICE:" <> name <> "*/?",
+              with: "\" <> " <> safe_name <> "_slice <> \"",
+            )
+          }
+          False -> acc
+        }
+      })
+    }
+    False -> string.replace(query.text, each: "\"", with: "\\\"")
+  }
+
+  let def_return_params = case query.params {
+    [] -> "[]"
+    args -> {
+      case has_slices {
+        False ->
+          "["
+          <> args
+          |> list.map(fn(arg) {
+            let arg_type = sqlc_col_to_gleam(arg.column, context)
+            gleam_type_to_return_type(arg.column.name, arg_type)
+          })
+          |> string.join(", ")
+          <> "]"
+        True -> {
+          let all_slice = list.all(args, fn(a) { a.column.is_sqlc_slice })
+          case all_slice {
+            True ->
+              args
+              |> list.map(fn(arg) {
+                let arg_type = sqlc_col_to_gleam(arg.column, context)
+                let sub_param = gleam_type_to_slice_param(arg_type)
+                "list.map(" <> arg.column.name <> ", " <> sub_param <> ")"
+              })
+              |> string.join(", ")
+              |> fn(joined) { "list.flatten([" <> joined <> "])" }
+            False ->
+              args
+              |> list.map(fn(arg) {
+                let arg_type = sqlc_col_to_gleam(arg.column, context)
+                case arg.column.is_sqlc_slice {
+                  True -> {
+                    let sub_param = gleam_type_to_slice_param(arg_type)
+                    "list.map(" <> arg.column.name <> ", " <> sub_param <> ")"
+                  }
+                  False -> gleam_type_to_return_type(arg.column.name, arg_type)
+                }
+              })
+              |> list.fold("list.new()", fn(acc, code) {
+                case string.starts_with(code, "list.map") {
+                  True -> acc <> " |> list.append(" <> code <> ")"
+                  False -> acc <> " |> list.append([" <> code <> "])"
+                }
+              })
+          }
+        }
+      }
+    }
+  }
 
   let def_fn = "pub fn " <> fn_name <> "(" <> def_fn_args <> ")"
-  let def_sql = "let sql = \"" <> text <> "\""
+
+  let def_sql = case has_slices {
+    True -> {
+      let escaped_text = string.replace(query.text, each: "\"", with: "\\\"")
+      let modified_sql =
+        query.params
+        |> list.fold(escaped_text, fn(acc, p) {
+          case p.column.is_sqlc_slice {
+            False -> acc
+            True -> {
+              let name = p.column.name
+              let safe_name = case built_into_gleam(name) {
+                False -> name
+                True -> name <> "_"
+              }
+              string.replace(
+                in: acc,
+                each: "/*SLICE:" <> name <> "*/?",
+                with: "\" <> " <> safe_name <> "_slice <> \"",
+              )
+            }
+          }
+        })
+      "let sql = \"" <> modified_sql <> "\""
+    }
+    False -> "let sql = \"" <> text <> "\""
+  }
+
   let def_exp = case query.cmd {
     sqlc.Exec | sqlc.ExecResult -> ""
     sqlc.Many | sqlc.One -> fn_name <> "_decoder()"
@@ -495,8 +615,20 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
   }
   let def_return = "#(sql, " <> def_return_params <> ", " <> def_exp <> ")"
 
-  [def_fn <> "{", "  " <> def_sql, "  " <> def_return, "}"]
-  |> string.join("\n")
+  case has_slices {
+    True ->
+      [
+        def_fn <> "{",
+        "  " <> slice_decls,
+        "  " <> def_sql,
+        "  " <> def_return,
+        "}",
+      ]
+      |> string.join("\n")
+    False ->
+      [def_fn <> "{", "  " <> def_sql, "  " <> def_return, "}"]
+      |> string.join("\n")
+  }
 }
 
 fn gleam_type_to_decoder(gtype: GleamType) -> String {
@@ -627,6 +759,16 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     True -> "import gleam/list\n"
   }
 
+  let uses_slice =
+    list.any(context.queries, fn(query) {
+      list.any(query.params, fn(param) { param.column.is_sqlc_slice })
+    })
+
+  let string_import = case uses_slice {
+    False -> ""
+    True -> "import gleam/string\n"
+  }
+
   let imports =
     "import gleam/dynamic/decode"
     <> "\n"
@@ -635,6 +777,7 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     <> date_import
     <> timestamp_import
     <> list_import
+    <> string_import
     <> "import parrot/dev"
 
   let enums =
