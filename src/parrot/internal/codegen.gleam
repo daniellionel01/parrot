@@ -550,7 +550,11 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
             })
           param_codes
           |> list.fold("list.new()", fn(acc, code) {
-            acc <> " |> list.append(" <> code <> ")"
+            // Check if code is a single param (for non-slice params) vs a list (for slices)
+            case string.starts_with(code, "list.map") {
+              True -> acc <> " |> list.append(" <> code <> ")"
+              False -> acc <> " |> list.append([" <> code <> "])"
+            }
           })
         }
       }
@@ -561,36 +565,30 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
   let def_sql = case has_slices {
     True -> {
       let escaped_text = string.replace(query.text, each: "\"", with: "\\\"")
-      let sql_parts =
-        list.fold(query.params, [escaped_text], fn(acc, p) {
-          case p.column.is_sqlc_slice {
-            True -> {
-              let name = p.column.name
-              let safe_name = case built_into_gleam(name) {
-                False -> name
-                True -> name <> "_"
-              }
-              let assert Ok(last_part) = list.last(acc)
-              case string.split_once(last_part, "/*SLICE:" <> name <> "*/?") {
-                Ok(#(before, after)) -> {
-                  list.take(acc, list.length(acc) - 1)
-                  |> list.append([before, safe_name <> "_slice", after])
-                }
-                Error(_) -> acc
-              }
-            }
-            False -> acc
+      // Find the first slice placeholder and build SQL around it
+      let slice_param =
+        list.find(query.params, fn(p) { p.column.is_sqlc_slice })
+      case slice_param {
+        Ok(p) -> {
+          let name = p.column.name
+          let safe_name = case built_into_gleam(name) {
+            False -> name
+            True -> name <> "_"
           }
-        })
-      let sql_str =
-        sql_parts
-        |> list.fold("", fn(acc, part) {
-          case acc {
-            "" -> "\"" <> part
-            _ -> acc <> " <> " <> part
+          case string.split_once(escaped_text, "/*SLICE:" <> name <> "*/?") {
+            Ok(#(before, after)) ->
+              "let sql = \""
+              <> before
+              <> "\" <> "
+              <> safe_name
+              <> "_slice <> \""
+              <> after
+              <> "\""
+            Error(_) -> "let sql = \"" <> escaped_text <> "\""
           }
-        })
-      "let sql = " <> sql_str <> "\""
+        }
+        Error(_) -> "let sql = \"" <> escaped_text <> "\""
+      }
     }
     False -> "let sql = \"" <> text <> "\""
   }

@@ -191,10 +191,9 @@ pub type PostsByIds {
 
 pub fn posts_by_ids(ids ids: List(Int)) {
   let ids_slice = string.repeat(",?", list.length(ids))
-  let sql =
-    "select id
+  let sql = "select id
 from posts
-where user_id in ( <> ids_slice <> )"
+where user_id in (" <> ids_slice <> ")"
   #(
     sql,
     list.new() |> list.append(list.map(ids, dev.ParamInt)),
@@ -205,4 +204,27 @@ where user_id in ( <> ids_slice <> )"
 pub fn posts_by_ids_decoder() -> decode.Decoder(PostsByIds) {
   use id <- decode.field(0, decode.int)
   decode.success(PostsByIds(id:))
+}
+
+pub type PostsByIdsAndStatus {
+  PostsByIdsAndStatus(id: Int)
+}
+
+pub fn posts_by_ids_and_status(ids ids: List(Int), title title: String) {
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where user_id in (" <> ids_slice <> ") and title = ?"
+  #(
+    sql,
+    list.new()
+      |> list.append(list.map(ids, dev.ParamInt))
+      |> list.append([dev.ParamString(title)]),
+    posts_by_ids_and_status_decoder(),
+  )
+}
+
+pub fn posts_by_ids_and_status_decoder() -> decode.Decoder(PostsByIdsAndStatus) {
+  use id <- decode.field(0, decode.int)
+  decode.success(PostsByIdsAndStatus(id:))
 }

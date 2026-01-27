@@ -71,3 +71,8 @@ where user_id in (
 select id
 from posts
 where user_id in (sqlc.slice('ids'));
+
+-- name: PostsByIdsAndStatus :many
+select id
+from posts
+where user_id in (sqlc.slice('ids')) and title = ?;
