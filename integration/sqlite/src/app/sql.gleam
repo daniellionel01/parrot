@@ -206,11 +206,11 @@ pub fn posts_by_ids_decoder() -> decode.Decoder(PostsByIds) {
   decode.success(PostsByIds(id:))
 }
 
-pub type PostsByIdsAndStatus {
-  PostsByIdsAndStatus(id: Int)
+pub type PostsByIdsAndTitle {
+  PostsByIdsAndTitle(id: Int)
 }
 
-pub fn posts_by_ids_and_status(ids ids: List(Int), title title: String) {
+pub fn posts_by_ids_and_title(ids ids: List(Int), title title: String) {
   let ids_slice = string.repeat(",?", list.length(ids))
   let sql = "select id
 from posts
@@ -220,6 +220,29 @@ where user_id in (" <> ids_slice <> ") and title = ?"
     list.new()
       |> list.append(list.map(ids, dev.ParamInt))
       |> list.append([dev.ParamString(title)]),
+    posts_by_ids_and_title_decoder(),
+  )
+}
+
+pub fn posts_by_ids_and_title_decoder() -> decode.Decoder(PostsByIdsAndTitle) {
+  use id <- decode.field(0, decode.int)
+  decode.success(PostsByIdsAndTitle(id:))
+}
+
+pub type PostsByIdsAndStatus {
+  PostsByIdsAndStatus(id: Int)
+}
+
+pub fn posts_by_ids_and_status(title title: String, ids ids: List(Int)) {
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where title = ? and user_id in (" <> ids_slice <> ")"
+  #(
+    sql,
+    list.new()
+      |> list.append([dev.ParamString(title)])
+      |> list.append(list.map(ids, dev.ParamInt)),
     posts_by_ids_and_status_decoder(),
   )
 }
@@ -227,4 +250,28 @@ where user_id in (" <> ids_slice <> ") and title = ?"
 pub fn posts_by_ids_and_status_decoder() -> decode.Decoder(PostsByIdsAndStatus) {
   use id <- decode.field(0, decode.int)
   decode.success(PostsByIdsAndStatus(id:))
+}
+
+pub type MultipleSlices {
+  MultipleSlices(id: Int)
+}
+
+pub fn multiple_slices(titles titles: List(String), ids ids: List(Int)) {
+  let titles_slice = string.repeat(",?", list.length(titles))
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where title in (" <> titles_slice <> ") and user_id in (/*SLICE:ids*/?)"
+  #(
+    sql,
+    list.new()
+      |> list.append(list.map(titles, dev.ParamString))
+      |> list.append(list.map(ids, dev.ParamInt)),
+    multiple_slices_decoder(),
+  )
+}
+
+pub fn multiple_slices_decoder() -> decode.Decoder(MultipleSlices) {
+  use id <- decode.field(0, decode.int)
+  decode.success(MultipleSlices(id:))
 }

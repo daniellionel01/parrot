@@ -72,7 +72,17 @@ select id
 from posts
 where user_id in (sqlc.slice('ids'));
 
--- name: PostsByIdsAndStatus :many
+-- name: PostsByIdsAndTitle :many
 select id
 from posts
 where user_id in (sqlc.slice('ids')) and title = ?;
+
+-- name: PostsByIdsAndStatus :many
+select id
+from posts
+where title = ? and user_id in (sqlc.slice('ids'));
+
+-- name: MultipleSlices :many
+select id
+from posts
+where title in (sqlc.slice('titles')) and user_id in (sqlc.slice('ids'));
