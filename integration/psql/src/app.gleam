@@ -16,11 +16,13 @@ pub fn main() {
   use config <- result.try(pog.url_config(name, database_url))
   let assert Ok(db) = pog.start(config)
 
-  let _ = test_getting_user_by_username(db.data)
-  let _ = test_creating_user_with_date(db.data)
+  // let _ = test_getting_user_by_username(db.data)
+  // let _ = test_creating_user_with_date(db.data)
+
+  let #(sql, params, expecting) = sql.get_tournament_champion_bets()
+  let _ = echo query(db.data, sql, params, expecting)
 
   process.send_exit(db.pid)
-
   Ok(Nil)
 }
 

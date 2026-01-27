@@ -460,3 +460,45 @@ pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
   use user_id <- decode.field(2, decode.int)
   decode.success(PostsByAdmins(id:, title:, user_id:))
 }
+
+pub type GetTournamentChampionBets {
+  GetTournamentChampionBets(
+    id: BitArray,
+    created_by: BitArray,
+    updated_by: BitArray,
+    updated_at: Timestamp,
+    tournament_name: String,
+    team_name: String,
+  )
+}
+
+pub fn get_tournament_champion_bets() {
+  let sql =
+    "SELECT id::uuid,
+       created_by::uuid,
+       updated_by::uuid,
+       updated_at::timestamp,
+       tournament_name::text,
+       team_name::text
+FROM get_tournament_champion_bets_safe()"
+  #(sql, [], get_tournament_champion_bets_decoder())
+}
+
+pub fn get_tournament_champion_bets_decoder() -> decode.Decoder(
+  GetTournamentChampionBets,
+) {
+  use id <- decode.field(0, decode.bit_array)
+  use created_by <- decode.field(1, decode.bit_array)
+  use updated_by <- decode.field(2, decode.bit_array)
+  use updated_at <- decode.field(3, dev.datetime_decoder())
+  use tournament_name <- decode.field(4, decode.string)
+  use team_name <- decode.field(5, decode.string)
+  decode.success(GetTournamentChampionBets(
+    id:,
+    created_by:,
+    updated_by:,
+    updated_at:,
+    tournament_name:,
+    team_name:,
+  ))
+}

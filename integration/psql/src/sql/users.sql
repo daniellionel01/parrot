@@ -122,3 +122,12 @@ where user_id in (
   from users
   where users."role" = 'admin'
 );
+
+-- name: GetTournamentChampionBets :many
+SELECT id::uuid,
+       created_by::uuid,
+       updated_by::uuid,
+       updated_at::timestamp,
+       tournament_name::text,
+       team_name::text
+FROM get_tournament_champion_bets_safe();
