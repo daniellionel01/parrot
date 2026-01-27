@@ -2,7 +2,9 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/list
 import gleam/option.{type Option}
+import gleam/string
 import parrot/dev
 
 pub type Simple {
@@ -181,4 +183,26 @@ pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
   use title <- decode.field(1, decode.string)
   use user_id <- decode.field(2, decode.int)
   decode.success(PostsByAdmins(id:, title:, user_id:))
+}
+
+pub type PostsByIds {
+  PostsByIds(id: Int)
+}
+
+pub fn posts_by_ids(ids ids: List(Int)) {
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql =
+    "select id
+from posts
+where user_id in ( <> ids_slice <> )"
+  #(
+    sql,
+    list.new() |> list.append(list.map(ids, dev.ParamInt)),
+    posts_by_ids_decoder(),
+  )
+}
+
+pub fn posts_by_ids_decoder() -> decode.Decoder(PostsByIds) {
+  use id <- decode.field(0, decode.int)
+  decode.success(PostsByIds(id:))
 }

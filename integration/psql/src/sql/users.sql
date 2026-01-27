@@ -131,8 +131,3 @@ SELECT id::uuid,
        tournament_name::text,
        team_name::text
 FROM get_tournament_champion_bets_safe();
-
--- name: AdminByIds :many
-select id
-from posts
-where user_id in (sqlc.slice('ids'));

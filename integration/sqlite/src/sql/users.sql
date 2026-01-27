@@ -66,3 +66,8 @@ where user_id in (
   from users
   where users.role = 'admin'
 );
+
+-- name: PostsByIds :many
+select id
+from posts
+where user_id in (sqlc.slice('ids'));

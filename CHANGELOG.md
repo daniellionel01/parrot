@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-01-27
+
+- Adds support for `sqlc.slice` syntax. (https://github.com/daniellionel01/parrot/pull/91)
+
 ## [2.1.3] - 2026-01-18
 
 - Improvement: dedicated error message for duplicate enum definitions. (https://github.com/daniellionel01/parrot/issues/82)
