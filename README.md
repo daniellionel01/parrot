@@ -292,8 +292,8 @@ the nature of your database of choice and sqlc.
 
 Wether it be custom functions in postgres or built-in, sqlc struggles to infer types
 for those types of queries. Luckily sqlc provides a way to annotate columns directly.
-Parrot will soon provide direct support. Until then, you will have to annotate the type
-of those columns.
+Parrot will soon provide support for direct database connections. Until then,
+you will have to annotate the type of those columns.
 
 Overview over all types can be found here:
 - Postgres: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/postgresql_type.go
