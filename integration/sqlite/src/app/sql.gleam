@@ -261,7 +261,7 @@ pub fn multiple_slices(titles titles: List(String), ids ids: List(Int)) {
   let ids_slice = string.repeat(",?", list.length(ids))
   let sql = "select id
 from posts
-where title in (" <> titles_slice <> ") and user_id in (/*SLICE:ids*/?)"
+where title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"
   #(
     sql,
     list.new()
@@ -274,4 +274,35 @@ where title in (" <> titles_slice <> ") and user_id in (/*SLICE:ids*/?)"
 pub fn multiple_slices_decoder() -> decode.Decoder(MultipleSlices) {
   use id <- decode.field(0, decode.int)
   decode.success(MultipleSlices(id:))
+}
+
+pub type MultipleSlicesAndArgument {
+  MultipleSlicesAndArgument(id: Int)
+}
+
+pub fn multiple_slices_and_argument(
+  user_id user_id: Int,
+  titles titles: List(String),
+  ids ids: List(Int),
+) {
+  let titles_slice = string.repeat(",?", list.length(titles))
+  let ids_slice = string.repeat(",?", list.length(ids))
+  let sql = "select id
+from posts
+where user_id = ? and title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"
+  #(
+    sql,
+    list.new()
+      |> list.append([dev.ParamInt(user_id)])
+      |> list.append(list.map(titles, dev.ParamString))
+      |> list.append(list.map(ids, dev.ParamInt)),
+    multiple_slices_and_argument_decoder(),
+  )
+}
+
+pub fn multiple_slices_and_argument_decoder() -> decode.Decoder(
+  MultipleSlicesAndArgument,
+) {
+  use id <- decode.field(0, decode.int)
+  decode.success(MultipleSlicesAndArgument(id:))
 }

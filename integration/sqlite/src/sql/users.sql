@@ -86,3 +86,8 @@ where title = ? and user_id in (sqlc.slice('ids'));
 select id
 from posts
 where title in (sqlc.slice('titles')) and user_id in (sqlc.slice('ids'));
+
+-- name: MultipleSlicesAndArgument :many
+select id
+from posts
+where user_id = ? and title in (sqlc.slice('titles')) and user_id in (sqlc.slice('ids'));

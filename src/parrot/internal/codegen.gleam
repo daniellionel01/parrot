@@ -509,9 +509,9 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
               True -> name <> "_"
             }
             string.replace(
-              acc,
-              "/*SLICE:" <> name <> "*/?",
-              safe_name <> "_slice",
+              in: acc,
+              each: "/*SLICE:" <> name <> "*/?",
+              with: "\" <> " <> safe_name <> "_slice <> \"",
             )
           }
           False -> acc
@@ -565,30 +565,26 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
   let def_sql = case has_slices {
     True -> {
       let escaped_text = string.replace(query.text, each: "\"", with: "\\\"")
-      // Find the first slice placeholder and build SQL around it
-      let slice_param =
-        list.find(query.params, fn(p) { p.column.is_sqlc_slice })
-      case slice_param {
-        Ok(p) -> {
-          let name = p.column.name
-          let safe_name = case built_into_gleam(name) {
-            False -> name
-            True -> name <> "_"
+      // Replace all slice placeholders with their variables
+      let modified_sql =
+        list.fold(query.params, escaped_text, fn(acc, p) {
+          case p.column.is_sqlc_slice {
+            True -> {
+              let name = p.column.name
+              let safe_name = case built_into_gleam(name) {
+                False -> name
+                True -> name <> "_"
+              }
+              string.replace(
+                in: acc,
+                each: "/*SLICE:" <> name <> "*/?",
+                with: "\" <> " <> safe_name <> "_slice <> \"",
+              )
+            }
+            False -> acc
           }
-          case string.split_once(escaped_text, "/*SLICE:" <> name <> "*/?") {
-            Ok(#(before, after)) ->
-              "let sql = \""
-              <> before
-              <> "\" <> "
-              <> safe_name
-              <> "_slice <> \""
-              <> after
-              <> "\""
-            Error(_) -> "let sql = \"" <> escaped_text <> "\""
-          }
-        }
-        Error(_) -> "let sql = \"" <> escaped_text <> "\""
-      }
+        })
+      "let sql = \"" <> modified_sql <> "\""
     }
     False -> "let sql = \"" <> text <> "\""
   }
