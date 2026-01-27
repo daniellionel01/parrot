@@ -290,7 +290,7 @@ the nature of your database of choice and sqlc.
   
 ### Functions
 
-Wether it be custom functions in postgres or built-in, sqlc struggles to infer types
+Wether it be custom or built-in functions in postgres, sqlc struggles to infer types
 for those types of queries. Luckily sqlc provides a way to annotate columns directly.
 Parrot will soon provide support for direct database connections. Until then,
 you will have to annotate the type of those columns.
