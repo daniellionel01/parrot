@@ -11,6 +11,8 @@ target = "erlang"
 [documentation]
 pages = [
   { title = "Changelog", path = "changelog.html", source = "./CHANGELOG.md" },
+  { title = "TOML reference", path = "toml-reference.html", source = "./pages/toml-reference.md" },
+  { title = "Migration v2 -> v3", path = "migration-v2-v3.html", source = "./pages/migration-v2-v3.md" }
 ]
 
 [dependencies]
