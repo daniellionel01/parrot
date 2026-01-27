@@ -194,11 +194,7 @@ pub fn posts_by_ids(ids ids: List(Int)) {
   let sql = "select id
 from posts
 where user_id in (" <> ids_slice <> ")"
-  #(
-    sql,
-    list.new() |> list.append(list.map(ids, dev.ParamInt)),
-    posts_by_ids_decoder(),
-  )
+  #(sql, list.flatten([list.map(ids, dev.ParamInt)]), posts_by_ids_decoder())
 }
 
 pub fn posts_by_ids_decoder() -> decode.Decoder(PostsByIds) {
@@ -264,9 +260,10 @@ from posts
 where title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"
   #(
     sql,
-    list.new()
-      |> list.append(list.map(titles, dev.ParamString))
-      |> list.append(list.map(ids, dev.ParamInt)),
+    list.flatten([
+      list.map(titles, dev.ParamString),
+      list.map(ids, dev.ParamInt),
+    ]),
     multiple_slices_decoder(),
   )
 }

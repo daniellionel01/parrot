@@ -536,26 +536,38 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
           <> "]"
         }
         True -> {
-          let param_codes =
-            args
-            |> list.map(fn(arg) {
-              let arg_type = sqlc_col_to_gleam(arg.column, context)
-              case arg.column.is_sqlc_slice {
-                True -> {
+          let all_slice = list.all(args, fn(a) { a.column.is_sqlc_slice })
+          case all_slice {
+            True -> {
+              let map_exprs =
+                args
+                |> list.map(fn(arg) {
+                  let arg_type = sqlc_col_to_gleam(arg.column, context)
                   let sub_param = gleam_type_to_slice_param(arg_type)
                   "list.map(" <> arg.column.name <> ", " <> sub_param <> ")"
-                }
-                False -> gleam_type_to_return_type(arg.column.name, arg_type)
-              }
-            })
-          param_codes
-          |> list.fold("list.new()", fn(acc, code) {
-            // Check if code is a single param (for non-slice params) vs a list (for slices)
-            case string.starts_with(code, "list.map") {
-              True -> acc <> " |> list.append(" <> code <> ")"
-              False -> acc <> " |> list.append([" <> code <> "])"
+                })
+              "list.flatten([" <> string.join(map_exprs, ", ") <> "])"
             }
-          })
+            False -> {
+              args
+              |> list.map(fn(arg) {
+                let arg_type = sqlc_col_to_gleam(arg.column, context)
+                case arg.column.is_sqlc_slice {
+                  True -> {
+                    let sub_param = gleam_type_to_slice_param(arg_type)
+                    "list.map(" <> arg.column.name <> ", " <> sub_param <> ")"
+                  }
+                  False -> gleam_type_to_return_type(arg.column.name, arg_type)
+                }
+              })
+              |> list.fold("list.new()", fn(acc, code) {
+                case string.starts_with(code, "list.map") {
+                  True -> acc <> " |> list.append(" <> code <> ")"
+                  False -> acc <> " |> list.append([" <> code <> "])"
+                }
+              })
+            }
+          }
         }
       }
   }
