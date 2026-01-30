@@ -6,8 +6,11 @@ drop type if exists user_role;
 
 create type user_role as enum ('admin', 'user', 'guest');
 
+create extension citext;
+
 create table users (
   id serial primary key,
+  email citext not null unique,
   username varchar(255) not null unique,
   created_at timestamp default current_timestamp,
   date_of_birth date,

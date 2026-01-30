@@ -330,6 +330,7 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     | "text" <> _
     | "mediumtext" <> _
     | "longtext" <> _
+    | "citext" <> _
     | "json" <> _ -> GleamString
     "uuid"
     | "bit"

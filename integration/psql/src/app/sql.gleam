@@ -110,6 +110,7 @@ pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
 pub type GetUser {
   GetUser(
     id: Int,
+    email: String,
     username: String,
     created_at: Option(Timestamp),
     date_of_birth: Option(Date),
@@ -124,7 +125,7 @@ pub type GetUser {
 pub fn get_user(id id: Int) {
   let sql =
     "SELECT
-  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
+  id, email, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 WHERE
@@ -136,22 +137,24 @@ LIMIT
 
 pub fn get_user_decoder() -> decode.Decoder(GetUser) {
   use id <- decode.field(0, decode.int)
-  use username <- decode.field(1, decode.string)
-  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use email <- decode.field(1, decode.string)
+  use username <- decode.field(2, decode.string)
+  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
   use date_of_birth <- decode.field(
-    3,
+    4,
     decode.optional(dev.calendar_date_decoder()),
   )
-  use profile <- decode.field(4, decode.optional(decode.string))
-  use extra_info <- decode.field(5, decode.optional(decode.string))
+  use profile <- decode.field(5, decode.optional(decode.string))
+  use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
-    6,
+    7,
     decode.optional(decode.list(of: decode.int)),
   )
-  use role <- decode.field(7, decode.optional(user_role_decoder()))
-  use document <- decode.field(8, decode.optional(decode.bit_array))
+  use role <- decode.field(8, decode.optional(user_role_decoder()))
+  use document <- decode.field(9, decode.optional(decode.bit_array))
   decode.success(GetUser(
     id:,
+    email:,
     username:,
     created_at:,
     date_of_birth:,
@@ -166,6 +169,7 @@ pub fn get_user_decoder() -> decode.Decoder(GetUser) {
 pub type ListUsers {
   ListUsers(
     id: Int,
+    email: String,
     username: String,
     created_at: Option(Timestamp),
     date_of_birth: Option(Date),
@@ -180,7 +184,7 @@ pub type ListUsers {
 pub fn list_users() {
   let sql =
     "SELECT
-  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
+  id, email, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 ORDER BY
@@ -190,22 +194,24 @@ ORDER BY
 
 pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   use id <- decode.field(0, decode.int)
-  use username <- decode.field(1, decode.string)
-  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use email <- decode.field(1, decode.string)
+  use username <- decode.field(2, decode.string)
+  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
   use date_of_birth <- decode.field(
-    3,
+    4,
     decode.optional(dev.calendar_date_decoder()),
   )
-  use profile <- decode.field(4, decode.optional(decode.string))
-  use extra_info <- decode.field(5, decode.optional(decode.string))
+  use profile <- decode.field(5, decode.optional(decode.string))
+  use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
-    6,
+    7,
     decode.optional(decode.list(of: decode.int)),
   )
-  use role <- decode.field(7, decode.optional(user_role_decoder()))
-  use document <- decode.field(8, decode.optional(decode.bit_array))
+  use role <- decode.field(8, decode.optional(user_role_decoder()))
+  use document <- decode.field(9, decode.optional(decode.bit_array))
   decode.success(ListUsers(
     id:,
+    email:,
     username:,
     created_at:,
     date_of_birth:,
@@ -245,6 +251,13 @@ VALUES ($1, CURRENT_TIMESTAMP, TO_TIMESTAMP($2::text, 'YYYY-MM-DDZ'))"
   #(sql, [dev.ParamString(username), dev.ParamString(date_of_birth)])
 }
 
+pub fn create_user_with_email(username username: String, email email: String) {
+  let sql =
+    "INSERT INTO users (username, email)
+VALUES ($1, $2)"
+  #(sql, [dev.ParamString(username), dev.ParamString(email)])
+}
+
 pub fn update_user_username(username username: String, id id: Int) {
   let sql =
     "UPDATE users
@@ -266,6 +279,7 @@ WHERE
 pub type GetUserByUsername {
   GetUserByUsername(
     id: Int,
+    email: String,
     username: String,
     created_at: Option(Timestamp),
     date_of_birth: Option(Date),
@@ -281,6 +295,7 @@ pub fn get_user_by_username(username username: String) {
   let sql =
     "SELECT
   id,
+  email,
   username,
   created_at,
   date_of_birth,
@@ -300,22 +315,24 @@ LIMIT
 
 pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use id <- decode.field(0, decode.int)
-  use username <- decode.field(1, decode.string)
-  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use email <- decode.field(1, decode.string)
+  use username <- decode.field(2, decode.string)
+  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
   use date_of_birth <- decode.field(
-    3,
+    4,
     decode.optional(dev.calendar_date_decoder()),
   )
-  use profile <- decode.field(4, decode.optional(decode.string))
-  use extra_info <- decode.field(5, decode.optional(decode.string))
+  use profile <- decode.field(5, decode.optional(decode.string))
+  use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
-    6,
+    7,
     decode.optional(decode.list(of: decode.int)),
   )
-  use role <- decode.field(7, decode.optional(user_role_decoder()))
-  use document <- decode.field(8, decode.optional(decode.bit_array))
+  use role <- decode.field(8, decode.optional(user_role_decoder()))
+  use document <- decode.field(9, decode.optional(decode.bit_array))
   decode.success(GetUserByUsername(
     id:,
+    email:,
     username:,
     created_at:,
     date_of_birth:,
@@ -330,6 +347,7 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
 pub type GetUserByLowerUsername {
   GetUserByLowerUsername(
     id: Int,
+    email: String,
     username: String,
     created_at: Option(Timestamp),
     date_of_birth: Option(Date),
@@ -344,7 +362,7 @@ pub type GetUserByLowerUsername {
 pub fn get_user_by_lower_username(lower lower: String) {
   let sql =
     "SELECT
-  id, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
+  id, email, username, created_at, date_of_birth, profile, extra_info, favorite_numbers, role, document
 FROM
   users
 WHERE
@@ -358,22 +376,24 @@ pub fn get_user_by_lower_username_decoder() -> decode.Decoder(
   GetUserByLowerUsername,
 ) {
   use id <- decode.field(0, decode.int)
-  use username <- decode.field(1, decode.string)
-  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use email <- decode.field(1, decode.string)
+  use username <- decode.field(2, decode.string)
+  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
   use date_of_birth <- decode.field(
-    3,
+    4,
     decode.optional(dev.calendar_date_decoder()),
   )
-  use profile <- decode.field(4, decode.optional(decode.string))
-  use extra_info <- decode.field(5, decode.optional(decode.string))
+  use profile <- decode.field(5, decode.optional(decode.string))
+  use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
-    6,
+    7,
     decode.optional(decode.list(of: decode.int)),
   )
-  use role <- decode.field(7, decode.optional(user_role_decoder()))
-  use document <- decode.field(8, decode.optional(decode.bit_array))
+  use role <- decode.field(8, decode.optional(user_role_decoder()))
+  use document <- decode.field(9, decode.optional(decode.bit_array))
   decode.success(GetUserByLowerUsername(
     id:,
+    email:,
     username:,
     created_at:,
     date_of_birth:,
