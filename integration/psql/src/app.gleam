@@ -35,6 +35,7 @@ fn test_getting_user_by_username(db: pog.Connection) {
       sql.GetUserByUsername(
         id: 3,
         username: "alice",
+        email: "alice@example.com",
         created_at: option.Some(_),
         date_of_birth: option.None,
         profile: option.Some("{\"a\": 1, \"b\": 2}"),
@@ -62,6 +63,7 @@ fn test_creating_user_with_date(db: pog.Connection) {
       sql.GetUserByUsername(
         id: 4,
         username: "freddy",
+        email: "freddy@example.com",
         created_at: option.Some(_),
         date_of_birth: option.Some(calendar.Date(1995, calendar.April, 4)),
         profile: option.None,
