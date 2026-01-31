@@ -716,6 +716,16 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     |> string.join("\n\n")
 
   // check if Timestamps used
+  let uses_optional =
+    fn(col: sqlc.TableColumn) {
+      case sqlc_col_to_gleam(col, context) {
+        GleamOption(_) -> True
+        _ -> False
+      }
+    }
+    |> uses_gleam_type(context)
+
+  // check if Timestamps used
   let uses_timestamp =
     fn(col: sqlc.TableColumn) {
       case sqlc_col_to_gleam(col, context) {
@@ -760,6 +770,11 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     True -> "import gleam/list\n"
   }
 
+  let optional_import = case uses_optional {
+    False -> ""
+    True -> "import gleam/option.{type Option}\n"
+  }
+
   let uses_slice =
     list.any(context.queries, fn(query) {
       list.any(query.params, fn(param) { param.column.is_sqlc_slice })
@@ -771,10 +786,8 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
   }
 
   let imports =
-    "import gleam/dynamic/decode"
-    <> "\n"
-    <> "import gleam/option.{type Option}"
-    <> "\n"
+    "import gleam/dynamic/decode\n"
+    <> optional_import
     <> date_import
     <> timestamp_import
     <> list_import

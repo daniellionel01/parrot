@@ -1,0 +1,34 @@
+import app/sql
+import gleam/dynamic/decode
+import gleam/list
+import parrot/dev
+import sqlight
+
+pub fn main() {
+  use on <- sqlight.with_connection("./file.db")
+
+  let #(sql, with) = sql.create_user("danny")
+  let with = list.map(with, parrot_to_sqlight)
+  let assert Ok(_) =
+    sqlight.query(sql, on:, with:, expecting: decode.success(""))
+
+  let #(sql, with, expecting) = sql.count_users()
+  let with = list.map(with, parrot_to_sqlight)
+  let assert Ok([sql.CountUsers(4)]) =
+    sqlight.query(sql, on:, with:, expecting:)
+}
+
+fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+  case param {
+    dev.ParamBool(x) -> sqlight.bool(x)
+    dev.ParamFloat(x) -> sqlight.float(x)
+    dev.ParamInt(x) -> sqlight.int(x)
+    dev.ParamString(x) -> sqlight.text(x)
+    dev.ParamBitArray(x) -> sqlight.blob(x)
+    dev.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
+    dev.ParamList(_) -> panic as "sqlite does not implement lists"
+    dev.ParamDate(_) -> panic as "date parameter needs to be implemented"
+    dev.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
+    dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
+  }
+}
