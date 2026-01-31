@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-01-31
+
+- Only import `Option` when used somewhere in the generated code. (https://github.com/daniellionel01/parrot/pull/95)
+
 ## [2.2.1] - 2026-01-30
 
 - Adds support for `citext` type in Postgres (https://github.com/daniellionel01/parrot/pull/92)<br />
