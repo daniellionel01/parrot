@@ -215,6 +215,9 @@ $ gleam run -m parrot -- -e PG_DATABASE_URL
 # specify sqlite file
 $ gleam run -m parrot -- --sqlite <file_path>
 
+# specify an engine and schema sql file
+$ gleam run -m parrot -- --schema <engine_name> <file_path>
+
 # see all options
 $ gleam run -m parrot help
 ```
