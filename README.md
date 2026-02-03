@@ -1,4 +1,4 @@
-# 🦜 Parrot / type-safe SQL in gleam (https://gleam.run/)
+# 🦜 Parrot / type-safe SQL in [Gleam](https://gleam.run/)
 
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
