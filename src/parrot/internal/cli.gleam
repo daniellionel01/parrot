@@ -29,6 +29,10 @@ pub const usage = "
       for the database connection URL.
       Defaults to 'DATABASE_URL'.
 
+    --schema <ENGINE> <FILE_PATH>
+      Load a database schema directly from a sql file. The database engine 
+      must be specified. The options are postgres, mysql, and sqlite.
+
   DATABASE_URL:
     Parrot automatically detects the driver from the URL scheme.
 
@@ -48,14 +52,22 @@ pub const usage = "
     # 3. Different environment variable
     $ export STAGING_DB_URL=\"mysql://staging:pass@remote/db\"
     $ gleam run -m parrot -- --env-var STAGING_DB_URL
+    
+    # 4. Using a schema file directly.
+    $ gleam run -m parrot -- --schema postgres src/schema.sql
 
-    # 4. Get help
+    # 5. Get help
     $ gleam run -m parrot help
 "
 
+pub type SchemaSource {
+  Database(url: String)
+  SQLFile(path: String)
+}
+
 pub type Command {
   Usage
-  Generate(engine: sqlc.Engine, db: String)
+  Generate(engine: sqlc.Engine, schema: SchemaSource)
 }
 
 pub fn engine_from_env(str: String) {

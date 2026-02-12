@@ -3,7 +3,6 @@
 
 import filepath
 import gleam/bool
-import gleam/dict.{type Dict}
 import gleam/list
 import gleam/result
 import simplifile
@@ -21,21 +20,23 @@ pub fn try_nil(
 /// files inside each one.
 /// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
 ///
-pub fn walk(from: String) -> Dict(String, List(String)) {
+pub fn walk(from: String) -> Result(List(String), Nil) {
+  use expanded <- result.try(filepath.expand(from))
+  Ok(walk_recur(expanded))
+}
+
+fn walk_recur(from: String) -> List(String) {
   case filepath.base_name(from) {
     "sql" -> {
       let assert Ok(files) = simplifile.read_directory(from)
-      let files = {
-        use file <- list.filter_map(files)
-        use extension <- result.try(filepath.extension(file))
-        use <- bool.guard(when: extension != "sql", return: Error(Nil))
-        let file_name = filepath.join(from, file)
-        case simplifile.is_file(file_name) {
-          Ok(True) -> Ok(file_name)
-          Ok(False) | Error(_) -> Error(Nil)
-        }
+      use file <- list.filter_map(files)
+      use extension <- result.try(filepath.extension(file))
+      use <- bool.guard(when: extension != "sql", return: Error(Nil))
+      let file_name = filepath.join(from, file)
+      case simplifile.is_file(file_name) {
+        Ok(True) -> Ok(file_name)
+        Ok(False) | Error(_) -> Error(Nil)
       }
-      dict.from_list([#(from, files)])
     }
 
     _ -> {
@@ -48,9 +49,7 @@ pub fn walk(from: String) -> Dict(String, List(String)) {
           Ok(False) | Error(_) -> Error(Nil)
         }
       }
-
-      list.map(directories, walk)
-      |> list.fold(from: dict.new(), with: dict.merge)
+      list.flat_map(directories, walk_recur)
     }
   }
 }
