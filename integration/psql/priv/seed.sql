@@ -6,6 +6,7 @@ VALUES
 
 INSERT INTO users (
   username,
+  email,
   profile,
   extra_info,
   favorite_numbers,
@@ -13,6 +14,7 @@ INSERT INTO users (
   document
 ) VALUES (
   'alice',
+  'alice@example.com',
   '{"a": 1, "b": 2}',
   '{"c": 3}',
   ARRAY[3, 11],

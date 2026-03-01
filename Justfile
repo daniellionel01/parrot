@@ -1,33 +1,25 @@
 default:
-  @just --choose
+    @just --choose
 
 clean:
-  find . -name build -type d -prune -o -name gleam.toml -execdir gleam clean \;
+    find . -name build -type d -prune -o -name gleam.toml -execdir gleam clean \;
 
 choire:
-  gleam run -m choire
+    gleam run -m choire
 
 update:
-  gleam update
-  find . -name build -type d -prune -o -name gleam.toml -execdir gleam update \;
+    gleam update
+    find . -name build -type d -prune -o -name gleam.toml -execdir gleam update \;
 
 # count lines of code of (excluding tests)
 @loc:
-  echo "SOURCE CODE"
-  cloc . --vcs=git --exclude-dir=integration,test
-  echo "\TESTS"
-  cloc integration test --vcs=git
+    echo "SOURCE CODE"
+    cloc . --vcs=git --exclude-dir=integration,test
+    echo "\TESTS"
+    cloc integration test --vcs=git
 
 @integration:
-  just test-sqlite
-  just test-mysql
-  just test-psql
-
-@test-mysql:
-  just integration/mysql/test
-
-@test-psql:
-  just integration/psql/test
-
-@test-sqlite:
-  just integration/sqlite/test
+    just integration/sqlite/test
+    just integration/sqlite-no-optional/test
+    just integration/mysql/test
+    just integration/psql/test

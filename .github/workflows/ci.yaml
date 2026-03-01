@@ -44,6 +44,28 @@ jobs:
           gleam run -m parrot -- --sqlite file.db
           gleam run
 
+  integration-sqlite-no-optional:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "28"
+          gleam-version: "1.14.0"
+          rebar3-version: "3"
+      - name: Install SQLite
+        run: sudo apt-get update && sudo apt-get install -y sqlite3
+      - name: Run SQLite Integration Tests
+        working-directory: integration/sqlite-no-optional
+        run: |
+          rm -f src/app/sql.gleam
+          rm -f file.db
+          sqlite3 file.db < ./priv/schema.sql
+          sqlite3 file.db < ./priv/seed.sql
+          gleam run -m parrot -- --sqlite file.db
+          gleam run
+
   integration-mysql:
     runs-on: ubuntu-latest
     needs: test

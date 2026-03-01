@@ -54,6 +54,10 @@ VALUES
 INSERT INTO users (username, created_at, date_of_birth)
 VALUES (@username, CURRENT_TIMESTAMP, TO_TIMESTAMP(@date_of_birth::text, 'YYYY-MM-DDZ'));
 
+-- name: CreateUserWithEmail :exec
+INSERT INTO users (username, email)
+VALUES ($1, $2);
+
 -- name: UpdateUserUsername :exec
 UPDATE users
 SET
@@ -69,6 +73,7 @@ WHERE
 -- name: GetUserByUsername :one
 SELECT
   id,
+  email,
   username,
   created_at,
   date_of_birth,
@@ -122,3 +127,12 @@ where user_id in (
   from users
   where users."role" = 'admin'
 );
+
+-- name: GetTournamentChampionBets :many
+SELECT id::uuid,
+       created_by::uuid,
+       updated_by::uuid,
+       updated_at::timestamp,
+       tournament_name::text,
+       team_name::text
+FROM get_tournament_champion_bets_safe();

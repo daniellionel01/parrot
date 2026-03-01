@@ -11,6 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+## [2.2.2] - 2026-01-31
+
+- Only import `Option` when used somewhere in the generated code. (https://github.com/daniellionel01/parrot/pull/95)
+
+## [2.2.1] - 2026-01-30
+
+- Adds support for `citext` type in Postgres (https://github.com/daniellionel01/parrot/pull/92)<br />
+  Thank you uh-kay! (https://github.com/uh-kay)
+
+## [2.2.0] - 2026-01-27
+
+- Adds support for `sqlc.slice` syntax. (https://github.com/daniellionel01/parrot/pull/91)<br />
+  This enables dynamic parameters for `in` queries in SQlite und MySQL who do not support it natively.
 
 ## [2.1.3] - 2026-01-18
 

@@ -1,4 +1,4 @@
-# 🦜 Parrot / type-safe SQL in gleam (https://gleam.run/)
+# 🦜 Parrot / type-safe SQL in [Gleam](https://gleam.run/)
 
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
@@ -287,6 +287,30 @@ $ just test-psql
 
 As with everything in software, there are some quirks with this library, due to
 the nature of your database of choice and sqlc.
+  
+### Functions
+
+Wether it be custom or built-in functions in postgres, sqlc struggles to infer types
+for those types of queries. Luckily sqlc provides a way to annotate columns directly.
+Parrot will soon provide support for direct database connections. Until then,
+you will have to annotate the type of those columns.
+
+Overview over all types can be found here:
+- Postgres: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/postgresql_type.go
+- MySQL: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/mysql_type.go
+- SQlite: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/sqlite_type.go
+
+You can annotate column types like so:
+```sql
+-- name: GetTournamentChampionBets :many
+SELECT id::uuid,
+       created_by::uuid,
+       updated_by::uuid,
+       updated_at::timestamp,
+       tournament_name::text,
+       team_name::text
+FROM get_tournament_champion_bets_safe();
+```
 
 ### Multidimensional Arrays
 
@@ -301,7 +325,6 @@ There are a couple of complex data types that are explictly made `dynamic`
 since they are too complex to handle with the current implementation.
 There is a plan for a better and more flexible implementation. Until then,
 it will be wrapped in a dynamic type.
-
 
 ### Targetting JavaScript
 
@@ -322,7 +345,9 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 ### What sqlc features are not supported?
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
 
-- Certain query annotations are not supported and will panic the process: `:execrows`, `:execlastid`, `:batchexec`, `:batchone`, `:batchmany`, `:copyfrom`. You can read more about it here: https://docs.sqlc.dev/en/stable/reference/query-annotations.html
+- Certain query annotations are not supported and will panic the process: `:execrows`, `:execlastid`, `:batchexec`, `:batchone`, `:batchmany`, `:copyfrom`.
+  You can read more about those operations here: https://docs.sqlc.dev/en/stable/reference/query-annotations.html.
+  Most of those operations are only supported when outputting Go code and are simply not necessary in Gleam.
 
 ## Future Work
 
