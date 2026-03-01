@@ -1,15 +1,5 @@
 # Plans V3
 
-**Edit:** v2 has been released to fix a bug with missing `Optional` parameters.
- 
----
-
-Parrot v1 & v2 has been quite useful for a lot of projects. It covers most crud-ish style applications using Sqlite, MySQL and PostgreSQL databases.
-
-However when you introduce more complex types, especially in Postgres, things start to get weird and the current API is not well suited to let the user handle these edge cases gracefully. All parrot does right now is throw its hands up and give you a `ParamDynamic`. But we can do better.
-
-So here are some changes outlined for a v3:
-
 - [ ] **toml based config**
        inspiration from lustre dev tools.
 
@@ -36,7 +26,7 @@ So here are some changes outlined for a v3:
 - [ ] **generate wrappers**
        we can detect if the project has `pog` or `sqlight` as a dependency and prompt the user (also enable via cli flag) if they want us to generate the mapping function from `dev.Param` to `pog.Value` automatically.
 
-- [ ] **remove tui spinners**
+- [x] **remove tui spinners**
         simply not necessary. codegen is quite fast so we do not need to show much progress indication. it also messes with the formatting quite a bit, which is irritating.
 
 - [ ] **test failing paths, not just successfull runs**

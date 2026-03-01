@@ -3,6 +3,9 @@
 Parrot follow Gleam's tools convention and can be configured in your project's `gleam.toml` file under the `tools.parrot` table.
 
 ```toml
+[tools.parrot]
+output = "./src/app/custom_module.gleam"
+
 [tools.parrot.sqlc]
 # Use the system-installed `sqlc` binary instead of downloading one automatically.
 bin = "system"
@@ -14,6 +17,12 @@ schema = "<path>"
 
 > **Note**: that any flags passed to the command line will always take precedence
 > over any configuration in your `gleam.toml`
+
+## `tools.parrot`
+
+- **`output = string`**: 
+
+  Default: `.src/<project_name>/sql.gleam`.
 
 ## `tools.parrot.sqlc`
 

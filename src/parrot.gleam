@@ -13,7 +13,6 @@ import parrot/internal/errors
 import parrot/internal/lib
 import parrot/internal/project
 import parrot/internal/shellout
-import parrot/internal/spinner
 import parrot/internal/sqlc
 import simplifile
 
@@ -48,11 +47,15 @@ pub fn main() {
           case result {
             Error(e) ->
               io.println(lib.red("\nError: " <> errors.err_to_string(e)))
-            Ok(_) -> io.println(lib.green("SQL successfully generated!"))
+            Ok(_) -> io.println("\u{1F99C} SQL successfully generated!")
           }
         }
       }
   }
+}
+
+fn print_error() {
+  io.println("\u{274C}")
 }
 
 fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
@@ -85,30 +88,23 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let queries_file = filepath.join(sqlc_dir, "queries.json")
   let _ = simplifile.create_directory_all(sqlc_dir)
 
-  let spinner =
-    spinner.new("downloading sqlc binary")
-    |> spinner.start()
-
+  io.println("\u{1F4E5} downloading sqlc binary...")
   let _ = case sqlc.download_binary() {
-    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
-    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
+    Error(_) -> print_error()
+    Ok(_) -> Nil
   }
 
-  let spinner =
-    spinner.new("verifying sqlc binary")
-    |> spinner.start()
+  io.println("\u{1F50D} verifying sqlc binary...")
 
   let _ = case sqlc.verify_binary() {
-    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
-    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
+    Error(_) -> print_error()
+    Ok(_) -> Nil
   }
 
   let sqlc_json = sqlc.gen_sqlc_json(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_json)
 
-  let spinner =
-    spinner.new("fetching schema")
-    |> spinner.start()
+  io.println("\u{1F5C4} fetching schema...")
 
   use schema_sql <- result.try(case engine {
     sqlc.MySQL -> {
@@ -139,11 +135,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   })
   let _ = simplifile.write(schema_file, schema_sql)
 
-  spinner.complete_current(spinner, spinner.green_checkmark())
-
-  let spinner =
-    spinner.new("generating gleam code")
-    |> spinner.start()
+  io.println("\u{2728} generating gleam code...")
 
   let gen_result =
     shellout.command(
@@ -169,11 +161,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     )
   use gen_result <- result.try(codegen.codegen_from_config(config))
 
-  spinner.complete_current(spinner, spinner.green_checkmark())
-
-  let spinner =
-    spinner.new("formatting generated code")
-    |> spinner.start()
+  io.println("\u{1F9F9} formatting generated code...")
 
   let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
 
@@ -191,8 +179,6 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       Error(errors.GleamFormatError(error))
     }
   })
-
-  spinner.complete_current(spinner, spinner.green_checkmark())
 
   gen_result.unknown_types
   |> list.unique()

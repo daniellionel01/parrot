@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+- Parrot can now be a dev dependency!
+
 ## [2.2.2] - 2026-01-31
 
 - Only import `Option` when used somewhere in the generated code. (https://github.com/daniellionel01/parrot/pull/95)

@@ -185,6 +185,26 @@ pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
   decode.success(PostsByAdmins(id:, title:, user_id:))
 }
 
+pub type PostWithUser {
+  PostWithUser(posts: Option(decode.Dynamic), user_id: Int)
+}
+
+pub fn post_with_user(id id: Int) {
+  let sql =
+    "select posts.id, posts.created_at, posts.title, posts.user_id, users.id as user_id
+from posts
+inner join users on users.id = posts.id
+where posts.id = ?
+limit 1"
+  #(sql, [dev.ParamInt(id)], post_with_user_decoder())
+}
+
+pub fn post_with_user_decoder() -> decode.Decoder(PostWithUser) {
+  use posts <- decode.field(0, decode.optional(decode.dynamic))
+  use user_id <- decode.field(1, decode.int)
+  decode.success(PostWithUser(posts:, user_id:))
+}
+
 pub type PostsByIds {
   PostsByIds(id: Int)
 }
