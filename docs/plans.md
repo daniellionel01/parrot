@@ -11,7 +11,7 @@
   set, hstore,  network address types (inet, cidr, macaddr, macaddr8), int4range, tsrange, geometric (point, polygon), interval, tsvector, tsquery
 
 - [ ] **improved code generation**
-       Don't generate unused imports (f.e. `Option`), use `glance` for code generation, Only generate necessary `Param` types (f.e. a lot of incompatible params for sqlite)
+       use `glance` for code generation, Only generate necessary `Param` types (f.e. a lot of incompatible params for sqlite)
 
 - [ ] **clearer internal workings**
        Right now parrot is basically an orchestration between `GleamType`, `GleamParam` and `SQLC` column types.

@@ -10,6 +10,7 @@ import gleam/string
 import parrot/internal/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
 }
+import parrot/internal/dev
 import parrot/internal/errors
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_case
@@ -98,7 +99,7 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamDate -> "Date"
     GleamBitArray -> "BitArray"
     GleamList(sub) -> "List(" <> gleam_type_to_string(sub) <> ")"
-    GleamOption(sub) -> "Option(" <> gleam_type_to_string(sub) <> ")"
+    GleamOption(sub) -> "option.Option(" <> gleam_type_to_string(sub) <> ")"
     GleamEnum(name) -> string_case.pascal_case(name)
     GleamDynamic -> "decode.Dynamic"
   }
@@ -397,17 +398,17 @@ pub fn gen_query_type(query: sqlc.Query, context: SQLC) {
 
 fn gleam_type_to_param(gtype: GleamType) -> String {
   case gtype {
-    GleamInt -> "dev.ParamInt"
-    GleamString -> "dev.ParamString"
-    GleamFloat -> "dev.ParamFloat"
-    GleamBool -> "dev.ParamBool"
-    GleamTimestamp -> "dev.ParamTimestamp"
-    GleamDate -> "dev.ParamDate"
-    GleamBitArray -> "dev.ParamBitArray"
-    GleamDynamic -> "dev.ParamDynamic"
-    GleamEnum(_) -> "dev.ParamString"
-    GleamOption(sub) -> "dev.ParamNullable(" <> gleam_type_to_param(sub) <> ")"
-    GleamList(sub) -> "dev.ParamList(" <> gleam_type_to_param(sub) <> ")"
+    GleamInt -> "ParamInt"
+    GleamString -> "ParamString"
+    GleamFloat -> "ParamFloat"
+    GleamBool -> "ParamBool"
+    GleamTimestamp -> "ParamTimestamp"
+    GleamDate -> "ParamDate"
+    GleamBitArray -> "ParamBitArray"
+    GleamDynamic -> "ParamDynamic"
+    GleamEnum(_) -> "ParamString"
+    GleamOption(sub) -> "ParamNullable(" <> gleam_type_to_param(sub) <> ")"
+    GleamList(sub) -> "ParamList(" <> gleam_type_to_param(sub) <> ")"
   }
 }
 
@@ -434,10 +435,10 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType) {
   case gt {
     GleamList(sub_type) -> {
       let sub_param = gleam_type_to_param(sub_type)
-      "dev.ParamList(list.map(" <> value <> ", " <> sub_param <> "))"
+      "ParamList(list.map(" <> value <> ", " <> sub_param <> "))"
     }
     GleamOption(sub_type) -> {
-      "dev.ParamNullable(option.map("
+      "ParamNullable(option.map("
       <> value
       <> ", fn (v) { "
       <> gleam_type_to_return_type("v", sub_type)
@@ -636,10 +637,10 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
   case gtype {
     GleamInt -> "decode.int"
     GleamString -> "decode.string"
-    GleamBool -> "dev.bool_decoder()"
+    GleamBool -> "bool_decoder()"
     GleamFloat -> "decode.float"
-    GleamTimestamp -> "dev.datetime_decoder()"
-    GleamDate -> "dev.calendar_date_decoder()"
+    GleamTimestamp -> "datetime_decoder()"
+    GleamDate -> "calendar_date_decoder()"
     GleamBitArray -> "decode.bit_array"
     GleamOption(x) -> "decode.optional(" <> gleam_type_to_decoder(x) <> ")"
     GleamList(x) -> "decode.list(of: " <> gleam_type_to_decoder(x) <> ")"
@@ -716,16 +717,6 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     |> string.join("\n\n")
 
   // check if Timestamps used
-  let uses_optional =
-    fn(col: sqlc.TableColumn) {
-      case sqlc_col_to_gleam(col, context) {
-        GleamOption(_) -> True
-        _ -> False
-      }
-    }
-    |> uses_gleam_type(context)
-
-  // check if Timestamps used
   let uses_timestamp =
     fn(col: sqlc.TableColumn) {
       case sqlc_col_to_gleam(col, context) {
@@ -755,24 +746,9 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     }
     |> uses_gleam_type(context)
 
-  let timestamp_import = case uses_timestamp {
-    False -> ""
-    True -> "import gleam/time/timestamp.{type Timestamp}\n"
-  }
-
-  let date_import = case uses_date {
-    False -> ""
-    True -> "import gleam/time/calendar.{type Date}\n"
-  }
-
   let list_import = case uses_list {
     False -> ""
     True -> "import gleam/list\n"
-  }
-
-  let optional_import = case uses_optional {
-    False -> ""
-    True -> "import gleam/option.{type Option}\n"
   }
 
   let uses_slice =
@@ -787,12 +763,13 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
 
   let imports =
     "import gleam/dynamic/decode\n"
-    <> optional_import
-    <> date_import
-    <> timestamp_import
+    <> "import gleam/option\n"
+    <> "import gleam/time/calendar.{type Date, type TimeOfDay, Date}\n"
+    <> "import gleam/time/timestamp.{type Timestamp}"
+    // used by `dev.gleam`
+    <> "import gleam/float\n"
     <> list_import
     <> string_import
-    <> "import parrot/dev"
 
   let enums =
     list.flat_map(context.queries, fn(query) {
@@ -890,6 +867,10 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     comment_dont_edit()
     <> "\n\n"
     <> imports
+    <> "\n\n"
+    <> string.trim(dev.types)
+    <> "\n\n"
+    <> string.trim(dev.functions)
     <> "\n\n"
     <> enums
     <> "\n\n"

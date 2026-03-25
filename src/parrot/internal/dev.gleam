@@ -1,9 +1,4 @@
-import gleam/dynamic/decode
-import gleam/float
-import gleam/option
-import gleam/time/calendar.{type Date, type TimeOfDay, Date}
-import gleam/time/timestamp.{type Timestamp}
-
+pub const types = "
 pub type Param {
   ParamInt(Int)
   ParamString(String)
@@ -16,7 +11,9 @@ pub type Param {
   ParamDynamic(decode.Dynamic)
   ParamNullable(option.Option(Param))
 }
+"
 
+pub const functions = "
 pub fn bool_decoder() {
   let int_to_bool = {
     decode.int
@@ -24,7 +21,7 @@ pub fn bool_decoder() {
       case v {
         0 -> decode.success(False)
         1 -> decode.success(True)
-        _ -> decode.failure(False, "could not decode int to boolean")
+        _ -> decode.failure(False, \"could not decode int to boolean\")
       }
     })
   }
@@ -54,7 +51,7 @@ pub fn calendar_date_decoder() -> decode.Decoder(Date) {
   case calendar.month_from_int(month) {
     Ok(month) -> decode.success(calendar.Date(year:, month:, day:))
     Error(_) ->
-      decode.failure(calendar.Date(0, calendar.January, 1), "Calendar date")
+      decode.failure(calendar.Date(0, calendar.January, 1), \"Calendar date\")
   }
 }
 
@@ -66,7 +63,7 @@ fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
       Error(_) ->
         decode.failure(
           timestamp.from_unix_seconds(0),
-          "Invalid datetime format",
+          \"Invalid datetime format\",
         )
     }
   })
@@ -87,7 +84,7 @@ fn date_decoder() -> decode.Decoder(Date) {
     decode.int
       |> decode.then(fn(month) {
         case calendar.month_from_int(month) {
-          Error(_) -> decode.failure(calendar.January, "Month")
+          Error(_) -> decode.failure(calendar.January, \"Month\")
           Ok(month) -> decode.success(month)
         }
       }),
@@ -122,3 +119,4 @@ fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
   }
   decode.one_of(int, [float])
 }
+"

@@ -2,10 +2,131 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/float
 import gleam/list
-import gleam/option.{type Option}
+import gleam/option
 import gleam/string
-import parrot/dev
+import gleam/time/calendar.{type Date, type TimeOfDay, Date}
+import gleam/time/timestamp.{type Timestamp}
+
+pub type Param {
+  ParamInt(Int)
+  ParamString(String)
+  ParamFloat(Float)
+  ParamBool(Bool)
+  ParamBitArray(BitArray)
+  ParamTimestamp(Timestamp)
+  ParamDate(Date)
+  ParamList(List(Param))
+  ParamDynamic(decode.Dynamic)
+  ParamNullable(option.Option(Param))
+}
+
+pub fn bool_decoder() {
+  let int_to_bool = {
+    decode.int
+    |> decode.then(fn(v) {
+      case v {
+        0 -> decode.success(False)
+        1 -> decode.success(True)
+        _ -> decode.failure(False, "could not decode int to boolean")
+      }
+    })
+  }
+  decode.one_of(decode.bool, or: [int_to_bool])
+}
+
+pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
+  decode.one_of(datetime_string_decoder(), or: [
+    datetime_tuple_decoder(),
+    timestamp_decoder(),
+  ])
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L394
+fn timestamp_decoder() -> decode.Decoder(Timestamp) {
+  use microseconds <- decode.map(decode.int)
+  let seconds = microseconds / 1_000_000
+  let nanoseconds = { microseconds % 1_000_000 } * 1000
+  timestamp.from_unix_seconds_and_nanoseconds(seconds, nanoseconds)
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L873
+pub fn calendar_date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(1, decode.int)
+  use day <- decode.field(2, decode.int)
+  case calendar.month_from_int(month) {
+    Ok(month) -> decode.success(calendar.Date(year:, month:, day:))
+    Error(_) ->
+      decode.failure(calendar.Date(0, calendar.January, 1), "Calendar date")
+  }
+}
+
+fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
+  decode.string
+  |> decode.then(fn(datetime_str) {
+    case timestamp.parse_rfc3339(datetime_str) {
+      Ok(ts) -> decode.success(ts)
+      Error(_) ->
+        decode.failure(
+          timestamp.from_unix_seconds(0),
+          "Invalid datetime format",
+        )
+    }
+  })
+}
+
+fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
+  use date <- decode.field(0, date_decoder())
+  use time <- decode.field(1, time_decoder())
+
+  timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
+  |> decode.success()
+}
+
+fn date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(
+    1,
+    decode.int
+      |> decode.then(fn(month) {
+        case calendar.month_from_int(month) {
+          Error(_) -> decode.failure(calendar.January, "Month")
+          Ok(month) -> decode.success(month)
+        }
+      }),
+  )
+  use day <- decode.field(2, decode.int)
+
+  decode.success(Date(year:, month:, day:))
+}
+
+fn time_decoder() -> decode.Decoder(TimeOfDay) {
+  use hours <- decode.field(0, decode.int)
+  use minutes <- decode.field(1, decode.int)
+  use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())
+
+  calendar.TimeOfDay(hours:, minutes:, seconds:, nanoseconds:)
+  |> decode.success()
+}
+
+fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
+  let int = {
+    decode.int
+    |> decode.map(fn(i) { #(i, 0) })
+  }
+  let float = {
+    decode.float
+    |> decode.map(fn(f) {
+      let floored = float.floor(f)
+      let seconds = float.round(floored)
+      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
+      #(seconds, nanoseconds)
+    })
+  }
+  decode.one_of(int, [float])
+}
 
 pub type Simple {
   Simple(col_0: Int)
@@ -45,22 +166,57 @@ pub fn create_user(username username: String) {
   users (username)
 VALUES
   (?)"
-  #(sql, [dev.ParamString(username)])
+  #(sql, [ParamString(username)])
+}
+
+pub type CreateUserWithRole {
+  CreateUserWithRole(
+    id: Int,
+    username: String,
+    created_at: option.Option(String),
+    balance: Float,
+    last_known_location: option.Option(Float),
+    role: option.Option(String),
+    avatar: option.Option(BitArray),
+    type_: option.Option(String),
+  )
 }
 
 pub fn create_user_with_role(
   username username: String,
-  role role: Option(String),
+  role role: option.Option(String),
 ) {
   let sql =
     "INSERT INTO
   users (username, role)
 VALUES
-  (?, ?)"
+  (?, ?)
+RETURNING id, username, created_at, balance, last_known_location, role, avatar, type"
   #(sql, [
-    dev.ParamString(username),
-    dev.ParamNullable(option.map(role, fn(v) { dev.ParamString(v) })),
+    ParamString(username),
+    ParamNullable(option.map(role, fn(v) { ParamString(v) })),
   ])
+}
+
+pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
+  use id <- decode.field(0, decode.int)
+  use username <- decode.field(1, decode.string)
+  use created_at <- decode.field(2, decode.optional(decode.string))
+  use balance <- decode.field(3, decode.float)
+  use last_known_location <- decode.field(4, decode.optional(decode.float))
+  use role <- decode.field(5, decode.optional(decode.string))
+  use avatar <- decode.field(6, decode.optional(decode.bit_array))
+  use type_ <- decode.field(7, decode.optional(decode.string))
+  decode.success(CreateUserWithRole(
+    id:,
+    username:,
+    created_at:,
+    balance:,
+    last_known_location:,
+    role:,
+    avatar:,
+    type_:,
+  ))
 }
 
 pub fn update_user_username(username username: String, id id: Int) {
@@ -70,10 +226,10 @@ SET
   username = ?
 WHERE
   id = ?"
-  #(sql, [dev.ParamString(username), dev.ParamInt(id)])
+  #(sql, [ParamString(username), ParamInt(id)])
 }
 
-pub fn update_user_type(type_ type_: Option(String), id id: Int) {
+pub fn update_user_type(type_ type_: option.Option(String), id id: Int) {
   let sql =
     "UPDATE users
 SET
@@ -81,8 +237,8 @@ SET
 WHERE
   id = ?"
   #(sql, [
-    dev.ParamNullable(option.map(type_, fn(v) { dev.ParamString(v) })),
-    dev.ParamInt(id),
+    ParamNullable(option.map(type_, fn(v) { ParamString(v) })),
+    ParamInt(id),
   ])
 }
 
@@ -90,12 +246,12 @@ pub type GetUserByUsername {
   GetUserByUsername(
     id: Int,
     username: String,
-    created_at: Option(String),
+    created_at: option.Option(String),
     balance: Float,
-    last_known_location: Option(Float),
-    role: Option(String),
-    avatar: Option(BitArray),
-    type_: Option(String),
+    last_known_location: option.Option(Float),
+    role: option.Option(String),
+    avatar: option.Option(BitArray),
+    type_: option.Option(String),
   )
 }
 
@@ -109,7 +265,7 @@ WHERE
   username = ?
 LIMIT
   1"
-  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
+  #(sql, [ParamString(username)], get_user_by_username_decoder())
 }
 
 pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
@@ -149,7 +305,7 @@ where user_id = (
   from users
   where username = ?
 )"
-  #(sql, [dev.ParamString(username)], posts_by_username_decoder())
+  #(sql, [ParamString(username)], posts_by_username_decoder())
 }
 
 pub fn posts_by_username_decoder() -> decode.Decoder(PostsByUsername) {
@@ -186,7 +342,7 @@ pub fn posts_by_admins_decoder() -> decode.Decoder(PostsByAdmins) {
 }
 
 pub type PostWithUser {
-  PostWithUser(posts: Option(decode.Dynamic), user_id: Int)
+  PostWithUser(posts: option.Option(decode.Dynamic), user_id: Int)
 }
 
 pub fn post_with_user(id id: Int) {
@@ -196,7 +352,7 @@ from posts
 inner join users on users.id = posts.id
 where posts.id = ?
 limit 1"
-  #(sql, [dev.ParamInt(id)], post_with_user_decoder())
+  #(sql, [ParamInt(id)], post_with_user_decoder())
 }
 
 pub fn post_with_user_decoder() -> decode.Decoder(PostWithUser) {
@@ -214,7 +370,7 @@ pub fn posts_by_ids(ids ids: List(Int)) {
   let sql = "select id
 from posts
 where user_id in (" <> ids_slice <> ")"
-  #(sql, list.flatten([list.map(ids, dev.ParamInt)]), posts_by_ids_decoder())
+  #(sql, list.flatten([list.map(ids, ParamInt)]), posts_by_ids_decoder())
 }
 
 pub fn posts_by_ids_decoder() -> decode.Decoder(PostsByIds) {
@@ -234,8 +390,8 @@ where user_id in (" <> ids_slice <> ") and title = ?"
   #(
     sql,
     list.new()
-      |> list.append(list.map(ids, dev.ParamInt))
-      |> list.append([dev.ParamString(title)]),
+      |> list.append(list.map(ids, ParamInt))
+      |> list.append([ParamString(title)]),
     posts_by_ids_and_title_decoder(),
   )
 }
@@ -257,8 +413,8 @@ where title = ? and user_id in (" <> ids_slice <> ")"
   #(
     sql,
     list.new()
-      |> list.append([dev.ParamString(title)])
-      |> list.append(list.map(ids, dev.ParamInt)),
+      |> list.append([ParamString(title)])
+      |> list.append(list.map(ids, ParamInt)),
     posts_by_ids_and_status_decoder(),
   )
 }
@@ -280,10 +436,7 @@ from posts
 where title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"
   #(
     sql,
-    list.flatten([
-      list.map(titles, dev.ParamString),
-      list.map(ids, dev.ParamInt),
-    ]),
+    list.flatten([list.map(titles, ParamString), list.map(ids, ParamInt)]),
     multiple_slices_decoder(),
   )
 }
@@ -310,9 +463,9 @@ where user_id = ? and title in (" <> titles_slice <> ") and user_id in (" <> ids
   #(
     sql,
     list.new()
-      |> list.append([dev.ParamInt(user_id)])
-      |> list.append(list.map(titles, dev.ParamString))
-      |> list.append(list.map(ids, dev.ParamInt)),
+      |> list.append([ParamInt(user_id)])
+      |> list.append(list.map(titles, ParamString))
+      |> list.append(list.map(ids, ParamInt)),
     multiple_slices_and_argument_decoder(),
   )
 }

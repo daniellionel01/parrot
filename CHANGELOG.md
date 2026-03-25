@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- Parrot can now be a dev dependency!
+- Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
 
 ## [2.2.2] - 2026-01-31
 
