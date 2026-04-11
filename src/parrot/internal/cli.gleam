@@ -1,4 +1,5 @@
 import envoy
+import gleam/option.{type Option}
 import gleam/result
 import parrot/internal/errors
 import parrot/internal/sqlc
@@ -29,6 +30,17 @@ pub const usage = "
       for the database connection URL.
       Defaults to 'DATABASE_URL'.
 
+    --output-dir <DIR>
+      Override the directory where 'sql.gleam' is written. By default
+      parrot writes to 'src/<project_name>/sql.gleam'. Use this to
+      route the generated module into a subdirectory, e.g. one
+      reserved for codegen output.
+
+      The path is relative to the project root. A leading 'src/' is
+      stripped if present, so both 'src/myapp/generated' and
+      'myapp/generated' work and write to
+      'src/myapp/generated/sql.gleam'.
+
   DATABASE_URL:
     Parrot automatically detects the driver from the URL scheme.
 
@@ -49,13 +61,16 @@ pub const usage = "
     $ export STAGING_DB_URL=\"mysql://staging:pass@remote/db\"
     $ gleam run -m parrot -- --env-var STAGING_DB_URL
 
-    # 4. Get help
+    # 4. Custom output directory (lands at src/myapp/generated/sql.gleam)
+    $ gleam run -m parrot -- --sqlite ./priv/app.db --output-dir src/myapp/generated
+
+    # 5. Get help
     $ gleam run -m parrot help
 "
 
 pub type Command {
   Usage
-  Generate(engine: sqlc.Engine, db: String)
+  Generate(engine: sqlc.Engine, db: String, output_dir: Option(String))
 }
 
 pub fn engine_from_env(str: String) {

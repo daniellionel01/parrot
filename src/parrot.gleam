@@ -3,6 +3,7 @@ import filepath
 import gleam/dict
 import gleam/io
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
 import parrot/internal/cli
@@ -21,18 +22,44 @@ pub fn main() {
   let cmd: Result(cli.Command, String) = case argv.load().arguments {
     [] -> {
       cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, None) })
     }
     ["--env-var", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, None) })
+    }
+    ["--env-var", env, "--output-dir", dir] -> {
+      cli.parse_env(env)
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, Some(dir)) })
+    }
+    ["--output-dir", dir, "--env-var", env] -> {
+      cli.parse_env(env)
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, Some(dir)) })
     }
     ["-e", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, None) })
+    }
+    ["-e", env, "--output-dir", dir] -> {
+      cli.parse_env(env)
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, Some(dir)) })
+    }
+    ["--output-dir", dir, "-e", env] -> {
+      cli.parse_env(env)
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, Some(dir)) })
     }
     ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
+      Ok(cli.Generate(sqlc.SQLite, file_path, None))
+    }
+    ["--sqlite", file_path, "--output-dir", dir] -> {
+      Ok(cli.Generate(sqlc.SQLite, file_path, Some(dir)))
+    }
+    ["--output-dir", dir, "--sqlite", file_path] -> {
+      Ok(cli.Generate(sqlc.SQLite, file_path, Some(dir)))
+    }
+    ["--output-dir", dir] -> {
+      cli.parse_env("DATABASE_URL")
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, Some(dir)) })
     }
     ["help"] -> Ok(cli.Usage)
     _ -> Ok(cli.Usage)
@@ -43,8 +70,8 @@ pub fn main() {
     Ok(cmd) ->
       case cmd {
         cli.Usage -> io.println(cli.usage)
-        cli.Generate(engine:, db:) -> {
-          let result = cmd_gen(engine, db)
+        cli.Generate(engine:, db:, output_dir:) -> {
+          let result = cmd_gen(engine, db, output_dir)
           case result {
             Error(e) ->
               io.println(lib.red("\nError: " <> errors.err_to_string(e)))
@@ -55,7 +82,23 @@ pub fn main() {
   }
 }
 
-fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
+/// Strip a leading "src/" or "./src/" from a user-supplied output
+/// directory so the rest is interpreted relative to the package's
+/// source root. Both `src/myapp/generated` and `myapp/generated`
+/// resolve to the same `gleam_module_out_path`.
+fn normalize_output_dir(dir: String) -> String {
+  case dir {
+    "./src/" <> rest -> rest
+    "src/" <> rest -> rest
+    other -> other
+  }
+}
+
+fn cmd_gen(
+  engine: sqlc.Engine,
+  db: String,
+  output_dir: Option(String),
+) -> Result(Nil, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db
@@ -162,9 +205,13 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   })
 
   let project_name = project.project_name()
+  let module_out_path = case output_dir {
+    None -> project_name <> "/sql.gleam"
+    Some(dir) -> normalize_output_dir(dir) <> "/sql.gleam"
+  }
   let config =
     config.Config(
-      gleam_module_out_path: project_name <> "/sql.gleam",
+      gleam_module_out_path: module_out_path,
       json_file_path: queries_file,
     )
   use gen_result <- result.try(codegen.codegen_from_config(config))
@@ -175,7 +222,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     spinner.new("formatting generated code")
     |> spinner.start()
 
-  let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
+  let output_path = filepath.join(project.src(), module_out_path)
 
   let stdout_format =
     shellout.command(
