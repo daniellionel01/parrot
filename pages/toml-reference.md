@@ -33,15 +33,10 @@ These options allow you to configure sqlc and how Parrot uses as part of the bui
   sqlc binary you want to use, or the string `"system"` to look up the `sqlc`
   executable in your system `PATH`.
 
+  Note, that we manually update the latest supported version of sqlc and compare them against a hash for security reasons.
+  That means that your local sqlc binary must be on the latest version.
+
   Default: `undefined`. Parrot will download and manage its own sqlc version.
-
-- **`version = string`**: choose the version of sqlc that Parrot will download
-  and manage, when no sqlc binary is specified.
-
-  Versions are specified like this: `v1.30.0`. A list of all available sqlc versions can be found
-  here: <https://github.com/sqlc-dev/sqlc/releases/>.
-
-  Default: `undefined`. Parrot will download the latest sqlc version.
 
 - **`schema = string`**: sqlc can parse various migration files to build up the schema even without a database connection.
 
