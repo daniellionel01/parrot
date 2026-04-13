@@ -22,7 +22,7 @@ schema = "<path>"
 
 - **`output = string`**: 
 
-  Default: `.src/<project_name>/sql.gleam`.
+  Default: `./src/<project_name>/sql.gleam`.
 
 ## `tools.parrot.sqlc`
 
