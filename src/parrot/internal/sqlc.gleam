@@ -418,7 +418,7 @@ fn binary_exists(path) {
   }
 }
 
-const sqlc_version = "1.30.0"
+const sqlc_version = "1.31.0"
 
 fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError) {
   let base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
