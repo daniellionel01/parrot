@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)
+
+- Upgrade to sqlc v1.31.1. (https://github.com/daniellionel01/parrot/pull/99)
+
 - All queries are ordered with `string.compare` to produce deterministic outputs regardless of operating system. (https://github.com/daniellionel01/parrot/pull/102)
 
 ## [2.2.2] - 2026-01-31
