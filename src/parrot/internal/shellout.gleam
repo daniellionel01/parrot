@@ -223,7 +223,11 @@ type StyleAcc {
   StyleAcc(styles: List(Style), rgb_counter: Int)
 }
 
-fn do_style(lookup: Lookup, strings: List(String), flag: String) -> List(String) {
+fn do_style(
+  lookup: Lookup,
+  strings: List(String),
+  flag: String,
+) -> List(String) {
   let lookup =
     case flag {
       "display" -> dict.from_list(displays)

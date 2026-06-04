@@ -134,7 +134,11 @@ pub fn orange_warning() {
 /// Stop the spinner with a checkmark, showing the completed task.
 /// This is useful when you want to show completion without starting a new spinner.
 ///
-pub fn complete(spinner: Spinner, completed_text: String, prefix: String) -> Nil {
+pub fn complete(
+  spinner: Spinner,
+  completed_text: String,
+  prefix: String,
+) -> Nil {
   repeatedly.stop(spinner.repeater)
 
   let show_cursor = "\u{001b}[?25h"

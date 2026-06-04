@@ -699,7 +699,10 @@ pub fn gen_query_decoder(query: sqlc.Query, context: SQLC) {
   }
 }
 
-fn uses_gleam_type(case_fn: fn(sqlc.TableColumn) -> Bool, context: SQLC) -> Bool {
+fn uses_gleam_type(
+  case_fn: fn(sqlc.TableColumn) -> Bool,
+  context: SQLC,
+) -> Bool {
   list.any(context.queries, fn(query) {
     let col_ts = list.any(query.columns, fn(col) { case_fn(col) })
     let param_ts = list.any(query.params, fn(param) { case_fn(param.column) })
