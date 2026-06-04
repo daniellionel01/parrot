@@ -430,31 +430,37 @@ fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError)
     "darwin", "arm64" | "darwin", "aarch64" ->
       Ok(#(
         "_darwin_arm64.tar.gz",
-        "d8e6153c9a6c74fa178abc4465c13ac008c06d64f50720c4b7c7203f98c8cfc6",
+        "21602158c99eb1f2bae197a66abfb1941d1e9e50b23125bb193349c6b1acc71e",
       ))
 
     "darwin", "amd64" | "darwin", "x86_64" | "darwin", "x64" ->
       Ok(#(
         "_darwin_amd64.tar.gz",
-        "7473103d9148b218a57e15a53b562c285c916fdedd85f6053ce9feaa714dcfd5",
+        "c5af76772e3785d21663a62697056b383f07629979b1bd25b93872e73dbd519b",
       ))
 
     "linux", "arm64" | "linux", "aarch64" ->
       Ok(#(
         "_linux_arm64.tar.gz",
-        "845fb31828129f3ecd3442f24e3ac0e8b1188660bf6807b8c652bd7acece0af7",
+        "b7cae247740d0c51a1e657479e5b2d21e6fef428f596682a01bc55bf4ab8a23d",
       ))
 
     "linux", "amd64" | "linux", "x86_64" | "linux", "x64" ->
       Ok(#(
         "_linux_amd64.tar.gz",
-        "e47db21025595d7e77b1260b2f97b6793401a4cba047d42e635c347e8443b5f4",
+        "497ae4fcdfa64c5b0c311ffe4c2bd991e43991e82e5367792ed78bc2dca27354",
       ))
 
     "win32", "amd64" | "win32", "x86_64" | "win32", "x64" ->
       Ok(#(
         "_windows_amd64.tar.gz",
-        "3fd5852bb05bd77d2bf4184984784844b55c1aa1f64ed69099d5fc528a10307e",
+        "40d138ec18b1cc80d2be7305917fd4deceda4e0c32d78ba5d8faa4bfa3bc0fc0",
+      ))
+
+    "win32", "arm64" | "win32", "aarch64" ->
+      Ok(#(
+        "_windows_arm64.tar.gz",
+        "aa9b926313f922a2c7c668076dd5a2754724d61f528c1d5ef033bed11b27eccd",
       ))
 
     _, _ -> Error(Nil)
