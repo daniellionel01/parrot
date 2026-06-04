@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- All queries are ordered with `string.compare` to produce deterministic outputs regardless of operating system. (https://github.com/daniellionel01/parrot/pull/102)
+
 ## [2.2.2] - 2026-01-31
 
 - Only import `Option` when used somewhere in the generated code. (https://github.com/daniellionel01/parrot/pull/95)
