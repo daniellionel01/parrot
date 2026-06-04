@@ -259,30 +259,6 @@ If you want to see how this library works in action, take a look at the integrat
 - MySQL: [integration/mysql](https://github.com/daniellionel01/parrot/blob/main/integration/mysql)
 - SQlite: [integration/sqlite](https://github.com/daniellionel01/parrot/blob/main/integration/sqlite)
 
-## Development
-
-[just](https://github.com/casey/just) is used to run project commands.
-
-### Database
-
-There are scripts to spawn a MySQL or PostgreSQL Podman container:
--  [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
--  [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
-
-For example:
-```sh
-$ ./bin/mysql.sh
-# or
-$ ./bin/psql.sh
-```
-
-### Integration Test Suite
-```sh
-$ just test-sqlite
-$ just test-mysql
-$ just test-psql
-```
-
 ## Quirks
 
 As with everything in software, there are some quirks with this library, due to
@@ -354,6 +330,30 @@ https://docs.sqlc.dev/en/stable/reference/language-support.html
 Ideas and actionable tasks are collected and organised here: https://github.com/daniellionel01/parrot/issues
 
 Contributions are welcomed!
+
+## Development
+
+[just](https://github.com/casey/just) is used to run project commands.
+
+### Database
+
+There are scripts to spawn a MySQL or PostgreSQL Podman container:
+-  [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
+-  [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
+
+For example:
+```sh
+$ ./bin/mysql.sh
+# or
+$ ./bin/psql.sh
+```
+
+### Integration Test Suite
+```sh
+$ just test-sqlite
+$ just test-mysql
+$ just test-psql
+```
 
 ## Acknowledgements
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
