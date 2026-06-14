@@ -80,6 +80,14 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
       })
     })
     |> list.flatten()
+    // We want the generated `sql.gleam` module to be deterministic
+    // on all operating systems, so we order all queries in a
+    // predictable manner, since operating system calls to the file
+    // system might return them in a different order.
+    //
+    // See https://github.com/daniellionel01/parrot/issues/101
+    //
+    |> list.sort(by: string.compare)
 
   let sqlc_binary = sqlc.sqlc_binary_path()
   let sqlc_dir = filepath.directory_name(sqlc_binary)

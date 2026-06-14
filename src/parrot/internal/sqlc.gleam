@@ -17,6 +17,10 @@ import parrot/internal/project
 import parrot/internal/shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
 
+pub const sqlc_version = "1.31.1"
+
+pub const download_base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
+
 pub type Engine {
   SQLite
   MySQL
@@ -418,11 +422,7 @@ fn binary_exists(path) {
   }
 }
 
-const sqlc_version = "1.30.0"
-
 fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError) {
-  let base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
-
   let os = get_os()
   let cpu = get_cpu()
 
@@ -430,31 +430,37 @@ fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError)
     "darwin", "arm64" | "darwin", "aarch64" ->
       Ok(#(
         "_darwin_arm64.tar.gz",
-        "d8e6153c9a6c74fa178abc4465c13ac008c06d64f50720c4b7c7203f98c8cfc6",
+        "7e63a8b2166f1103a2ad1d2e5d05d8fe3f13ca65ecf2774a2570b830d32055fd",
       ))
 
     "darwin", "amd64" | "darwin", "x86_64" | "darwin", "x64" ->
       Ok(#(
         "_darwin_amd64.tar.gz",
-        "7473103d9148b218a57e15a53b562c285c916fdedd85f6053ce9feaa714dcfd5",
+        "359730e2fbfdb5480dd90389bd2987a5dad00fc7510a330df749c6bc6987c1af",
       ))
 
     "linux", "arm64" | "linux", "aarch64" ->
       Ok(#(
         "_linux_arm64.tar.gz",
-        "845fb31828129f3ecd3442f24e3ac0e8b1188660bf6807b8c652bd7acece0af7",
+        "3b42bdbc5be1d534b95fc6b9f0e1572e6aa555fda3c96f208cb26abb1bb77d7e",
       ))
 
     "linux", "amd64" | "linux", "x86_64" | "linux", "x64" ->
       Ok(#(
         "_linux_amd64.tar.gz",
-        "e47db21025595d7e77b1260b2f97b6793401a4cba047d42e635c347e8443b5f4",
+        "0496fbc18f603e2fbd10c752942d1389a1fa9bc3d18de7243ec00cccd611575f",
+      ))
+
+    "win32", "arm64" | "win32", "aarch64" ->
+      Ok(#(
+        "_windows_arm64.tar.gz",
+        "bbf2bdca2e0eb0b23f94b6dba5c3f1de5f6a12251cda947d83accdb34164fe1e",
       ))
 
     "win32", "amd64" | "win32", "x86_64" | "win32", "x64" ->
       Ok(#(
         "_windows_amd64.tar.gz",
-        "3fd5852bb05bd77d2bf4184984784844b55c1aa1f64ed69099d5fc528a10307e",
+        "22ce316349ac153a4aacaa3912981f73980a6f84861f4c602ae6e3075ca326e4",
       ))
 
     _, _ -> Error(Nil)
@@ -465,7 +471,7 @@ fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError)
     errors.SqlcDownloadError("unsupported platform: " <> os <> ", " <> cpu),
   ))
 
-  Ok(#(base <> platform, hash))
+  Ok(#(download_base <> platform, hash))
 }
 
 fn check_sqlc_integrity(bin: BitArray, expected_hash: String) {

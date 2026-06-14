@@ -53,7 +53,9 @@ pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
   |> Ok
 }
 
-pub fn fetch_schema_postgresql(db: String) -> Result(String, errors.ParrotError) {
+pub fn fetch_schema_postgresql(
+  db: String,
+) -> Result(String, errors.ParrotError) {
   shellout.command(
     run: "pg_dump",
     with: [

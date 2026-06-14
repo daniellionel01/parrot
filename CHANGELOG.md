@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
 
+## [2.3.0] - 2026-05-04
+
+- Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)
+
+- Upgrade to sqlc v1.31.1. (https://github.com/daniellionel01/parrot/pull/99)
+
+- All queries are ordered with `string.compare` to produce deterministic outputs regardless of operating system. (https://github.com/daniellionel01/parrot/pull/102)
+
 ## [2.2.2] - 2026-01-31
 
 - Only import `Option` when used somewhere in the generated code. (https://github.com/daniellionel01/parrot/pull/95)
