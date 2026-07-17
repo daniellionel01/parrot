@@ -10,8 +10,7 @@ import gleam/string
 import parrot/internal/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
 }
-import parrot/internal/dev
-import parrot/internal/errors
+import parrot/internal/error
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_case
 import simplifile
@@ -22,15 +21,15 @@ pub type Codegen {
 
 pub fn codegen_from_config(
   config: Config,
-) -> Result(Codegen, errors.ParrotError) {
+) -> Result(Codegen, error.ParrotError) {
   use json_string <- result.try(
     get_json_file(config)
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
 
   use dyn_json <- result.try(
     json.parse(from: json_string, using: d.dynamic)
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
 
   let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
@@ -54,11 +53,11 @@ pub fn codegen_from_config(
   use _ <- result.try(
     get_module_directory(config)
     |> simplifile.create_directory_all()
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
   use _ <- result.try(
     simplifile.write(to: get_module_path(config), contents: module_contents)
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
 
   Ok(Codegen(unknowns))
@@ -143,7 +142,7 @@ fn built_into_gleam(value: String) {
   }
 }
 
-fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
+fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
   let enums_for_duplicate_check =
     list.flat_map(context.queries, fn(query) {
       list.filter_map(query.columns, fn(col) {
@@ -203,7 +202,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
         list.find(context.queries, fn(q) {
           string_case.pascal_case(q.name) == first
         })
-      Error(errors.DuplicateDefinitionError(first, query.name))
+      Error(error.DuplicateDefinitionError(first, query.name))
     }
     False -> {
       case
@@ -213,7 +212,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
           }
         })
       {
-        Ok(#(name, _)) -> Error(errors.EmptyEnumError(name))
+        Ok(#(name, _)) -> Error(error.EmptyEnumError(name))
         Error(_) -> {
           let all_enum_values =
             list.flat_map(enums_for_duplicate_check, fn(item) {
@@ -246,7 +245,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
                     #(v, enum) -> v == val_name && enum != first_enum
                   }
                 })
-              Error(errors.DuplicateEnumValueError(
+              Error(error.DuplicateEnumValueError(
                 val_name,
                 first_enum,
                 second_enum,
@@ -711,7 +710,7 @@ fn uses_gleam_type(
   })
 }
 
-pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
+pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
   use _ <- result.try(find_duplicates(context))
 
   let queries =

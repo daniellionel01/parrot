@@ -12,7 +12,7 @@ import gleam/option.{type Option, Some}
 import gleam/result
 import gleam/set
 import gleam/string
-import parrot/internal/errors
+import parrot/internal/error
 import parrot/internal/project
 import parrot/internal/shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
@@ -422,7 +422,7 @@ fn binary_exists(path) {
   }
 }
 
-fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError) {
+fn get_download_path_and_hash() -> Result(#(String, String), error.ParrotError) {
   let os = get_os()
   let cpu = get_cpu()
 
@@ -468,7 +468,7 @@ fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError)
 
   use #(platform, hash) <- result.try(result.replace_error(
     platform,
-    errors.SqlcDownloadError("unsupported platform: " <> os <> ", " <> cpu),
+    error.SqlcDownloadError("unsupported platform: " <> os <> ", " <> cpu),
   ))
 
   Ok(#(download_base <> platform, hash))
@@ -483,7 +483,7 @@ fn check_sqlc_integrity(bin: BitArray, expected_hash: String) {
   }
 }
 
-pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
+pub fn verify_binary() -> Result(Nil, error.ParrotError) {
   use #(download, _) <- result.try(get_download_path_and_hash())
 
   let path = sqlc_binary_path()
@@ -501,7 +501,7 @@ pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
           "sqlc binary path: " <> path,
         ]
         |> string.join("\n")
-      Error(errors.SqlcDownloadError(
+      Error(error.SqlcDownloadError(
         "could not verify sqlc binary. information:\n" <> information,
       ))
     }
@@ -511,7 +511,7 @@ pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
       case v == sqlc_version {
         True -> Ok(Nil)
         False ->
-          Error(errors.SqlcVersionError(
+          Error(error.SqlcVersionError(
             "Could not match sqlc version. Wanted "
             <> sqlc_version
             <> ". Received "
@@ -522,7 +522,7 @@ pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
   }
 }
 
-pub fn download_binary() -> Result(Nil, errors.ParrotError) {
+pub fn download_binary() -> Result(Nil, error.ParrotError) {
   let path = sqlc_binary_path()
   let dir = filepath.directory_name(path)
   let assert Ok(_) = simplifile.create_directory_all(dir)
@@ -534,7 +534,7 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
     True -> Ok(Nil)
     False -> {
       case verify_binary() {
-        Error(errors.SqlcVersionError(_)) -> {
+        Error(error.SqlcVersionError(_)) -> {
           let assert Ok(_) = simplifile.delete(path)
         }
         _ -> Ok(Nil)
@@ -546,7 +546,7 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
   use <- bool.lazy_guard(when: exists, return: fn() {
     use bin <- result.try(
       simplifile.read_bits(path)
-      |> result.map_error(fn(_) { errors.SqlcDownloadError("could not verify") }),
+      |> result.map_error(fn(_) { error.SqlcDownloadError("could not verify") }),
     )
     check_sqlc_integrity(bin, hash)
     Ok(Nil)
@@ -555,14 +555,14 @@ pub fn download_binary() -> Result(Nil, errors.ParrotError) {
   use tarball <- result.try(
     download_zip(download)
     |> result.map_error(fn(_) {
-      errors.SqlcDownloadError("could not curl the sqlc binary")
+      error.SqlcDownloadError("could not curl the sqlc binary")
     }),
   )
 
   use bin <- result.try(
     extract_sqlc_binary(tarball)
     |> result.map_error(fn(_) {
-      errors.SqlcDownloadError("could not unzip the sqlc binary")
+      error.SqlcDownloadError("could not unzip the sqlc binary")
     }),
   )
   check_sqlc_integrity(bin, hash)

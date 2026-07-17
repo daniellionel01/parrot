@@ -4,10 +4,10 @@ import gleam/option
 import gleam/result
 import gleam/string
 import gleam/uri
-import parrot/internal/errors
+import parrot/internal/error
 import parrot/internal/shellout
 
-pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
+pub fn fetch_schema_mysql(db: String) -> Result(String, error.ParrotError) {
   let assert Ok(conn) = uri.parse(db)
 
   let creds = case conn.userinfo {
@@ -23,7 +23,7 @@ pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
 
   use #(user, pass) <- result.try(option.to_result(
     creds,
-    errors.MySqlDBNotFound(""),
+    error.MySqlDBNotFound(""),
   ))
 
   let port = case conn.port {
@@ -43,7 +43,7 @@ pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
       in: ".",
       opt: [],
     )
-    |> result.replace_error(errors.MysqldumpError),
+    |> result.replace_error(error.MysqldumpError),
   )
 
   out
@@ -55,7 +55,7 @@ pub fn fetch_schema_mysql(db: String) -> Result(String, errors.ParrotError) {
 
 pub fn fetch_schema_postgresql(
   db: String,
-) -> Result(String, errors.ParrotError) {
+) -> Result(String, error.ParrotError) {
   shellout.command(
     run: "pg_dump",
     with: [
@@ -72,11 +72,11 @@ pub fn fetch_schema_postgresql(
   )
   |> result.map_error(fn(e) {
     let #(_, err) = e
-    errors.PgdumpError(err)
+    error.PgdumpError(err)
   })
 }
 
-pub fn fetch_schema_sqlite(db: String) -> Result(String, errors.ParrotError) {
+pub fn fetch_schema_sqlite(db: String) -> Result(String, error.ParrotError) {
   shellout.command(
     run: "sqlite3",
     with: [
@@ -86,5 +86,5 @@ pub fn fetch_schema_sqlite(db: String) -> Result(String, errors.ParrotError) {
     in: ".",
     opt: [],
   )
-  |> result.replace_error(errors.SqliteDBNotFound(""))
+  |> result.replace_error(error.SqliteDBNotFound(""))
 }

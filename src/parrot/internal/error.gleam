@@ -1,4 +1,5 @@
 pub type ParrotError {
+  EnvironmentVariableEmpty(String)
   UnknownEngine(String)
 
   SqliteDBNotFound(String)
@@ -21,8 +22,10 @@ pub type ParrotError {
   DuplicateEnumValueError(String, String, String)
 }
 
-pub fn err_to_string(error: ParrotError) {
+pub fn to_string(error: ParrotError) {
   case error {
+    EnvironmentVariableEmpty(e) ->
+      "Environment Variable \"" <> e <> "\" is empty!"
     MySqlDBNotFound(_) -> "mysql db not found"
     PostgreSqlDBNotFound(_) -> "postgresql db not found"
     SqliteDBNotFound(_) -> "sqlite db not found"

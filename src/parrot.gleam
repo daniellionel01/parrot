@@ -9,51 +9,70 @@ import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
 import parrot/internal/db
-import parrot/internal/errors
+import parrot/internal/error
 import parrot/internal/project
 import parrot/internal/shellout
 import parrot/internal/sqlc
 import simplifile
 
-pub fn main() {
-  let cmd: Result(cli.Command, String) = case argv.load().arguments {
+pub fn command_from_args() -> Result(cli.Command, error.ParrotError) {
+  case argv.load().arguments {
     [] -> {
       cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) {
+        let #(engine, db) = a
+        cli.Generate(engine:, db:)
+      })
     }
     ["--env-var", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) {
+        let #(engine, db) = a
+        cli.Generate(engine:, db:)
+      })
     }
     ["-e", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) {
+        let #(engine, db) = a
+        cli.Generate(engine:, db:)
+      })
     }
     ["--sqlite", file_path] -> {
       Ok(cli.Generate(sqlc.SQLite, file_path))
     }
-    ["help"] -> Ok(cli.Usage)
-    _ -> Ok(cli.Usage)
+    ["help"] -> Ok(cli.Help)
+    _ -> Ok(cli.Help)
   }
+}
 
-  case cmd {
-    Error(e) -> io.println(cli.red("Error: " <> e))
+pub fn main() {
+  case command_from_args() {
+    Error(e) -> {
+      let error_message = error.to_string(e)
+      io.println(cli.red("Error: " <> error_message))
+    }
     Ok(cmd) ->
       case cmd {
-        cli.Usage -> io.println(cli.usage)
+        cli.Help -> {
+          io.println(cli.usage)
+        }
         cli.Generate(engine:, db:) -> {
-          let result = cmd_gen(engine, db)
+          let result = generate(engine, db)
           case result {
-            Error(e) ->
-              io.println(cli.red("\nError: " <> errors.err_to_string(e)))
-            Ok(_) -> io.println("\u{1F99C} SQL successfully generated!")
+            Error(e) -> {
+              io.println(cli.red("\nError: " <> error.to_string(e)))
+            }
+            Ok(_) -> {
+              io.println("\u{1F99C} SQL successfully generated!")
+            }
           }
         }
       }
   }
 }
 
-fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
+fn generate(engine: sqlc.Engine, db: String) -> Result(Nil, error.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db
@@ -150,7 +169,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     Ok(_) -> Ok(Nil)
     Error(error) -> {
       let #(_, error) = error
-      Error(errors.SqlcGenerateError(error))
+      Error(error.SqlcGenerateError(error))
     }
   })
 
@@ -177,7 +196,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     Ok(_) -> Ok(Nil)
     Error(error) -> {
       let #(_, error) = error
-      Error(errors.GleamFormatError(error))
+      Error(error.GleamFormatError(error))
     }
   })
 

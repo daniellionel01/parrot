@@ -1,6 +1,6 @@
 import envoy
 import gleam/result
-import parrot/internal/errors
+import parrot/internal/error
 import parrot/internal/sqlc
 
 pub const colorless = "\u{001b}[0m"
@@ -70,33 +70,30 @@ pub const usage = "
 "
 
 pub type Command {
-  Usage
+  Help
   Generate(engine: sqlc.Engine, db: String)
 }
 
-pub fn engine_from_env(str: String) {
+pub fn engine_from_env(str: String) -> Result(sqlc.Engine, error.ParrotError) {
   case str {
     "postgres" <> _ -> Ok(sqlc.PostgreSQL)
     "mysql" <> _ -> Ok(sqlc.MySQL)
     "file" | "sqlite" <> _ -> Ok(sqlc.SQLite)
-    _ -> Error(errors.UnknownEngine(str))
+    _ -> Error(error.UnknownEngine(str))
   }
 }
 
-pub fn parse_env(env: String) -> Result(#(sqlc.Engine, String), String) {
+pub fn parse_env(
+  env: String,
+) -> Result(#(sqlc.Engine, String), error.ParrotError) {
   let env_result = envoy.get(env)
   use env_var <- result.try(result.replace_error(
     env_result,
-    "Environment Variable \"" <> env <> "\" is empty!",
+    error.EnvironmentVariableEmpty(env),
   ))
 
   let engine_result = engine_from_env(env_var)
-  use engine <- result.try(result.replace_error(
-    engine_result,
-    "\""
-      <> env
-      <> "\" does not match any of the supported formats (MySQL, PostgreSQL, SQLite)",
-  ))
+  use engine <- result.try(engine_result)
 
   Ok(#(engine, env_var))
 }
