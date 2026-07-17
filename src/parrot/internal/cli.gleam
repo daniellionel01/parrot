@@ -5,6 +5,8 @@ import parrot/internal/sqlc
 
 pub const colorless = "\u{001b}[0m"
 
+pub const error_crossmark = "\u{274C}"
+
 pub fn green(text: String) {
   "\u{001b}[32m" <> text <> colorless
 }

@@ -1,3 +1,8 @@
+//// Module to execute shell commands.
+////
+//// Vendored from https://github.com/tynanbe/shellout/blob/main/src/shellout.gleam
+////
+
 import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list

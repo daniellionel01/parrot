@@ -3,6 +3,10 @@
 ////
 
 import filepath
+import gleam/bool
+import gleam/dict
+import gleam/list
+import gleam/result
 import simplifile
 import tom
 
@@ -31,5 +35,43 @@ fn find_root(path: String) -> String {
   case simplifile.is_file(toml) {
     Ok(False) | Error(_) -> find_root(filepath.join("..", path))
     Ok(True) -> path
+  }
+}
+
+/// Finds all `from/**/sql` directories and lists the full paths of the `*.sql`
+/// files inside each one.
+/// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
+///
+pub fn walk(from: String) -> dict.Dict(String, List(String)) {
+  case filepath.base_name(from) {
+    "sql" -> {
+      let assert Ok(files) = simplifile.read_directory(from)
+      let files = {
+        use file <- list.filter_map(files)
+        use extension <- result.try(filepath.extension(file))
+        use <- bool.guard(when: extension != "sql", return: Error(Nil))
+        let file_name = filepath.join(from, file)
+        case simplifile.is_file(file_name) {
+          Ok(True) -> Ok(file_name)
+          Ok(False) | Error(_) -> Error(Nil)
+        }
+      }
+      dict.from_list([#(from, files)])
+    }
+
+    _ -> {
+      let assert Ok(files) = simplifile.read_directory(from)
+      let directories = {
+        use file <- list.filter_map(files)
+        let file_name = filepath.join(from, file)
+        case simplifile.is_directory(file_name) {
+          Ok(True) -> Ok(file_name)
+          Ok(False) | Error(_) -> Error(Nil)
+        }
+      }
+
+      list.map(directories, walk)
+      |> list.fold(from: dict.new(), with: dict.merge)
+    }
   }
 }

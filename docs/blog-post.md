@@ -23,3 +23,4 @@ Notes:
 - Ideas that are still there but not implemented
 - Silly numbers: lines of code!
 - the developer UX
+- just -> mise

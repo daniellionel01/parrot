@@ -169,19 +169,6 @@ VALUES
   #(sql, [ParamString(username)])
 }
 
-pub type CreateUserWithRole {
-  CreateUserWithRole(
-    id: Int,
-    username: String,
-    created_at: option.Option(String),
-    balance: Float,
-    last_known_location: option.Option(Float),
-    role: option.Option(String),
-    avatar: option.Option(BitArray),
-    type_: option.Option(String),
-  )
-}
-
 pub fn create_user_with_role(
   username username: String,
   role role: option.Option(String),
@@ -190,33 +177,11 @@ pub fn create_user_with_role(
     "INSERT INTO
   users (username, role)
 VALUES
-  (?, ?)
-RETURNING id, username, created_at, balance, last_known_location, role, avatar, type"
+  (?, ?)"
   #(sql, [
     ParamString(username),
     ParamNullable(option.map(role, fn(v) { ParamString(v) })),
   ])
-}
-
-pub fn create_user_with_role_decoder() -> decode.Decoder(CreateUserWithRole) {
-  use id <- decode.field(0, decode.int)
-  use username <- decode.field(1, decode.string)
-  use created_at <- decode.field(2, decode.optional(decode.string))
-  use balance <- decode.field(3, decode.float)
-  use last_known_location <- decode.field(4, decode.optional(decode.float))
-  use role <- decode.field(5, decode.optional(decode.string))
-  use avatar <- decode.field(6, decode.optional(decode.bit_array))
-  use type_ <- decode.field(7, decode.optional(decode.string))
-  decode.success(CreateUserWithRole(
-    id:,
-    username:,
-    created_at:,
-    balance:,
-    last_known_location:,
-    role:,
-    avatar:,
-    type_:,
-  ))
 }
 
 pub fn update_user_username(username username: String, id id: Int) {

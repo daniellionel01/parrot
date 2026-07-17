@@ -1,6 +1,5 @@
 import argv
 import filepath
-import gleam/bool
 import gleam/dict
 import gleam/io
 import gleam/list
@@ -54,10 +53,6 @@ pub fn main() {
   }
 }
 
-fn print_error() {
-  io.println("\u{274C}")
-}
-
 fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
@@ -65,7 +60,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     db -> db
   }
 
-  let files = walk(project.src())
+  let files = project.walk(project.src())
   let queries =
     files
     |> dict.to_list
@@ -96,14 +91,14 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 
   io.println("\u{1F4E5} downloading sqlc binary...")
   let _ = case sqlc.download_binary() {
-    Error(_) -> print_error()
+    Error(_) -> io.println(cli.error_crossmark)
     Ok(_) -> Nil
   }
 
   io.println("\u{1F50D} verifying sqlc binary...")
 
   let _ = case sqlc.verify_binary() {
-    Error(_) -> print_error()
+    Error(_) -> io.println(cli.error_crossmark)
     Ok(_) -> Nil
   }
 
@@ -194,42 +189,4 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   io.println("")
 
   Ok(Nil)
-}
-
-/// Finds all `from/**/sql` directories and lists the full paths of the `*.sql`
-/// files inside each one.
-/// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
-///
-fn walk(from: String) -> dict.Dict(String, List(String)) {
-  case filepath.base_name(from) {
-    "sql" -> {
-      let assert Ok(files) = simplifile.read_directory(from)
-      let files = {
-        use file <- list.filter_map(files)
-        use extension <- result.try(filepath.extension(file))
-        use <- bool.guard(when: extension != "sql", return: Error(Nil))
-        let file_name = filepath.join(from, file)
-        case simplifile.is_file(file_name) {
-          Ok(True) -> Ok(file_name)
-          Ok(False) | Error(_) -> Error(Nil)
-        }
-      }
-      dict.from_list([#(from, files)])
-    }
-
-    _ -> {
-      let assert Ok(files) = simplifile.read_directory(from)
-      let directories = {
-        use file <- list.filter_map(files)
-        let file_name = filepath.join(from, file)
-        case simplifile.is_directory(file_name) {
-          Ok(True) -> Ok(file_name)
-          Ok(False) | Error(_) -> Error(Nil)
-        }
-      }
-
-      list.map(directories, walk)
-      |> list.fold(from: dict.new(), with: dict.merge)
-    }
-  }
 }
