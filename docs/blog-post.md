@@ -26,3 +26,4 @@ Notes:
 - just -> mise
 - removing `String` errors
 - domains and types are great
+- security: checking the gleam binary

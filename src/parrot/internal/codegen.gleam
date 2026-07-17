@@ -12,7 +12,7 @@ import parrot/internal/config.{
 }
 import parrot/internal/error
 import parrot/internal/sqlc.{type SQLC}
-import parrot/internal/string_case
+import parrot/internal/string_extra
 import simplifile
 
 pub type Codegen {
@@ -99,7 +99,7 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamBitArray -> "BitArray"
     GleamList(sub) -> "List(" <> gleam_type_to_string(sub) <> ")"
     GleamOption(sub) -> "option.Option(" <> gleam_type_to_string(sub) <> ")"
-    GleamEnum(name) -> string_case.pascal_case(name)
+    GleamEnum(name) -> string_extra.pascal_case(name)
     GleamDynamic -> "decode.Dynamic"
   }
 }
@@ -151,7 +151,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
             let type_ = normalise_col_type(col)
             let schema = find_col_schema(col, context)
             case list.find(schema.enums, fn(e) { e.name == type_ }) {
-              Ok(enum) -> Ok(#(string_case.pascal_case(enum.name), enum.vals))
+              Ok(enum) -> Ok(#(string_extra.pascal_case(enum.name), enum.vals))
               Error(_) -> Error(Nil)
             }
           }
@@ -165,7 +165,8 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
               let type_ = normalise_col_type(param.column)
               let schema = find_col_schema(param.column, context)
               case list.find(schema.enums, fn(e) { e.name == type_ }) {
-                Ok(enum) -> Ok(#(string_case.pascal_case(enum.name), enum.vals))
+                Ok(enum) ->
+                  Ok(#(string_extra.pascal_case(enum.name), enum.vals))
                 Error(_) -> Error(Nil)
               }
             }
@@ -177,7 +178,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
     |> list.unique()
 
   let query_names =
-    list.map(context.queries, fn(q) { string_case.pascal_case(q.name) })
+    list.map(context.queries, fn(q) { string_extra.pascal_case(q.name) })
     |> set.from_list
     |> set.to_list
 
@@ -200,7 +201,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
         })
       let assert Ok(query) =
         list.find(context.queries, fn(q) {
-          string_case.pascal_case(q.name) == first
+          string_extra.pascal_case(q.name) == first
         })
       Error(error.DuplicateDefinitionError(first, query.name))
     }
@@ -219,7 +220,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
               case item {
                 #(enum_name, vals) ->
                   list.map(vals, fn(val) {
-                    #(string_case.pascal_case(val), enum_name)
+                    #(string_extra.pascal_case(val), enum_name)
                   })
               }
             })
@@ -367,7 +368,7 @@ pub fn gen_column_name(
       }
     }
   }
-  let result = case string_case.snake_case(result) {
+  let result = case string_extra.snake_case(result) {
     "" -> "col_" <> int.to_string(index)
     x -> x
   }
@@ -378,7 +379,7 @@ pub fn gen_column_name(
 }
 
 pub fn gen_query_type(query: sqlc.Query, context: SQLC) {
-  let name = string_case.pascal_case(query.name)
+  let name = string_extra.pascal_case(query.name)
 
   let args =
     query.columns
@@ -426,7 +427,7 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType) {
 
   let value = case gt {
     GleamEnum(name) -> {
-      let name = string_case.snake_case(name)
+      let name = string_extra.snake_case(name)
       name <> "_to_string(" <> variable <> ")"
     }
     _ -> variable
@@ -451,7 +452,7 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType) {
 }
 
 pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
-  let fn_name = string_case.snake_case(query.name)
+  let fn_name = string_extra.snake_case(query.name)
 
   let def_fn_args =
     query.params
@@ -644,7 +645,7 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
     GleamOption(x) -> "decode.optional(" <> gleam_type_to_decoder(x) <> ")"
     GleamList(x) -> "decode.list(of: " <> gleam_type_to_decoder(x) <> ")"
     GleamEnum(name) -> {
-      let name = string_case.snake_case(name)
+      let name = string_extra.snake_case(name)
       name <> "_decoder()"
     }
     GleamDynamic -> "decode.dynamic"
@@ -655,8 +656,8 @@ pub fn gen_query_decoder(query: sqlc.Query, context: SQLC) {
   case list.length(query.columns) {
     0 -> ""
     _ -> {
-      let type_name = string_case.pascal_case(query.name)
-      let fn_name = string_case.snake_case(query.name) <> "_decoder"
+      let type_name = string_extra.pascal_case(query.name)
+      let fn_name = string_extra.snake_case(query.name) <> "_decoder"
 
       let decoder_fields =
         query.columns
@@ -794,26 +795,26 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
 
   let enums =
     list.map(enums, fn(enum) {
-      let record_name = string_case.pascal_case(enum.name)
-      let fn_name = string_case.snake_case(enum.name)
+      let record_name = string_extra.pascal_case(enum.name)
+      let fn_name = string_extra.snake_case(enum.name)
 
       let values =
-        list.map(enum.vals, fn(val) { "  " <> string_case.pascal_case(val) })
+        list.map(enum.vals, fn(val) { "  " <> string_extra.pascal_case(val) })
 
       let to_str_vals =
         list.map(enum.vals, fn(val) {
-          let type_ = string_case.pascal_case(val)
+          let type_ = string_extra.pascal_case(val)
           "    " <> type_ <> " -> " <> "\"" <> val <> "\""
         })
 
       let decode_str_vals =
         list.map(enum.vals, fn(val) {
-          let type_ = string_case.pascal_case(val)
+          let type_ = string_extra.pascal_case(val)
           "    \"" <> val <> "\" -> " <> "decode.success(" <> type_ <> ")"
         })
 
       let assert Ok(first_value) = list.first(enum.vals)
-      let zero_value = string_case.pascal_case(first_value)
+      let zero_value = string_extra.pascal_case(first_value)
 
       "pub type "
       <> record_name

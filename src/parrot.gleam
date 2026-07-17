@@ -1,4 +1,3 @@
-import argv
 import filepath
 import gleam/dict
 import gleam/io
@@ -15,62 +14,36 @@ import parrot/internal/shellout
 import parrot/internal/sqlc
 import simplifile
 
-pub fn command_from_args() -> Result(cli.Command, error.ParrotError) {
-  case argv.load().arguments {
-    [] -> {
-      cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) {
-        let #(engine, db) = a
-        cli.Generate(engine:, db:)
-      })
-    }
-    ["--env-var", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) {
-        let #(engine, db) = a
-        cli.Generate(engine:, db:)
-      })
-    }
-    ["-e", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) {
-        let #(engine, db) = a
-        cli.Generate(engine:, db:)
-      })
-    }
-    ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
-    }
-    ["help"] -> Ok(cli.Help)
-    _ -> Ok(cli.Help)
-  }
-}
-
 pub fn main() {
-  case command_from_args() {
+  case cli.command_from_args() {
+    Ok(cli.Help) -> {
+      io.println(cli.usage_text)
+      exit(0)
+    }
+    Ok(cli.Generate(engine:, db:)) -> {
+      let result = generate(engine, db)
+      case result {
+        Ok(_) -> {
+          io.println("\u{1F99C} SQL successfully generated!")
+        }
+        Error(e) -> {
+          io.println(cli.red("\nError: " <> error.to_string(e)))
+        }
+      }
+    }
     Error(e) -> {
       let error_message = error.to_string(e)
       io.println(cli.red("Error: " <> error_message))
+      exit(1)
     }
-    Ok(cmd) ->
-      case cmd {
-        cli.Help -> {
-          io.println(cli.usage)
-        }
-        cli.Generate(engine:, db:) -> {
-          let result = generate(engine, db)
-          case result {
-            Error(e) -> {
-              io.println(cli.red("\nError: " <> error.to_string(e)))
-            }
-            Ok(_) -> {
-              io.println("\u{1F99C} SQL successfully generated!")
-            }
-          }
-        }
-      }
   }
 }
+
+/// exit(0) -> success
+/// exit(1) -> failure
+///
+@external(erlang, "parrot_ffi.erl", "exit")
+fn exit(n: Int) -> Nil
 
 fn generate(engine: sqlc.Engine, db: String) -> Result(Nil, error.ParrotError) {
   let db = case db {

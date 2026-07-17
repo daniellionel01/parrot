@@ -1,25 +1,10 @@
+import argv
 import envoy
 import gleam/result
 import parrot/internal/error
 import parrot/internal/sqlc
 
-pub const colorless = "\u{001b}[0m"
-
-pub const error_crossmark = "\u{274C}"
-
-pub fn green(text: String) {
-  "\u{001b}[32m" <> text <> colorless
-}
-
-pub fn red(text: String) {
-  "\u{001b}[31m" <> text <> colorless
-}
-
-pub fn yellow(text: String) {
-  "\u{001b}[33m" <> text <> colorless
-}
-
-pub const usage = "
+pub const usage_text = "
   🦜 Parrot - type-safe SQL in gleam for sqlite, postgresql & mysql
 
   USAGE:
@@ -69,12 +54,28 @@ pub const usage = "
     $ gleam run -m parrot help
 "
 
+pub const colorless = "\u{001b}[0m"
+
+pub const error_crossmark = "\u{274C}"
+
+pub fn green(text: String) {
+  "\u{001b}[32m" <> text <> colorless
+}
+
+pub fn red(text: String) {
+  "\u{001b}[31m" <> text <> colorless
+}
+
+pub fn yellow(text: String) {
+  "\u{001b}[33m" <> text <> colorless
+}
+
 pub type Command {
   Help
   Generate(engine: sqlc.Engine, db: String)
 }
 
-pub fn engine_from_env(str: String) -> Result(sqlc.Engine, error.ParrotError) {
+fn engine_from_env(str: String) -> Result(sqlc.Engine, error.ParrotError) {
   case str {
     "postgres" <> _ -> Ok(sqlc.PostgreSQL)
     "mysql" <> _ -> Ok(sqlc.MySQL)
@@ -83,9 +84,7 @@ pub fn engine_from_env(str: String) -> Result(sqlc.Engine, error.ParrotError) {
   }
 }
 
-pub fn parse_env(
-  env: String,
-) -> Result(#(sqlc.Engine, String), error.ParrotError) {
+fn parse_env(env: String) -> Result(#(sqlc.Engine, String), error.ParrotError) {
   let env_result = envoy.get(env)
   use env_var <- result.try(result.replace_error(
     env_result,
@@ -96,4 +95,35 @@ pub fn parse_env(
   use engine <- result.try(engine_result)
 
   Ok(#(engine, env_var))
+}
+
+pub fn command_from_args() -> Result(Command, error.ParrotError) {
+  case argv.load().arguments {
+    [] -> {
+      parse_env("DATABASE_URL")
+      |> result.map(fn(a) {
+        let #(engine, db) = a
+        Generate(engine:, db:)
+      })
+    }
+    ["--env-var", env] -> {
+      parse_env(env)
+      |> result.map(fn(a) {
+        let #(engine, db) = a
+        Generate(engine:, db:)
+      })
+    }
+    ["-e", env] -> {
+      parse_env(env)
+      |> result.map(fn(a) {
+        let #(engine, db) = a
+        Generate(engine:, db:)
+      })
+    }
+    ["--sqlite", file_path] -> {
+      Ok(Generate(sqlc.SQLite, file_path))
+    }
+    ["help"] -> Ok(Help)
+    _ -> Ok(Help)
+  }
 }
