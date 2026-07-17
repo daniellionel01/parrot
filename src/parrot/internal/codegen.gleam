@@ -719,26 +719,6 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     |> list.map(gen_query(_, context))
     |> string.join("\n\n")
 
-  // check if Timestamps used
-  let uses_timestamp =
-    fn(col: sqlc.TableColumn) {
-      case sqlc_col_to_gleam(col, context) {
-        GleamOption(GleamTimestamp) | GleamTimestamp -> True
-        _ -> False
-      }
-    }
-    |> uses_gleam_type(context)
-
-  // check if Dates are used
-  let uses_date =
-    fn(col: sqlc.TableColumn) {
-      case sqlc_col_to_gleam(col, context) {
-        GleamOption(GleamDate) | GleamDate -> True
-        _ -> False
-      }
-    }
-    |> uses_gleam_type(context)
-
   // checks if Lists are used
   let uses_list =
     fn(col: sqlc.TableColumn) {

@@ -200,7 +200,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
 /// files inside each one.
 /// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
 ///
-pub fn walk(from: String) -> dict.Dict(String, List(String)) {
+fn walk(from: String) -> dict.Dict(String, List(String)) {
   case filepath.base_name(from) {
     "sql" -> {
       let assert Ok(files) = simplifile.read_directory(from)
