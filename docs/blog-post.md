@@ -21,3 +21,4 @@ Notes:
 - Not less code but less modules
 - Ideas that were scrapped (one query per file a la squirrel)
 - Ideas that are still there but not implemented
+- Silly numbers: lines of code!
