@@ -1,5 +1,6 @@
 import argv
 import filepath
+import gleam/bool
 import gleam/dict
 import gleam/io
 import gleam/list
@@ -10,7 +11,6 @@ import parrot/internal/codegen
 import parrot/internal/config
 import parrot/internal/db
 import parrot/internal/errors
-import parrot/internal/lib
 import parrot/internal/project
 import parrot/internal/shellout
 import parrot/internal/sqlc
@@ -38,7 +38,7 @@ pub fn main() {
   }
 
   case cmd {
-    Error(e) -> io.println(lib.red("Error: " <> e))
+    Error(e) -> io.println(cli.red("Error: " <> e))
     Ok(cmd) ->
       case cmd {
         cli.Usage -> io.println(cli.usage)
@@ -46,7 +46,7 @@ pub fn main() {
           let result = cmd_gen(engine, db)
           case result {
             Error(e) ->
-              io.println(lib.red("\nError: " <> errors.err_to_string(e)))
+              io.println(cli.red("\nError: " <> errors.err_to_string(e)))
             Ok(_) -> io.println("\u{1F99C} SQL successfully generated!")
           }
         }
@@ -65,7 +65,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     db -> db
   }
 
-  let files = lib.walk(project.src())
+  let files = walk(project.src())
   let queries =
     files
     |> dict.to_list
@@ -84,8 +84,6 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     // on all operating systems, so we order all queries in a
     // predictable manner, since operating system calls to the file
     // system might return them in a different order.
-    //
-    // See https://github.com/daniellionel01/parrot/issues/101
     //
     |> list.sort(by: string.compare)
 
@@ -191,9 +189,47 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   gen_result.unknown_types
   |> list.unique()
   |> list.each(fn(unknown) {
-    io.println(lib.yellow("unknown column type: " <> unknown))
+    io.println(cli.yellow("unknown column type: " <> unknown))
   })
   io.println("")
 
   Ok(Nil)
+}
+
+/// Finds all `from/**/sql` directories and lists the full paths of the `*.sql`
+/// files inside each one.
+/// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
+///
+pub fn walk(from: String) -> dict.Dict(String, List(String)) {
+  case filepath.base_name(from) {
+    "sql" -> {
+      let assert Ok(files) = simplifile.read_directory(from)
+      let files = {
+        use file <- list.filter_map(files)
+        use extension <- result.try(filepath.extension(file))
+        use <- bool.guard(when: extension != "sql", return: Error(Nil))
+        let file_name = filepath.join(from, file)
+        case simplifile.is_file(file_name) {
+          Ok(True) -> Ok(file_name)
+          Ok(False) | Error(_) -> Error(Nil)
+        }
+      }
+      dict.from_list([#(from, files)])
+    }
+
+    _ -> {
+      let assert Ok(files) = simplifile.read_directory(from)
+      let directories = {
+        use file <- list.filter_map(files)
+        let file_name = filepath.join(from, file)
+        case simplifile.is_directory(file_name) {
+          Ok(True) -> Ok(file_name)
+          Ok(False) | Error(_) -> Error(Nil)
+        }
+      }
+
+      list.map(directories, walk)
+      |> list.fold(from: dict.new(), with: dict.merge)
+    }
+  }
 }

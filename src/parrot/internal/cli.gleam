@@ -3,6 +3,20 @@ import gleam/result
 import parrot/internal/errors
 import parrot/internal/sqlc
 
+pub const colorless = "\u{001b}[0m"
+
+pub fn green(text: String) {
+  "\u{001b}[32m" <> text <> colorless
+}
+
+pub fn red(text: String) {
+  "\u{001b}[31m" <> text <> colorless
+}
+
+pub fn yellow(text: String) {
+  "\u{001b}[33m" <> text <> colorless
+}
+
 pub const usage = "
   🦜 Parrot - type-safe SQL in gleam for sqlite, postgresql & mysql
 

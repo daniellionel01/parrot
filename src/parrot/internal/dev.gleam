@@ -1,3 +1,9 @@
+//// Gleam code added to the generated `sql.gleam` output module.
+////
+//// This is to enable parrot to be a `dev` dependency and have no imports
+//// from parrot in production in the user's code.
+////
+
 pub const types = "
 pub type Param {
   ParamInt(Int)
