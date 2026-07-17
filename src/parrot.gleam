@@ -15,28 +15,29 @@ import parrot/internal/sqlc
 import simplifile
 
 pub fn main() {
-  case cli.command_from_args() {
+  let #(text, status_code) = case cli.command_from_args() {
     Ok(cli.Help) -> {
-      io.println(cli.usage_text)
-      exit(0)
+      #(cli.usage_text, 0)
     }
     Ok(cli.Generate(engine:, db:)) -> {
       let result = generate(engine, db)
       case result {
         Ok(_) -> {
-          io.println("\u{1F99C} SQL successfully generated!")
+          #("\u{1F99C} SQL successfully generated!", 0)
         }
         Error(e) -> {
-          io.println(cli.red("\nError: " <> error.to_string(e)))
+          #(cli.red("\nError: " <> error.to_string(e)), 1)
         }
       }
     }
     Error(e) -> {
       let error_message = error.to_string(e)
-      io.println(cli.red("Error: " <> error_message))
-      exit(1)
+      #(cli.red("Error: " <> error_message), 1)
     }
   }
+
+  io.println(text)
+  exit(status_code)
 }
 
 /// exit(0) -> success
