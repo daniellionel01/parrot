@@ -1,3 +1,4 @@
+import child_process
 import filepath
 import gleam/dict
 import gleam/io
@@ -10,7 +11,6 @@ import parrot/internal/config
 import parrot/internal/db
 import parrot/internal/error
 import parrot/internal/project
-import parrot/internal/shellout
 import parrot/internal/sqlc
 import simplifile
 
@@ -26,7 +26,8 @@ pub fn main() {
           #("\u{1F99C} SQL successfully generated!", 0)
         }
         Error(e) -> {
-          #(cli.red("\nError: " <> error.to_string(e)), 1)
+          let error_message = error.to_string(e)
+          #(cli.red("\nError: " <> error_message), 1)
         }
       }
     }
@@ -46,11 +47,14 @@ pub fn main() {
 @external(erlang, "parrot_ffi.erl", "exit")
 fn exit(n: Int) -> Nil
 
-fn generate(engine: sqlc.Engine, db: String) -> Result(Nil, error.ParrotError) {
-  let db = case db {
-    "sqlite://" <> db -> db
-    "sqlite:" <> db -> db
-    db -> db
+fn generate(
+  engine: sqlc.Engine,
+  connection_string: String,
+) -> Result(Nil, error.ParrotError) {
+  let connection_string = case connection_string {
+    "sqlite://" <> connection_string -> connection_string
+    "sqlite:" <> connection_string -> connection_string
+    connection_string -> connection_string
   }
 
   let files = project.walk(project.src())
@@ -102,14 +106,15 @@ fn generate(engine: sqlc.Engine, db: String) -> Result(Nil, error.ParrotError) {
 
   use schema_sql <- result.try(case engine {
     sqlc.MySQL -> {
-      use schema <- result.try(db.fetch_schema_mysql(db))
+      use schema <- result.try(db.fetch_schema_mysql(connection_string))
       Ok(schema)
     }
     sqlc.PostgreSQL -> {
-      use schema <- result.try(db.fetch_schema_postgresql(db))
+      use schema <- result.try(db.fetch_schema_postgresql(connection_string))
 
       // this is an edge case with the postgres schema dump.
       // sqlc does not like those lines from postgres 17.
+      //
       let schema =
         schema
         |> string.split("\n")
@@ -122,7 +127,7 @@ fn generate(engine: sqlc.Engine, db: String) -> Result(Nil, error.ParrotError) {
       Ok(schema)
     }
     sqlc.SQLite -> {
-      use schema <- result.try(db.fetch_schema_sqlite(db))
+      use schema <- result.try(db.fetch_schema_sqlite(connection_string))
       let sql = string.trim(schema)
       Ok(sql)
     }
@@ -132,17 +137,16 @@ fn generate(engine: sqlc.Engine, db: String) -> Result(Nil, error.ParrotError) {
   io.println("\u{2728} generating gleam code...")
 
   let gen_result =
-    shellout.command(
+    child_process.exec(
       run: "./sqlc",
       with: ["generate", "--file", "sqlc.json"],
       in: sqlc_dir,
-      opt: [],
     )
 
   use _ <- result.try(case gen_result {
     Ok(_) -> Ok(Nil)
     Error(error) -> {
-      let #(_, error) = error
+      let error = child_process.describe_start_error(error)
       Error(error.SqlcGenerateError(error))
     }
   })
@@ -160,16 +164,15 @@ fn generate(engine: sqlc.Engine, db: String) -> Result(Nil, error.ParrotError) {
   let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
 
   let stdout_format =
-    shellout.command(
+    child_process.exec(
       run: "gleam",
       with: ["format", output_path],
       in: project.root(),
-      opt: [],
     )
   use _ <- result.try(case stdout_format {
     Ok(_) -> Ok(Nil)
     Error(error) -> {
-      let #(_, error) = error
+      let error = child_process.describe_start_error(error)
       Error(error.GleamFormatError(error))
     }
   })

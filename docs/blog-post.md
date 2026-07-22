@@ -27,3 +27,7 @@ Notes:
 - removing `String` errors
 - domains and types are great
 - security: checking the gleam binary
+- code. read the code.
+  - { } blocks in every case statement
+  - naming conventions: e, err, error
+  - shadowing global variables

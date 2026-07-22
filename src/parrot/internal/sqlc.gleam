@@ -1,6 +1,7 @@
 //// This module generates the JSON config, which is used when running sqlc, and
 //// decodes the JSON that sqlc generates.
 
+import child_process
 import filepath
 import gleam/bit_array
 import gleam/bool
@@ -14,7 +15,6 @@ import gleam/set
 import gleam/string
 import parrot/internal/error
 import parrot/internal/project
-import parrot/internal/shellout
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 pub const sqlc_version = "1.31.1"
@@ -488,8 +488,7 @@ pub fn verify_binary() -> Result(Nil, error.ParrotError) {
 
   let path = sqlc_binary_path()
   let dir = filepath.directory_name(path)
-  let gen_res =
-    shellout.command(run: "./sqlc", with: ["version"], in: dir, opt: [])
+  let gen_res = child_process.exec(run: "./sqlc", with: ["version"], in: dir)
 
   case gen_res {
     Error(_) -> {
@@ -505,7 +504,7 @@ pub fn verify_binary() -> Result(Nil, error.ParrotError) {
         "could not verify sqlc binary. information:\n" <> information,
       ))
     }
-    Ok(v) -> {
+    Ok(child_process.Output(status_code: _, output: v)) -> {
       let sqlc_version = "v" <> sqlc_version
       let v = string.trim(v)
       case v == sqlc_version {

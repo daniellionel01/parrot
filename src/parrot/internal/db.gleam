@@ -1,3 +1,4 @@
+import child_process
 import gleam/int
 import gleam/list
 import gleam/option
@@ -5,7 +6,6 @@ import gleam/result
 import gleam/string
 import gleam/uri
 import parrot/internal/error
-import parrot/internal/shellout
 
 pub fn fetch_schema_mysql(db: String) -> Result(String, error.ParrotError) {
   let assert Ok(conn) = uri.parse(db)
@@ -36,17 +36,16 @@ pub fn fetch_schema_mysql(db: String) -> Result(String, error.ParrotError) {
   }
   let db = string.replace(conn.path, "/", "")
 
-  use out <- result.try(
-    shellout.command(
+  use child_process.Output(status_code: _, output:) <- result.try(
+    child_process.exec(
       run: "mysqldump",
       with: ["--no-data", "-u", user, "-p" <> pass, "-h", host, "-P", port, db],
       in: ".",
-      opt: [],
     )
     |> result.replace_error(error.MysqldumpError),
   )
 
-  out
+  output
   |> string.split("\n")
   |> list.filter(fn(line) { string.contains(line, "mysqldump:") == False })
   |> string.join("\n")
@@ -56,7 +55,7 @@ pub fn fetch_schema_mysql(db: String) -> Result(String, error.ParrotError) {
 pub fn fetch_schema_postgresql(
   db: String,
 ) -> Result(String, error.ParrotError) {
-  shellout.command(
+  child_process.exec(
     run: "pg_dump",
     with: [
       "--no-privileges",
@@ -68,23 +67,16 @@ pub fn fetch_schema_postgresql(
       db,
     ],
     in: ".",
-    opt: [],
   )
   |> result.map_error(fn(e) {
-    let #(_, err) = e
-    error.PgdumpError(err)
+    let e = child_process.describe_start_error(e)
+    error.PgdumpError(e)
   })
+  |> result.map(fn(out) { out.output })
 }
 
 pub fn fetch_schema_sqlite(db: String) -> Result(String, error.ParrotError) {
-  shellout.command(
-    run: "sqlite3",
-    with: [
-      db,
-      ".schema",
-    ],
-    in: ".",
-    opt: [],
-  )
+  child_process.exec(run: "sqlite3", with: [db, ".schema"], in: ".")
   |> result.replace_error(error.SqliteDBNotFound(""))
+  |> result.map(fn(out) { out.output })
 }
