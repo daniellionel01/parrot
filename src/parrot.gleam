@@ -5,11 +5,12 @@ import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
+import parrot/error
 import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
 import parrot/internal/db
-import parrot/internal/error
+
 import parrot/internal/project
 import parrot/internal/sqlc
 import simplifile

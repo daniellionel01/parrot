@@ -7,10 +7,10 @@ import gleam/option
 import gleam/result
 import gleam/set
 import gleam/string
+import parrot/error
 import parrot/internal/config.{
   type Config, get_json_file, get_module_directory, get_module_path,
 }
-import parrot/internal/error
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_extra
 import simplifile

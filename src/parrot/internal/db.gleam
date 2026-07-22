@@ -5,7 +5,7 @@ import gleam/option
 import gleam/result
 import gleam/string
 import gleam/uri
-import parrot/internal/error
+import parrot/error
 
 pub fn fetch_schema_mysql(db: String) -> Result(String, error.ParrotError) {
   let assert Ok(conn) = uri.parse(db)

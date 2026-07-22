@@ -13,7 +13,7 @@ import gleam/option.{type Option, Some}
 import gleam/result
 import gleam/set
 import gleam/string
-import parrot/internal/error
+import parrot/error
 import parrot/internal/project
 import simplifile.{Execute, FilePermissions, Read, Write}
 

@@ -1,7 +1,7 @@
 import argv
 import envoy
 import gleam/result
-import parrot/internal/error
+import parrot/error
 import parrot/internal/sqlc
 
 pub const usage_text = "
