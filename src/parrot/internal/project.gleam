@@ -1,4 +1,7 @@
-//// Copy pasted from https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel/internal/project.gleam
+//// Helps to find information about the current gleam
+//// project this program is running in.
+////
+//// Based off https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel/internal/project.gleam
 //// Thank you https://www.github.com/giacomocavalieri
 ////
 

@@ -9,7 +9,7 @@ import parrot/error
 import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
-import parrot/internal/db
+import parrot/internal/database
 
 import parrot/internal/project
 import parrot/internal/sqlc
@@ -107,11 +107,13 @@ fn generate(
 
   use schema_sql <- result.try(case engine {
     sqlc.MySQL -> {
-      use schema <- result.try(db.fetch_schema_mysql(connection_string))
+      use schema <- result.try(database.fetch_schema_mysql(connection_string))
       Ok(schema)
     }
     sqlc.PostgreSQL -> {
-      use schema <- result.try(db.fetch_schema_postgresql(connection_string))
+      use schema <- result.try(database.fetch_schema_postgresql(
+        connection_string,
+      ))
 
       // this is an edge case with the postgres schema dump.
       // sqlc does not like those lines from postgres 17.
@@ -128,7 +130,7 @@ fn generate(
       Ok(schema)
     }
     sqlc.SQLite -> {
-      use schema <- result.try(db.fetch_schema_sqlite(connection_string))
+      use schema <- result.try(database.fetch_schema_sqlite(connection_string))
       let sql = string.trim(schema)
       Ok(sql)
     }

@@ -1,3 +1,9 @@
+//// Parrot supports Sqlite, PostgreSQL and MySQL.
+////
+//// This module contains functionality related to working
+//// with the different schema files and connection strings.
+////
+
 import child_process
 import gleam/int
 import gleam/list

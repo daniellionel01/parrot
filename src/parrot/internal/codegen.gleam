@@ -1,3 +1,6 @@
+//// The functionality of generating the output gleam module.
+////
+
 import gleam/bool
 import gleam/dynamic/decode as d
 import gleam/int

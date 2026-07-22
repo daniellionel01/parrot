@@ -28,6 +28,7 @@ Notes:
 - domains and types are great
 - security: checking the gleam binary
 - module visibility - ex. error module
+- reviewing asserts
 - code. read the code.
   - { } blocks in every case statement
   - naming conventions: e, err, error

@@ -1,3 +1,8 @@
+//// Configuration for a gleam project which is
+//// gathered from command line arguments and the
+//// `[tools.parrot]` configuration in `gleam.toml`.
+////
+
 import filepath
 import parrot/internal/project
 import simplifile

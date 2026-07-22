@@ -1,3 +1,7 @@
+//// Contains functionality related to the command line
+//// and rendering text in the terminal.
+////
+
 import argv
 import envoy
 import gleam/result
