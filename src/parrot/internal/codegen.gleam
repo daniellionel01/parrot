@@ -11,9 +11,7 @@ import gleam/result
 import gleam/set
 import gleam/string
 import parrot/error
-import parrot/internal/config.{
-  type Config, get_json_file, get_module_directory, get_module_path,
-}
+import parrot/internal/config
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_extra
 import simplifile
@@ -22,11 +20,11 @@ pub type Codegen {
   Codegen(unknown_types: List(String))
 }
 
-pub fn codegen_from_config(
-  config: Config,
+pub fn from_config(
+  config: config.Config,
 ) -> Result(Codegen, error.ParrotError) {
   use json_string <- result.try(
-    get_json_file(config)
+    config.json_file(config)
     |> result.map_error(fn(_) { error.CodegenError }),
   )
 
@@ -54,12 +52,15 @@ pub fn codegen_from_config(
   use module_contents <- result.try(gen_gleam_module(context))
 
   use _ <- result.try(
-    get_module_directory(config)
+    config.output_directory(config)
     |> simplifile.create_directory_all()
     |> result.map_error(fn(_) { error.CodegenError }),
   )
   use _ <- result.try(
-    simplifile.write(to: get_module_path(config), contents: module_contents)
+    simplifile.write(
+      to: config.output_module_path(config),
+      contents: module_contents,
+    )
     |> result.map_error(fn(_) { error.CodegenError }),
   )
 

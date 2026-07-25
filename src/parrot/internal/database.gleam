@@ -79,10 +79,22 @@ pub fn fetch_schema_postgresql(
     error.PgdumpError(e)
   })
   |> result.map(fn(out) { out.output })
+  |> result.map(fn(schema) {
+    // this is an edge case with the postgres schema dump.
+    // sqlc does not like those lines from postgres 17.
+    //
+    schema
+    |> string.split("\n")
+    |> list.filter(fn(line) {
+      !string.starts_with(line, "\\restrict")
+      && !string.starts_with(line, "\\unrestrict")
+    })
+    |> string.join("\n")
+  })
 }
 
 pub fn fetch_schema_sqlite(db: String) -> Result(String, error.ParrotError) {
   child_process.exec(run: "sqlite3", with: [db, ".schema"], in: ".")
   |> result.replace_error(error.SqliteDBNotFound(""))
-  |> result.map(fn(out) { out.output })
+  |> result.map(fn(out) { string.trim(out.output) })
 }

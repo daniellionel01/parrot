@@ -15,6 +15,7 @@ I quite like the quote "Yes is forever. No is for now.".
 Notes:
 
 - Using hoist package
+- child_process!
 - Dev dependency!
 - Testing this is hard!
 - JavaScript!
@@ -33,3 +34,5 @@ Notes:
   - { } blocks in every case statement
   - naming conventions: e, err, error
   - shadowing global variables
+  - so many module name duplicates (codegen.codegen_from_config, project.project_name, sqlc.sqlc_binary_path, get_...)
+- migrating from v2 -> v3

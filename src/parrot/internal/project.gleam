@@ -21,7 +21,9 @@ pub fn src() -> String {
   filepath.join(root(), "src")
 }
 
-pub fn project_name() -> String {
+/// Name of the gleam application
+///
+pub fn name() -> String {
   let root = find_root(".")
   let toml_path = filepath.join(root, "gleam.toml")
   let assert Ok(toml) = simplifile.read(toml_path)

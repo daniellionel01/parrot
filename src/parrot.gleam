@@ -107,32 +107,13 @@ fn generate(
 
   use schema_sql <- result.try(case engine {
     sqlc.MySQL -> {
-      use schema <- result.try(database.fetch_schema_mysql(connection_string))
-      Ok(schema)
+      database.fetch_schema_mysql(connection_string)
     }
     sqlc.PostgreSQL -> {
-      use schema <- result.try(database.fetch_schema_postgresql(
-        connection_string,
-      ))
-
-      // this is an edge case with the postgres schema dump.
-      // sqlc does not like those lines from postgres 17.
-      //
-      let schema =
-        schema
-        |> string.split("\n")
-        |> list.filter(fn(line) {
-          !string.starts_with(line, "\\restrict")
-          && !string.starts_with(line, "\\unrestrict")
-        })
-        |> string.join("\n")
-
-      Ok(schema)
+      database.fetch_schema_postgresql(connection_string)
     }
     sqlc.SQLite -> {
-      use schema <- result.try(database.fetch_schema_sqlite(connection_string))
-      let sql = string.trim(schema)
-      Ok(sql)
+      database.fetch_schema_sqlite(connection_string)
     }
   })
   let _ = simplifile.write(schema_file, schema_sql)
@@ -154,18 +135,12 @@ fn generate(
     }
   })
 
-  let project_name = project.project_name()
-  let config =
-    config.Config(
-      gleam_module_out_path: project_name <> "/sql.gleam",
-      json_file_path: queries_file,
-    )
-  use gen_result <- result.try(codegen.codegen_from_config(config))
+  use config <- result.try(config.load(queries_file))
+  use gen_result <- result.try(codegen.from_config(config))
 
   io.println("\u{1F9F9} formatting generated code...")
 
-  let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
-
+  let output_path = config.output_module_path(config)
   let stdout_format =
     child_process.exec(
       run: "gleam",
