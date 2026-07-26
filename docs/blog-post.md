@@ -36,3 +36,4 @@ Notes:
   - shadowing global variables
   - so many module name duplicates (codegen.codegen_from_config, project.project_name, sqlc.sqlc_binary_path, get_...)
 - migrating from v2 -> v3
+- the wrappers...
