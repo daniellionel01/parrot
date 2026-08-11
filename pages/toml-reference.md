@@ -5,13 +5,14 @@ Parrot follow Gleam's tools convention and can be configured in your project's `
 ```toml
 [tools.parrot]
 output = "./src/app/custom_module.gleam"
+env = "DATABASE_URL"
 
 [tools.parrot.sqlc]
 # Use the system-installed `sqlc` binary instead of downloading one automatically.
 bin = "system"
 # Override the sqlc version that is downloaded automatically (default: latest)
-version = "v1.30.0"
-# Provide a path to a schema or migration files
+version = "1.30.0"
+# Provide a path to schema or migration files
 schema = "<path>"
 ```
 
@@ -20,7 +21,7 @@ schema = "<path>"
 
 ## `tools.parrot`
 
-- **`output = string`**: 
+- **`output = string`**: the output path of the generated gleam module.
 
   Default: `./src/<project_name>/sql.gleam`.
 
@@ -41,5 +42,5 @@ These options allow you to configure sqlc and how Parrot uses as part of the bui
 - **`schema = string`**: sqlc can parse various migration files to build up the schema even without a database connection.
 
   You can read more about it here: <https://docs.sqlc.dev/en/stable/howto/ddl.html#handling-sql-migrations>
-  
+
   Default: `undefined`. Parrot will attempt to fetch the schema from the database connection string.
