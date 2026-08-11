@@ -101,17 +101,7 @@ fn generate(
 
   io.println("\u{1F5C4} fetching schema...")
 
-  use schema_sql <- result.try(case engine {
-    sqlc.MySQL -> {
-      database.fetch_schema_mysql(connection_string)
-    }
-    sqlc.PostgreSQL -> {
-      database.fetch_schema_postgresql(connection_string)
-    }
-    sqlc.SQLite -> {
-      database.fetch_schema_sqlite(connection_string)
-    }
-  })
+  use schema_sql <- result.try(database.fetch_schema(engine, connection_string))
   let _ = simplifile.write(schema_file, schema_sql)
 
   io.println("\u{2728} generating gleam code...")
