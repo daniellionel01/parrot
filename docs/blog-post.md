@@ -1,11 +1,12 @@
 # Making Parrot v3
 
+Oh boy. I think at this point most of the ideas that have been integrated in v3 have been in development for almost a year now.
+
 A technical diary of the thoughts and decisions behind the latest version of parrot.
 
-I like to give things time. My gleam open source packages are the one place I do not place many delivery expectations on myself.
+I like to give things time. My gleam open source packages are the one place I do not place many expectations on myself.
 
-I can give them the proper attention and improving my craft of software engineering without having an economical or financial
-incentivation or pressure to take shortcuts or rush anything.
+I can give them the proper attention and improving my craft without having an economical or financial incentivation, pressure to take shortcuts or rush anything.
 
 Of course I acknowledge the responsibility for the users of this library and bug fixes are adressed quickly.
 But new features and versions are always developed carefully and with lots of iterations.
