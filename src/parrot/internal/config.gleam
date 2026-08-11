@@ -14,6 +14,7 @@ pub opaque type Config {
   Config(
     json_file_path: String,
     output_module_path: String,
+    env: String,
     sqlc_binary: String,
     sqlc_version: String,
     sqlc_schema: String,
@@ -25,11 +26,13 @@ pub opaque type Config {
 pub fn load(queries_file: String) -> Result(Config, error.ParrotError) {
   let project_name = project.name()
   let output_module_path = "src/" <> project_name <> "/sql.gleam"
+  let env = ""
 
   let config =
     Config(
       json_file_path: queries_file,
       output_module_path:,
+      env:,
       sqlc_binary: todo,
       sqlc_version: todo,
       sqlc_schema: todo,
