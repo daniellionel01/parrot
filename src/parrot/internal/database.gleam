@@ -13,8 +13,24 @@ import gleam/string
 import gleam/uri
 import parrot/error
 
-pub fn fetch_schema_mysql(db: String) -> Result(String, error.ParrotError) {
-  let assert Ok(conn) = uri.parse(db)
+pub opaque type ConnectionString {
+  ConnectionString(String)
+}
+
+pub fn connection_string(value: String) {
+  let value = case value {
+    "sqlite://" <> value -> value
+    "sqlite:" <> value -> value
+    value -> value
+  }
+  ConnectionString(value)
+}
+
+pub fn fetch_schema_mysql(
+  connection_string: ConnectionString,
+) -> Result(String, error.ParrotError) {
+  let ConnectionString(connection_string) = connection_string
+  let assert Ok(conn) = uri.parse(connection_string)
 
   let creds = case conn.userinfo {
     option.None -> option.None
@@ -59,8 +75,10 @@ pub fn fetch_schema_mysql(db: String) -> Result(String, error.ParrotError) {
 }
 
 pub fn fetch_schema_postgresql(
-  db: String,
+  connection_string: ConnectionString,
 ) -> Result(String, error.ParrotError) {
+  let ConnectionString(connection_string) = connection_string
+
   child_process.exec(
     run: "pg_dump",
     with: [
@@ -70,7 +88,7 @@ pub fn fetch_schema_postgresql(
       "--schema-only",
       "--no-comments",
       "--encoding=utf8",
-      db,
+      connection_string,
     ],
     in: ".",
   )
@@ -93,8 +111,16 @@ pub fn fetch_schema_postgresql(
   })
 }
 
-pub fn fetch_schema_sqlite(db: String) -> Result(String, error.ParrotError) {
-  child_process.exec(run: "sqlite3", with: [db, ".schema"], in: ".")
+pub fn fetch_schema_sqlite(
+  connection_string: ConnectionString,
+) -> Result(String, error.ParrotError) {
+  let ConnectionString(connection_string) = connection_string
+
+  child_process.exec(
+    run: "sqlite3",
+    with: [connection_string, ".schema"],
+    in: ".",
+  )
   |> result.replace_error(error.SqliteDBNotFound(""))
   |> result.map(fn(out) { string.trim(out.output) })
 }

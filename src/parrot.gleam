@@ -52,11 +52,7 @@ fn generate(
   engine: sqlc.Engine,
   connection_string: String,
 ) -> Result(Nil, error.ParrotError) {
-  let connection_string = case connection_string {
-    "sqlite://" <> connection_string -> connection_string
-    "sqlite:" <> connection_string -> connection_string
-    connection_string -> connection_string
-  }
+  let connection_string = database.connection_string(connection_string)
 
   let files = project.walk(project.src())
   let queries =
