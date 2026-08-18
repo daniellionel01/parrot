@@ -1,68 +1,60 @@
-import argv
+import child_process
 import filepath
 import gleam/dict
 import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
+import parrot/error
 import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
-import parrot/internal/db
-import parrot/internal/errors
-import parrot/internal/lib
+import parrot/internal/database
+
 import parrot/internal/project
-import parrot/internal/shellout
-import parrot/internal/spinner
 import parrot/internal/sqlc
 import simplifile
 
 pub fn main() {
-  let cmd: Result(cli.Command, String) = case argv.load().arguments {
-    [] -> {
-      cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+  let #(text, status_code) = case cli.command_from_args() {
+    Ok(cli.Help) -> {
+      #(cli.usage_text, 0)
     }
-    ["--env-var", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
-    }
-    ["-e", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
-    }
-    ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
-    }
-    ["help"] -> Ok(cli.Usage)
-    _ -> Ok(cli.Usage)
-  }
-
-  case cmd {
-    Error(e) -> io.println(lib.red("Error: " <> e))
-    Ok(cmd) ->
-      case cmd {
-        cli.Usage -> io.println(cli.usage)
-        cli.Generate(engine:, db:) -> {
-          let result = cmd_gen(engine, db)
-          case result {
-            Error(e) ->
-              io.println(lib.red("\nError: " <> errors.err_to_string(e)))
-            Ok(_) -> io.println(lib.green("SQL successfully generated!"))
-          }
+    Ok(cli.Generate(engine:, db:)) -> {
+      let result = generate(engine, db)
+      case result {
+        Ok(_) -> {
+          #("\u{1F99C} SQL successfully generated!", 0)
+        }
+        Error(e) -> {
+          let error_message = error.to_string(e)
+          #(cli.red("\nError: " <> error_message), 1)
         }
       }
+    }
+    Error(e) -> {
+      let error_message = error.to_string(e)
+      #(cli.red("Error: " <> error_message), 1)
+    }
   }
+
+  io.println(text)
+  exit(status_code)
 }
 
-fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
-  let db = case db {
-    "sqlite://" <> db -> db
-    "sqlite:" <> db -> db
-    db -> db
-  }
+/// exit(0) -> success
+/// exit(1) -> failure
+///
+@external(erlang, "parrot_ffi.erl", "exit")
+fn exit(n: Int) -> Nil
 
-  let files = lib.walk(project.src())
+fn generate(
+  engine: sqlc.Engine,
+  connection_string: String,
+) -> Result(Nil, error.ParrotError) {
+  let connection_string = database.connection_string(connection_string)
+
+  let files = project.walk(project.src())
   let queries =
     files
     |> dict.to_list
@@ -82,8 +74,6 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     // predictable manner, since operating system calls to the file
     // system might return them in a different order.
     //
-    // See https://github.com/daniellionel01/parrot/issues/101
-    //
     |> list.sort(by: string.compare)
 
   let sqlc_binary = sqlc.sqlc_binary_path()
@@ -93,119 +83,68 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   let queries_file = filepath.join(sqlc_dir, "queries.json")
   let _ = simplifile.create_directory_all(sqlc_dir)
 
-  let spinner =
-    spinner.new("downloading sqlc binary")
-    |> spinner.start()
-
+  io.println("\u{1F4E5} downloading sqlc binary...")
   let _ = case sqlc.download_binary() {
-    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
-    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
+    Error(_) -> io.println(cli.error_crossmark)
+    Ok(_) -> Nil
   }
 
-  let spinner =
-    spinner.new("verifying sqlc binary")
-    |> spinner.start()
+  io.println("\u{1F50D} verifying sqlc binary...")
 
   let _ = case sqlc.verify_binary() {
-    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
-    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
+    Error(_) -> io.println(cli.error_crossmark)
+    Ok(_) -> Nil
   }
 
   let sqlc_json = sqlc.gen_sqlc_json(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_json)
 
-  let spinner =
-    spinner.new("fetching schema")
-    |> spinner.start()
+  io.println("\u{1F5C4} fetching schema...")
 
-  use schema_sql <- result.try(case engine {
-    sqlc.MySQL -> {
-      use schema <- result.try(db.fetch_schema_mysql(db))
-      Ok(schema)
-    }
-    sqlc.PostgreSQL -> {
-      use schema <- result.try(db.fetch_schema_postgresql(db))
-
-      // this is an edge case with the postgres schema dump.
-      // sqlc does not like those lines from postgres 17.
-      let schema =
-        schema
-        |> string.split("\n")
-        |> list.filter(fn(line) {
-          !string.starts_with(line, "\\restrict")
-          && !string.starts_with(line, "\\unrestrict")
-        })
-        |> string.join("\n")
-
-      Ok(schema)
-    }
-    sqlc.SQLite -> {
-      use schema <- result.try(db.fetch_schema_sqlite(db))
-      let sql = string.trim(schema)
-      Ok(sql)
-    }
-  })
+  use schema_sql <- result.try(database.fetch_schema(engine, connection_string))
   let _ = simplifile.write(schema_file, schema_sql)
 
-  spinner.complete_current(spinner, spinner.green_checkmark())
-
-  let spinner =
-    spinner.new("generating gleam code")
-    |> spinner.start()
+  io.println("\u{2728} generating gleam code...")
 
   let gen_result =
-    shellout.command(
+    child_process.exec(
       run: "./sqlc",
       with: ["generate", "--file", "sqlc.json"],
       in: sqlc_dir,
-      opt: [],
     )
 
   use _ <- result.try(case gen_result {
     Ok(_) -> Ok(Nil)
     Error(error) -> {
-      let #(_, error) = error
-      Error(errors.SqlcGenerateError(error))
+      let error = child_process.describe_start_error(error)
+      Error(error.SqlcGenerateError(error))
     }
   })
 
-  let project_name = project.project_name()
-  let config =
-    config.Config(
-      gleam_module_out_path: project_name <> "/sql.gleam",
-      json_file_path: queries_file,
-    )
-  use gen_result <- result.try(codegen.codegen_from_config(config))
+  use config <- result.try(config.load(queries_file))
+  use gen_result <- result.try(codegen.from_config(config))
 
-  spinner.complete_current(spinner, spinner.green_checkmark())
+  io.println("\u{1F9F9} formatting generated code...")
 
-  let spinner =
-    spinner.new("formatting generated code")
-    |> spinner.start()
-
-  let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
-
+  let output_path = config.output_module_path(config)
   let stdout_format =
-    shellout.command(
+    child_process.exec(
       run: "gleam",
       with: ["format", output_path],
       in: project.root(),
-      opt: [],
     )
   use _ <- result.try(case stdout_format {
     Ok(_) -> Ok(Nil)
     Error(error) -> {
-      let #(_, error) = error
-      Error(errors.GleamFormatError(error))
+      let error = child_process.describe_start_error(error)
+      Error(error.GleamFormatError(error))
     }
   })
-
-  spinner.complete_current(spinner, spinner.green_checkmark())
 
   gen_result.unknown_types
   |> list.unique()
   |> list.each(fn(unknown) {
-    io.println(lib.yellow("unknown column type: " <> unknown))
+    io.println(cli.yellow("unknown column type: " <> unknown))
   })
   io.println("")
 

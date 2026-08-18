@@ -67,6 +67,13 @@ where user_id in (
   where users.role = 'admin'
 );
 
+-- name: PostWithUser :one
+select sqlc.embed(posts), users.id as user_id
+from posts
+inner join users on users.id = posts.id
+where posts.id = ?
+limit 1;
+
 -- name: PostsByIds :many
 select id
 from posts

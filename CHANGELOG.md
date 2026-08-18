@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Version 3**
+
+### Breaking Changes
+
+- Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
+
 ## [2.3.0] - 2026-05-04
 
 - Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)

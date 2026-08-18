@@ -1,4 +1,7 @@
+//// Extra utilities when working with strings.
+////
 //// Thank you https://github.com/lpil/justin
+////
 
 import gleam/list
 import gleam/string

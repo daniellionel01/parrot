@@ -1,4 +1,5 @@
 pub type ParrotError {
+  EnvironmentVariableEmpty(String)
   UnknownEngine(String)
 
   SqliteDBNotFound(String)
@@ -21,22 +22,48 @@ pub type ParrotError {
   DuplicateEnumValueError(String, String, String)
 }
 
-pub fn err_to_string(error: ParrotError) {
+pub fn to_string(error: ParrotError) {
   case error {
-    MySqlDBNotFound(_) -> "mysql db not found"
-    PostgreSqlDBNotFound(_) -> "postgresql db not found"
-    SqliteDBNotFound(_) -> "sqlite db not found"
-    MysqldumpError -> "there was an error with mysqldump"
-    SqlcDownloadError(e) -> "there was an error downloading sqlc: " <> e
-    SqlcVersionError(e) -> "incompatible sqlc version found: " <> e
-    SqlcGenerateError(e) -> "could not call `sqlc generate`:\n" <> e
-    PgdumpError(e) -> e
-    NoQueriesFound -> "no queries were found to codegen"
-    UnknownEngine(engine) -> "unknown engine: " <> engine
-    CodegenError -> "there was an error during codegen"
-    GleamFormatError(err) ->
+    EnvironmentVariableEmpty(e) -> {
+      "Environment Variable \"" <> e <> "\" is empty!"
+    }
+    MySqlDBNotFound(_) -> {
+      "mysql db not found"
+    }
+    PostgreSqlDBNotFound(_) -> {
+      "postgresql db not found"
+    }
+    SqliteDBNotFound(_) -> {
+      "sqlite db not found"
+    }
+    MysqldumpError -> {
+      "there was an error with mysqldump"
+    }
+    SqlcDownloadError(e) -> {
+      "there was an error downloading sqlc: " <> e
+    }
+    SqlcVersionError(e) -> {
+      "incompatible sqlc version found: " <> e
+    }
+    SqlcGenerateError(e) -> {
+      "could not call `sqlc generate`:\n" <> e
+    }
+    PgdumpError(e) -> {
+      e
+    }
+    NoQueriesFound -> {
+      "no queries were found to codegen"
+    }
+    UnknownEngine(engine) -> {
+      "unknown engine: " <> engine
+    }
+    CodegenError -> {
+      "there was an error during codegen"
+    }
+    GleamFormatError(err) -> {
       "there was an error formatting the generated code:" <> err
-    DuplicateDefinitionError(name, _) ->
+    }
+    DuplicateDefinitionError(name, _) -> {
       "duplicate definition found: '"
       <> name
       <> "' is defined both as an enum and as a query. "
@@ -45,13 +72,15 @@ pub fn err_to_string(error: ParrotError) {
       <> "' or 'List"
       <> name
       <> "') to avoid the collision."
-    EmptyEnumError(name) ->
+    }
+    EmptyEnumError(name) -> {
       "enum '"
       <> name
       <> "' has no variants. "
       <> "Empty enums cannot be represented in Gleam. "
       <> "Please add values to the enum or remove it from your schema."
-    DuplicateEnumValueError(val_name, enum1, enum2) ->
+    }
+    DuplicateEnumValueError(val_name, enum1, enum2) -> {
       "duplicate enum value '"
       <> val_name
       <> "' found in both '"
@@ -60,5 +89,6 @@ pub fn err_to_string(error: ParrotError) {
       <> enum2
       <> "'. "
       <> "Enum values must be unique across all enums to avoid naming conflicts in generated Gleam code."
+    }
   }
 }

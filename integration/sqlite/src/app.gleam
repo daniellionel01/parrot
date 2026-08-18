@@ -2,7 +2,6 @@ import app/sql
 import gleam/dynamic/decode
 import gleam/list
 import gleam/option
-import parrot/dev
 import sqlight
 
 pub fn main() {
@@ -34,17 +33,17 @@ pub fn main() {
   ]) = sqlight.query(sql, on:, with:, expecting:)
 }
 
-fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+fn parrot_to_sqlight(param: sql.Param) -> sqlight.Value {
   case param {
-    dev.ParamBool(x) -> sqlight.bool(x)
-    dev.ParamFloat(x) -> sqlight.float(x)
-    dev.ParamInt(x) -> sqlight.int(x)
-    dev.ParamString(x) -> sqlight.text(x)
-    dev.ParamBitArray(x) -> sqlight.blob(x)
-    dev.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
-    dev.ParamList(_) -> panic as "sqlite does not implement lists"
-    dev.ParamDate(_) -> panic as "date parameter needs to be implemented"
-    dev.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
-    dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
+    sql.ParamBool(x) -> sqlight.bool(x)
+    sql.ParamFloat(x) -> sqlight.float(x)
+    sql.ParamInt(x) -> sqlight.int(x)
+    sql.ParamString(x) -> sqlight.text(x)
+    sql.ParamBitArray(x) -> sqlight.blob(x)
+    sql.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
+    sql.ParamList(_) -> panic as "sqlite does not implement lists"
+    sql.ParamDate(_) -> panic as "date parameter needs to be implemented"
+    sql.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
+    sql.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
   }
 }

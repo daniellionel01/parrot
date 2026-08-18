@@ -11,7 +11,7 @@
 - [ ] add ToC to type mappings document
 
 | Sqlite  | Encoded as | Decoded as |
-|---------|------------|------------|
+| ------- | ---------- | ---------- |
 | INTEGER | Int        | Int        |
 
 ## Add custom decoder & encoder for JSON columns
@@ -20,7 +20,7 @@
 
 https://docs.sqlc.dev/en/latest/howto/managed-databases.html
 
-## Test more platforms in CI 
+## Test more platforms in CI
 
 Inspiration: https://github.com/gleam-lang/gleam/blob/main/.github/workflows/ci.yaml
 
@@ -46,20 +46,10 @@ https://github.com/k9withabone/autocast
 
 Store configuration in gleam.toml and when we first run parrot they can do an interactive walkthrough such as choosing the database engine, sqlc binary, etc.
 
-## Thoughts on query organization
-
-Squirrels approach to everything is explicitly "convention over configuration".
-
-From its README (https://github.com/giacomocavalieri/squirrel?tab=readme-ov-file#why-isnt-squirrel-configurable-in-any-way)
-
-By going the "convention over configuration" route, Squirrel enforces that all projects adopting it will always have the same structure. If you need to contribute to a project using Squirrel you'll immediately know which directories and modules to look for.
-
-This makes it easier to get started with a new project and cuts down on all the bike shedding: "Where should I put my queries?", "How many queries should go in on file?", ...
-
-Same goes for query organization in squirrel. It works via one-query-per-file.
-
-I don't think we need to throw away convention completely to have a good default user experience, while allowing others to configure parrot to their project needs.
-
-I'd like to introduce a one-file-per-query mode to parrot, because I do appreciate a world where you don't have to worry about annotation and sqlc-specific syntax, making it "just work".
-
-However through the toml-configuration we'll be able to offer the user both. Manual annotation and one-query-per-file mode.
+```sh
+$ gleam run -m parrot init
+> parrot seems to already be configured in your `gleam.toml`. proceed and override anyways? [y/n]
+> what database are you using? [sqlite/postgresql/mysql]
+> would you like parrot to download and manage sqlc? [y/n]
+> provide the path for the sqlc binary (`system` for default)
+```

@@ -1,3 +1,6 @@
+//// The functionality of generating the output gleam module.
+////
+
 import gleam/bool
 import gleam/dynamic/decode as d
 import gleam/int
@@ -7,29 +10,27 @@ import gleam/option
 import gleam/result
 import gleam/set
 import gleam/string
-import parrot/internal/config.{
-  type Config, get_json_file, get_module_directory, get_module_path,
-}
-import parrot/internal/errors
+import parrot/error
+import parrot/internal/config
 import parrot/internal/sqlc.{type SQLC}
-import parrot/internal/string_case
+import parrot/internal/string_extra
 import simplifile
 
 pub type Codegen {
   Codegen(unknown_types: List(String))
 }
 
-pub fn codegen_from_config(
-  config: Config,
-) -> Result(Codegen, errors.ParrotError) {
+pub fn from_config(
+  config: config.Config,
+) -> Result(Codegen, error.ParrotError) {
   use json_string <- result.try(
-    get_json_file(config)
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    config.json_file(config)
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
 
   use dyn_json <- result.try(
     json.parse(from: json_string, using: d.dynamic)
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
 
   let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
@@ -51,13 +52,16 @@ pub fn codegen_from_config(
   use module_contents <- result.try(gen_gleam_module(context))
 
   use _ <- result.try(
-    get_module_directory(config)
+    config.output_directory(config)
     |> simplifile.create_directory_all()
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
   use _ <- result.try(
-    simplifile.write(to: get_module_path(config), contents: module_contents)
-    |> result.map_error(fn(_) { errors.CodegenError }),
+    simplifile.write(
+      to: config.output_module_path(config),
+      contents: module_contents,
+    )
+    |> result.map_error(fn(_) { error.CodegenError }),
   )
 
   Ok(Codegen(unknowns))
@@ -98,8 +102,8 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamDate -> "Date"
     GleamBitArray -> "BitArray"
     GleamList(sub) -> "List(" <> gleam_type_to_string(sub) <> ")"
-    GleamOption(sub) -> "Option(" <> gleam_type_to_string(sub) <> ")"
-    GleamEnum(name) -> string_case.pascal_case(name)
+    GleamOption(sub) -> "option.Option(" <> gleam_type_to_string(sub) <> ")"
+    GleamEnum(name) -> string_extra.pascal_case(name)
     GleamDynamic -> "decode.Dynamic"
   }
 }
@@ -142,7 +146,7 @@ fn built_into_gleam(value: String) {
   }
 }
 
-fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
+fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
   let enums_for_duplicate_check =
     list.flat_map(context.queries, fn(query) {
       list.filter_map(query.columns, fn(col) {
@@ -151,7 +155,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
             let type_ = normalise_col_type(col)
             let schema = find_col_schema(col, context)
             case list.find(schema.enums, fn(e) { e.name == type_ }) {
-              Ok(enum) -> Ok(#(string_case.pascal_case(enum.name), enum.vals))
+              Ok(enum) -> Ok(#(string_extra.pascal_case(enum.name), enum.vals))
               Error(_) -> Error(Nil)
             }
           }
@@ -165,7 +169,8 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
               let type_ = normalise_col_type(param.column)
               let schema = find_col_schema(param.column, context)
               case list.find(schema.enums, fn(e) { e.name == type_ }) {
-                Ok(enum) -> Ok(#(string_case.pascal_case(enum.name), enum.vals))
+                Ok(enum) ->
+                  Ok(#(string_extra.pascal_case(enum.name), enum.vals))
                 Error(_) -> Error(Nil)
               }
             }
@@ -177,7 +182,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
     |> list.unique()
 
   let query_names =
-    list.map(context.queries, fn(q) { string_case.pascal_case(q.name) })
+    list.map(context.queries, fn(q) { string_extra.pascal_case(q.name) })
     |> set.from_list
     |> set.to_list
 
@@ -200,9 +205,9 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
         })
       let assert Ok(query) =
         list.find(context.queries, fn(q) {
-          string_case.pascal_case(q.name) == first
+          string_extra.pascal_case(q.name) == first
         })
-      Error(errors.DuplicateDefinitionError(first, query.name))
+      Error(error.DuplicateDefinitionError(first, query.name))
     }
     False -> {
       case
@@ -212,14 +217,14 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
           }
         })
       {
-        Ok(#(name, _)) -> Error(errors.EmptyEnumError(name))
+        Ok(#(name, _)) -> Error(error.EmptyEnumError(name))
         Error(_) -> {
           let all_enum_values =
             list.flat_map(enums_for_duplicate_check, fn(item) {
               case item {
                 #(enum_name, vals) ->
                   list.map(vals, fn(val) {
-                    #(string_case.pascal_case(val), enum_name)
+                    #(string_extra.pascal_case(val), enum_name)
                   })
               }
             })
@@ -245,7 +250,7 @@ fn find_duplicates(context: SQLC) -> Result(Nil, errors.ParrotError) {
                     #(v, enum) -> v == val_name && enum != first_enum
                   }
                 })
-              Error(errors.DuplicateEnumValueError(
+              Error(error.DuplicateEnumValueError(
                 val_name,
                 first_enum,
                 second_enum,
@@ -367,7 +372,7 @@ pub fn gen_column_name(
       }
     }
   }
-  let result = case string_case.snake_case(result) {
+  let result = case string_extra.snake_case(result) {
     "" -> "col_" <> int.to_string(index)
     x -> x
   }
@@ -378,7 +383,7 @@ pub fn gen_column_name(
 }
 
 pub fn gen_query_type(query: sqlc.Query, context: SQLC) {
-  let name = string_case.pascal_case(query.name)
+  let name = string_extra.pascal_case(query.name)
 
   let args =
     query.columns
@@ -397,17 +402,17 @@ pub fn gen_query_type(query: sqlc.Query, context: SQLC) {
 
 fn gleam_type_to_param(gtype: GleamType) -> String {
   case gtype {
-    GleamInt -> "dev.ParamInt"
-    GleamString -> "dev.ParamString"
-    GleamFloat -> "dev.ParamFloat"
-    GleamBool -> "dev.ParamBool"
-    GleamTimestamp -> "dev.ParamTimestamp"
-    GleamDate -> "dev.ParamDate"
-    GleamBitArray -> "dev.ParamBitArray"
-    GleamDynamic -> "dev.ParamDynamic"
-    GleamEnum(_) -> "dev.ParamString"
-    GleamOption(sub) -> "dev.ParamNullable(" <> gleam_type_to_param(sub) <> ")"
-    GleamList(sub) -> "dev.ParamList(" <> gleam_type_to_param(sub) <> ")"
+    GleamInt -> "ParamInt"
+    GleamString -> "ParamString"
+    GleamFloat -> "ParamFloat"
+    GleamBool -> "ParamBool"
+    GleamTimestamp -> "ParamTimestamp"
+    GleamDate -> "ParamDate"
+    GleamBitArray -> "ParamBitArray"
+    GleamDynamic -> "ParamDynamic"
+    GleamEnum(_) -> "ParamString"
+    GleamOption(sub) -> "ParamNullable(" <> gleam_type_to_param(sub) <> ")"
+    GleamList(sub) -> "ParamList(" <> gleam_type_to_param(sub) <> ")"
   }
 }
 
@@ -426,7 +431,7 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType) {
 
   let value = case gt {
     GleamEnum(name) -> {
-      let name = string_case.snake_case(name)
+      let name = string_extra.snake_case(name)
       name <> "_to_string(" <> variable <> ")"
     }
     _ -> variable
@@ -434,10 +439,10 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType) {
   case gt {
     GleamList(sub_type) -> {
       let sub_param = gleam_type_to_param(sub_type)
-      "dev.ParamList(list.map(" <> value <> ", " <> sub_param <> "))"
+      "ParamList(list.map(" <> value <> ", " <> sub_param <> "))"
     }
     GleamOption(sub_type) -> {
-      "dev.ParamNullable(option.map("
+      "ParamNullable(option.map("
       <> value
       <> ", fn (v) { "
       <> gleam_type_to_return_type("v", sub_type)
@@ -451,7 +456,7 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType) {
 }
 
 pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
-  let fn_name = string_case.snake_case(query.name)
+  let fn_name = string_extra.snake_case(query.name)
 
   let def_fn_args =
     query.params
@@ -636,15 +641,15 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
   case gtype {
     GleamInt -> "decode.int"
     GleamString -> "decode.string"
-    GleamBool -> "dev.bool_decoder()"
+    GleamBool -> "bool_decoder()"
     GleamFloat -> "decode.float"
-    GleamTimestamp -> "dev.datetime_decoder()"
-    GleamDate -> "dev.calendar_date_decoder()"
+    GleamTimestamp -> "datetime_decoder()"
+    GleamDate -> "calendar_date_decoder()"
     GleamBitArray -> "decode.bit_array"
     GleamOption(x) -> "decode.optional(" <> gleam_type_to_decoder(x) <> ")"
     GleamList(x) -> "decode.list(of: " <> gleam_type_to_decoder(x) <> ")"
     GleamEnum(name) -> {
-      let name = string_case.snake_case(name)
+      let name = string_extra.snake_case(name)
       name <> "_decoder()"
     }
     GleamDynamic -> "decode.dynamic"
@@ -655,8 +660,8 @@ pub fn gen_query_decoder(query: sqlc.Query, context: SQLC) {
   case list.length(query.columns) {
     0 -> ""
     _ -> {
-      let type_name = string_case.pascal_case(query.name)
-      let fn_name = string_case.snake_case(query.name) <> "_decoder"
+      let type_name = string_extra.pascal_case(query.name)
+      let fn_name = string_extra.snake_case(query.name) <> "_decoder"
 
       let decoder_fields =
         query.columns
@@ -710,43 +715,13 @@ fn uses_gleam_type(
   })
 }
 
-pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
+pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
   use _ <- result.try(find_duplicates(context))
 
   let queries =
     context.queries
     |> list.map(gen_query(_, context))
     |> string.join("\n\n")
-
-  // check if Timestamps used
-  let uses_optional =
-    fn(col: sqlc.TableColumn) {
-      case sqlc_col_to_gleam(col, context) {
-        GleamOption(_) -> True
-        _ -> False
-      }
-    }
-    |> uses_gleam_type(context)
-
-  // check if Timestamps used
-  let uses_timestamp =
-    fn(col: sqlc.TableColumn) {
-      case sqlc_col_to_gleam(col, context) {
-        GleamOption(GleamTimestamp) | GleamTimestamp -> True
-        _ -> False
-      }
-    }
-    |> uses_gleam_type(context)
-
-  // check if Dates are used
-  let uses_date =
-    fn(col: sqlc.TableColumn) {
-      case sqlc_col_to_gleam(col, context) {
-        GleamOption(GleamDate) | GleamDate -> True
-        _ -> False
-      }
-    }
-    |> uses_gleam_type(context)
 
   // checks if Lists are used
   let uses_list =
@@ -758,24 +733,9 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     }
     |> uses_gleam_type(context)
 
-  let timestamp_import = case uses_timestamp {
-    False -> ""
-    True -> "import gleam/time/timestamp.{type Timestamp}\n"
-  }
-
-  let date_import = case uses_date {
-    False -> ""
-    True -> "import gleam/time/calendar.{type Date}\n"
-  }
-
   let list_import = case uses_list {
     False -> ""
     True -> "import gleam/list\n"
-  }
-
-  let optional_import = case uses_optional {
-    False -> ""
-    True -> "import gleam/option.{type Option}\n"
   }
 
   let uses_slice =
@@ -790,12 +750,13 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
 
   let imports =
     "import gleam/dynamic/decode\n"
-    <> optional_import
-    <> date_import
-    <> timestamp_import
+    <> "import gleam/option\n"
+    <> "import gleam/time/calendar.{type Date, type TimeOfDay, Date}\n"
+    <> "import gleam/time/timestamp.{type Timestamp}"
+    // used by `dev.gleam`
+    <> "import gleam/float\n"
     <> list_import
     <> string_import
-    <> "import parrot/dev"
 
   let enums =
     list.flat_map(context.queries, fn(query) {
@@ -838,26 +799,26 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
 
   let enums =
     list.map(enums, fn(enum) {
-      let record_name = string_case.pascal_case(enum.name)
-      let fn_name = string_case.snake_case(enum.name)
+      let record_name = string_extra.pascal_case(enum.name)
+      let fn_name = string_extra.snake_case(enum.name)
 
       let values =
-        list.map(enum.vals, fn(val) { "  " <> string_case.pascal_case(val) })
+        list.map(enum.vals, fn(val) { "  " <> string_extra.pascal_case(val) })
 
       let to_str_vals =
         list.map(enum.vals, fn(val) {
-          let type_ = string_case.pascal_case(val)
+          let type_ = string_extra.pascal_case(val)
           "    " <> type_ <> " -> " <> "\"" <> val <> "\""
         })
 
       let decode_str_vals =
         list.map(enum.vals, fn(val) {
-          let type_ = string_case.pascal_case(val)
+          let type_ = string_extra.pascal_case(val)
           "    \"" <> val <> "\" -> " <> "decode.success(" <> type_ <> ")"
         })
 
       let assert Ok(first_value) = list.first(enum.vals)
-      let zero_value = string_case.pascal_case(first_value)
+      let zero_value = string_extra.pascal_case(first_value)
 
       "pub type "
       <> record_name
@@ -889,10 +850,16 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
     })
     |> string.join("\n\n")
 
+  let comment_dont_edit =
+    "//// Code generated by parrot. DO NOT EDIT.
+////"
+
   Ok(
-    comment_dont_edit()
+    comment_dont_edit
     <> "\n\n"
     <> imports
+    <> "\n\n"
+    <> string.trim(output_gleam_module_seed_code)
     <> "\n\n"
     <> enums
     <> "\n\n"
@@ -900,10 +867,123 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, errors.ParrotError) {
   )
 }
 
-pub fn comment_dont_edit() {
-  "
-//// Code generated by parrot. DO NOT EDIT.
-////
-  "
-  |> string.trim()
+pub const output_gleam_module_seed_code = "
+pub type Param {
+  ParamInt(Int)
+  ParamString(String)
+  ParamFloat(Float)
+  ParamBool(Bool)
+  ParamBitArray(BitArray)
+  ParamTimestamp(Timestamp)
+  ParamDate(Date)
+  ParamList(List(Param))
+  ParamDynamic(decode.Dynamic)
+  ParamNullable(option.Option(Param))
 }
+
+pub fn bool_decoder() {
+  let int_to_bool = {
+    decode.int
+    |> decode.then(fn(v) {
+      case v {
+        0 -> decode.success(False)
+        1 -> decode.success(True)
+        _ -> decode.failure(False, \"could not decode int to boolean\")
+      }
+    })
+  }
+  decode.one_of(decode.bool, or: [int_to_bool])
+}
+
+pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
+  decode.one_of(datetime_string_decoder(), or: [
+    datetime_tuple_decoder(),
+    timestamp_decoder(),
+  ])
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L394
+fn timestamp_decoder() -> decode.Decoder(Timestamp) {
+  use microseconds <- decode.map(decode.int)
+  let seconds = microseconds / 1_000_000
+  let nanoseconds = { microseconds % 1_000_000 } * 1000
+  timestamp.from_unix_seconds_and_nanoseconds(seconds, nanoseconds)
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L873
+pub fn calendar_date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(1, decode.int)
+  use day <- decode.field(2, decode.int)
+  case calendar.month_from_int(month) {
+    Ok(month) -> decode.success(calendar.Date(year:, month:, day:))
+    Error(_) ->
+      decode.failure(calendar.Date(0, calendar.January, 1), \"Calendar date\")
+  }
+}
+
+fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
+  decode.string
+  |> decode.then(fn(datetime_str) {
+    case timestamp.parse_rfc3339(datetime_str) {
+      Ok(ts) -> decode.success(ts)
+      Error(_) ->
+        decode.failure(
+          timestamp.from_unix_seconds(0),
+          \"Invalid datetime format\",
+        )
+    }
+  })
+}
+
+fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
+  use date <- decode.field(0, date_decoder())
+  use time <- decode.field(1, time_decoder())
+
+  timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
+  |> decode.success()
+}
+
+fn date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(
+    1,
+    decode.int
+      |> decode.then(fn(month) {
+        case calendar.month_from_int(month) {
+          Error(_) -> decode.failure(calendar.January, \"Month\")
+          Ok(month) -> decode.success(month)
+        }
+      }),
+  )
+  use day <- decode.field(2, decode.int)
+
+  decode.success(Date(year:, month:, day:))
+}
+
+fn time_decoder() -> decode.Decoder(TimeOfDay) {
+  use hours <- decode.field(0, decode.int)
+  use minutes <- decode.field(1, decode.int)
+  use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())
+
+  calendar.TimeOfDay(hours:, minutes:, seconds:, nanoseconds:)
+  |> decode.success()
+}
+
+fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
+  let int = {
+    decode.int
+    |> decode.map(fn(i) { #(i, 0) })
+  }
+  let float = {
+    decode.float
+    |> decode.map(fn(f) {
+      let floored = float.floor(f)
+      let seconds = float.round(floored)
+      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
+      #(seconds, nanoseconds)
+    })
+  }
+  decode.one_of(int, [float])
+}
+"

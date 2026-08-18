@@ -9,15 +9,16 @@
 > Check it out here: https://docs.sqlc.dev/en/latest/reference/language-support.html
 
 ## Table of Contents
+
 - [🦜 Parrot / type-safe SQL in gleam](#)
-  * [Features](#features)
-  * [Code Showcase](#code-showcase)
-  * [Usage / Getting Started](#usage--getting-started)
-  * [Development](#development)
-  * [Quirks](#quirks)
-  * [FAQ](#faq)
-  * [Future Work](#future-work)
-  * [Acknowledgements](#acknowledgements)
+  - [Features](#features)
+  - [Code Showcase](#code-showcase)
+  - [Usage / Getting Started](#usage--getting-started)
+  - [Development](#development)
+  - [Quirks](#quirks)
+  - [FAQ](#faq)
+  - [Future Work](#future-work)
+  - [Acknowledgements](#acknowledgements)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -168,6 +169,7 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
 ```
 
 If you want to see more code how this lirbary works in action, take a look at the integration tests:
+
 - PostgreSQL: [./integration/psql](./integration/psql)
 - MySQL: [./integration/mysql](./integration/mysql)
 - SQlite: [./integration/sqlite](./integration/sqlite)
@@ -177,21 +179,25 @@ If you want to see more code how this lirbary works in action, take a look at th
 ## Usage / Getting Started
 
 ### Installation
+
 ```sh
 $ gleam add parrot
 ```
 
 ### Define your Queries
+
 - Parrot will look for all *.sql files in any sql directory under your project's src directory.
 - Each *.sql file can contain as many SQL queries as you want.
 - All of the queries will compile into a single `src/[project name]/sql.gleam` module.
 
 Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
+
 - [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html#schema-and-queries)
 - [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html#schema-and-queries)
 - [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html#schema-and-queries)
 
 Here is an example of the file structure:
+
 ```sh
 ├── gleam.toml
 ├── README.md
@@ -205,6 +211,7 @@ Here is an example of the file structure:
 ```
 
 ### Code Generation
+
 ```sh
 # automatically detects database & engine from env (DATABASE_URL by default)
 $ gleam run -m parrot
@@ -230,9 +237,10 @@ If you use PostgreSQL, you also need to have installed [pg_dump](https://www.pos
 You now have type safe access to your sql queries.
 
 You might want to write wrapper functions for the database client library of your choice. If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
-You can find functions to copy & paste into your codebase here: [wrappers](https://github.com/daniellionel01/parrot/blob/main/docs/wrappers.md)
+You can find functions to copy & paste into your codebase here: [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md)
 
 An example with [lpil/sqlight](https://github.com/lpil/sqlight):
+
 ```gleam
 import app/sql
 import parrot/dev
@@ -255,6 +263,7 @@ pub fn main() {
 ## Examples
 
 If you want to see how this library works in action, take a look at the integration tests:
+
 - PostgreSQL: [integration/psql](https://github.com/daniellionel01/parrot/blob/main/integration/psql)
 - MySQL: [integration/mysql](https://github.com/daniellionel01/parrot/blob/main/integration/mysql)
 - SQlite: [integration/sqlite](https://github.com/daniellionel01/parrot/blob/main/integration/sqlite)
@@ -263,7 +272,7 @@ If you want to see how this library works in action, take a look at the integrat
 
 As with everything in software, there are some quirks with this library, due to
 the nature of your database of choice and sqlc.
-  
+
 ### Functions
 
 Wether it be custom or built-in functions in postgres, sqlc struggles to infer types
@@ -272,11 +281,13 @@ Parrot will soon provide support for direct database connections. Until then,
 you will have to annotate the type of those columns.
 
 Overview over all types can be found here:
+
 - Postgres: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/postgresql_type.go
 - MySQL: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/mysql_type.go
 - SQlite: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/sqlite_type.go
 
 You can annotate column types like so:
+
 ```sql
 -- name: GetTournamentChampionBets :many
 SELECT id::uuid,
@@ -312,6 +323,7 @@ copy over the generated module and that will work.
 ## FAQ
 
 ### What flavour of SQL does parrot support?
+
 This library supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
 would be MySQL, PostgreSQL and SQlite.
 
@@ -319,6 +331,7 @@ You can read more on language & SQL support here:
 https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 ### What sqlc features are not supported?
+
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
 
 - Certain query annotations are not supported and will panic the process: `:execrows`, `:execlastid`, `:batchexec`, `:batchone`, `:batchmany`, `:copyfrom`.
@@ -338,10 +351,12 @@ Contributions are welcomed!
 ### Database
 
 There are scripts to spawn a MySQL or PostgreSQL Podman container:
--  [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
--  [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
+
+- [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
+- [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
 
 For example:
+
 ```sh
 $ ./bin/mysql.sh
 # or
@@ -349,6 +364,7 @@ $ ./bin/psql.sh
 ```
 
 ### Integration Test Suite
+
 ```sh
 $ just test-sqlite
 $ just test-mysql
@@ -356,5 +372,6 @@ $ just test-psql
 ```
 
 ## Acknowledgements
+
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
 - Thank you to `sqlc` ([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))

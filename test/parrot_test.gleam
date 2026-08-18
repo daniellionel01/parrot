@@ -6,12 +6,14 @@ pub fn main() {
   gleeunit.main()
 }
 
-pub fn parrot_test() {
-  assert project.project_name() == "parrot"
+pub fn project_name_test() {
+  assert project.name() == "parrot"
 }
 
 pub fn os_cpu_test() {
   // just calling these functions to make sure they're accessible
-  echo sqlc.get_os()
-  echo sqlc.get_cpu()
+  // and ffi is setup correctly
+  //
+  sqlc.get_os()
+  sqlc.get_cpu()
 }
