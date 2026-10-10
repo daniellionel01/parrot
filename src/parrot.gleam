@@ -3,6 +3,7 @@ import filepath
 import gleam/dict
 import gleam/io
 import gleam/list
+import gleam/option
 import gleam/result
 import gleam/string
 import parrot/internal/cli
@@ -21,18 +22,22 @@ pub fn main() {
   let cmd: Result(cli.Command, String) = case argv.load().arguments {
     [] -> {
       cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, option.None) })
     }
     ["--env-var", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, option.None) })
     }
     ["-e", env] -> {
       cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, option.None) })
     }
     ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
+      Ok(cli.Generate(sqlc.SQLite, file_path, option.None))
+    }
+    ["--output", output_path] -> {
+      cli.parse_env("DATABASE_URL")
+      |> result.map(fn(a) { cli.Generate(a.0, a.1, option.Some(output_path)) })
     }
     ["help"] -> Ok(cli.Usage)
     _ -> Ok(cli.Usage)
@@ -43,8 +48,8 @@ pub fn main() {
     Ok(cmd) ->
       case cmd {
         cli.Usage -> io.println(cli.usage)
-        cli.Generate(engine:, db:) -> {
-          let result = cmd_gen(engine, db)
+        cli.Generate(engine:, db:, output_path:) -> {
+          let result = cmd_gen(engine, db, output_path)
           case result {
             Error(e) ->
               io.println(lib.red("\nError: " <> errors.err_to_string(e)))
@@ -55,7 +60,11 @@ pub fn main() {
   }
 }
 
-fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
+fn cmd_gen(
+  engine: sqlc.Engine,
+  db: String,
+  output_path: option.Option(String),
+) -> Result(Nil, errors.ParrotError) {
   let db = case db {
     "sqlite://" <> db -> db
     "sqlite:" <> db -> db
@@ -170,9 +179,10 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
   })
 
   let project_name = project.project_name()
+  let output_path = output_path |> option.unwrap(project_name <> "/sql.gleam")
   let config =
     config.Config(
-      gleam_module_out_path: project_name <> "/sql.gleam",
+      gleam_module_out_path: output_path,
       json_file_path: queries_file,
     )
   use gen_result <- result.try(codegen.codegen_from_config(config))
@@ -183,7 +193,7 @@ fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
     spinner.new("formatting generated code")
     |> spinner.start()
 
-  let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
+  let output_path = filepath.join(project.src(), output_path)
 
   let stdout_format =
     shellout.command(

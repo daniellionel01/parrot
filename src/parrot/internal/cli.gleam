@@ -1,9 +1,11 @@
 import envoy
+import gleam/option
 import gleam/result
 import parrot/internal/errors
 import parrot/internal/sqlc
 
-pub const usage = "
+pub const usage =
+  "
   🦜 Parrot - type-safe SQL in gleam for sqlite, postgresql & mysql
 
   USAGE:
@@ -28,6 +30,11 @@ pub const usage = "
       Specify the name of an alternative environment variable to use
       for the database connection URL.
       Defaults to 'DATABASE_URL'.
+
+    --output <FILE_PATH>
+      Specify the file to output Gleam functions into, relative to the
+      project's src/ (can include subdirectories).
+      Defaults to 'project_name/sql.gleam'.
 
   DATABASE_URL:
     Parrot automatically detects the driver from the URL scheme.
@@ -55,7 +62,7 @@ pub const usage = "
 
 pub type Command {
   Usage
-  Generate(engine: sqlc.Engine, db: String)
+  Generate(engine: sqlc.Engine, db: String, output_path: option.Option(String))
 }
 
 pub fn engine_from_env(str: String) {
