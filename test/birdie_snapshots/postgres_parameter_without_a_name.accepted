@@ -1,0 +1,16 @@
+---
+version: 2.0.2
+title: postgres parameter without a name
+---
+-- schema.sql ------------------------------------------------------------------
+
+create table posts (id serial primary key, tags text[] not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: PostsWithTag :many
+select id from posts where $1::text = any(tags);
+
+-- error -----------------------------------------------------------------------
+
+parameter $1 of query 'PostsWithTag' has no name, so parrot can not generate a function argument for it. Please use a named parameter instead, f.e. "sqlc.arg(name)" or "@name".

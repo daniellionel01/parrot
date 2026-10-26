@@ -1,0 +1,17 @@
+---
+version: 2.0.2
+title: enum and query with the same name
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type status as enum ('open', 'closed');
+create table tickets (id serial primary key, status status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: Status :many
+select status from tickets;
+
+-- error -----------------------------------------------------------------------
+
+duplicate definition found: 'Status' is defined both as an enum and as a query. Consider renaming your query (e.g., to 'GetStatus' or 'ListStatus') to avoid the collision.

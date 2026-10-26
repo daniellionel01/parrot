@@ -67,15 +67,18 @@ pub fn from_config(
   Ok(Codegen(unknowns))
 }
 
-fn gen_query(query: sqlc.Query, context: SQLC) {
+fn gen_query(
+  query: sqlc.Query,
+  context: SQLC,
+) -> Result(String, error.ParrotError) {
   let type_str = case list.length(query.columns) {
     0 -> ""
     _ -> gen_query_type(query, context) <> "\n\n"
   }
 
-  let func = gen_query_function(query, context)
+  use func <- result.try(gen_query_function(query, context))
   let deco = gen_query_decoder(query, context)
-  type_str <> func <> deco
+  Ok(type_str <> func <> deco)
 }
 
 pub type GleamType {
@@ -84,6 +87,7 @@ pub type GleamType {
   GleamFloat
   GleamBool
   GleamTimestamp
+  GleamTimeOfDay
   GleamDate
   GleamBitArray
   GleamList(GleamType)
@@ -99,6 +103,7 @@ pub fn gleam_type_to_string(gleamtype: GleamType) -> String {
     GleamInt -> "Int"
     GleamString -> "String"
     GleamTimestamp -> "Timestamp"
+    GleamTimeOfDay -> "TimeOfDay"
     GleamDate -> "Date"
     GleamBitArray -> "BitArray"
     GleamList(sub) -> "List(" <> gleam_type_to_string(sub) <> ")"
@@ -314,6 +319,8 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
   use <- bool.guard(tiny_bool, GleamBool)
 
   case sqltype {
+    // has to come before `int`, otherwise it would be matched as an integer
+    "interval" -> GleamDynamic
     "int" <> _
     | "tinyint"
     | "smallint"
@@ -347,6 +354,8 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     | "binary"
     | "varbinary"
     | "byte" <> _ -> GleamBitArray
+    "time" | "timetz" | "time without time zone" | "time with time zone" ->
+      GleamTimeOfDay
     "datetime" <> _ | "time" <> _ -> GleamTimestamp
     "date" <> _ -> GleamDate
     "bool" <> _ -> GleamBool
@@ -407,6 +416,7 @@ fn gleam_type_to_param(gtype: GleamType) -> String {
     GleamFloat -> "ParamFloat"
     GleamBool -> "ParamBool"
     GleamTimestamp -> "ParamTimestamp"
+    GleamTimeOfDay -> "ParamTimeOfDay"
     GleamDate -> "ParamDate"
     GleamBitArray -> "ParamBitArray"
     GleamDynamic -> "ParamDynamic"
@@ -455,12 +465,14 @@ fn gleam_type_to_return_type(variable: String, gt: GleamType) {
   }
 }
 
-pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
+pub fn gen_query_function(
+  query: sqlc.Query,
+  context: SQLC,
+) -> Result(String, error.ParrotError) {
   let fn_name = string_extra.snake_case(query.name)
 
-  let def_fn_args =
-    query.params
-    |> list.map(fn(p) {
+  use def_fn_args <- result.try(
+    list.try_map(query.params, fn(p) {
       let gleam_type = sqlc_col_to_gleam(p.column, context)
       let name = p.column.name
       let name = case built_into_gleam(name) {
@@ -469,17 +481,12 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
       }
 
       case name {
-        "" ->
-          panic as {
-            "Parameter name for "
-            <> fn_name
-            <> " is empty! Please use a named parameter instead (f.e. \"sqlc.arg(name)\" or \"@arg\")"
-          }
-        _ -> Nil
+        "" -> Error(error.UnnamedParameterError(query.name, p.number))
+        _ -> Ok(name <> " " <> name <> ": " <> gleam_type_to_string(gleam_type))
       }
-      name <> " " <> name <> ": " <> gleam_type_to_string(gleam_type)
-    })
-    |> string.join(", ")
+    }),
+  )
+  let def_fn_args = string.join(def_fn_args, ", ")
 
   let has_slices = list.any(query.params, fn(p) { p.column.is_sqlc_slice })
 
@@ -493,11 +500,15 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
           False -> name
           True -> name <> "_"
         }
+        // An empty list is replaced with `NULL`, same as sqlc does
+        // for go, since `in ()` is not valid sql in every database.
         "let "
         <> safe_name
-        <> "_slice = string.repeat(\",?\", list.length("
+        <> "_slice = case "
         <> safe_name
-        <> "))"
+        <> " {\n    [] -> \"NULL\"\n    _ -> list.map("
+        <> safe_name
+        <> ", fn(_) { \"?\" }) |> string.join(\",\")\n  }"
       })
       |> string.join("\n  ")
     False -> ""
@@ -605,23 +616,23 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
     False -> "let sql = \"" <> text <> "\""
   }
 
-  let def_exp = case query.cmd {
-    sqlc.Exec | sqlc.ExecResult -> ""
-    sqlc.Many | sqlc.One -> fn_name <> "_decoder()"
+  use def_exp <- result.try(case query.cmd {
+    sqlc.Exec | sqlc.ExecResult -> Ok("")
+    sqlc.Many | sqlc.One -> Ok(fn_name <> "_decoder()")
     sqlc.ExecRows
     | sqlc.ExecLastId
     | sqlc.BatchExec
     | sqlc.BatchMany
     | sqlc.BatchOne
     | sqlc.CopyFrom ->
-      panic as {
-        "parrot does not support this query annotation: "
-        <> sqlc.query_cmd_to_string(query.cmd)
-      }
-  }
+      Error(error.UnsupportedQueryCommandError(
+        query.name,
+        sqlc.query_cmd_to_string(query.cmd),
+      ))
+  })
   let def_return = "#(sql, " <> def_return_params <> ", " <> def_exp <> ")"
 
-  case has_slices {
+  Ok(case has_slices {
     True ->
       [
         def_fn <> "{",
@@ -634,7 +645,7 @@ pub fn gen_query_function(query: sqlc.Query, context: SQLC) {
     False ->
       [def_fn <> "{", "  " <> def_sql, "  " <> def_return, "}"]
       |> string.join("\n")
-  }
+  })
 }
 
 fn gleam_type_to_decoder(gtype: GleamType) -> String {
@@ -644,6 +655,7 @@ fn gleam_type_to_decoder(gtype: GleamType) -> String {
     GleamBool -> "bool_decoder()"
     GleamFloat -> "decode.float"
     GleamTimestamp -> "datetime_decoder()"
+    GleamTimeOfDay -> "time_of_day_decoder()"
     GleamDate -> "calendar_date_decoder()"
     GleamBitArray -> "decode.bit_array"
     GleamOption(x) -> "decode.optional(" <> gleam_type_to_decoder(x) <> ")"
@@ -718,10 +730,10 @@ fn uses_gleam_type(
 pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
   use _ <- result.try(find_duplicates(context))
 
-  let queries =
-    context.queries
-    |> list.map(gen_query(_, context))
-    |> string.join("\n\n")
+  use queries <- result.try(
+    list.try_map(context.queries, gen_query(_, context)),
+  )
+  let queries = string.join(queries, "\n\n")
 
   // checks if Lists are used
   let uses_list =
@@ -876,6 +888,7 @@ pub type Param {
   ParamBool(Bool)
   ParamBitArray(BitArray)
   ParamTimestamp(Timestamp)
+  ParamTimeOfDay(TimeOfDay)
   ParamDate(Date)
   ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
@@ -939,7 +952,7 @@ fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
 
 fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
   use date <- decode.field(0, date_decoder())
-  use time <- decode.field(1, time_decoder())
+  use time <- decode.field(1, time_of_day_decoder())
 
   timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
   |> decode.success()
@@ -962,7 +975,7 @@ fn date_decoder() -> decode.Decoder(Date) {
   decode.success(Date(year:, month:, day:))
 }
 
-fn time_decoder() -> decode.Decoder(TimeOfDay) {
+pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
   use hours <- decode.field(0, decode.int)
   use minutes <- decode.field(1, decode.int)
   use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())

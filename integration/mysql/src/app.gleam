@@ -34,6 +34,8 @@ fn parrot_to_shork(param: sql.Param) {
     sql.ParamDate(_) -> panic as "date parameter needs to be implemented"
     sql.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"
+    sql.ParamTimeOfDay(_) ->
+      panic as "time of day parameter needs to be implemented"
     sql.ParamDynamic(_) -> panic as "dynamic parameter need to implemented"
   }
 }

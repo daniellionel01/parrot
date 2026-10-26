@@ -16,6 +16,7 @@ pub type Param {
   ParamBool(Bool)
   ParamBitArray(BitArray)
   ParamTimestamp(Timestamp)
+  ParamTimeOfDay(TimeOfDay)
   ParamDate(Date)
   ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
@@ -79,7 +80,7 @@ fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
 
 fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
   use date <- decode.field(0, date_decoder())
-  use time <- decode.field(1, time_decoder())
+  use time <- decode.field(1, time_of_day_decoder())
 
   timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
   |> decode.success()
@@ -102,7 +103,7 @@ fn date_decoder() -> decode.Decoder(Date) {
   decode.success(Date(year:, month:, day:))
 }
 
-fn time_decoder() -> decode.Decoder(TimeOfDay) {
+pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
   use hours <- decode.field(0, decode.int)
   use minutes <- decode.field(1, decode.int)
   use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())
@@ -331,7 +332,10 @@ pub type PostsByIds {
 }
 
 pub fn posts_by_ids(ids ids: List(Int)) {
-  let ids_slice = string.repeat(",?", list.length(ids))
+  let ids_slice = case ids {
+    [] -> "NULL"
+    _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
+  }
   let sql = "select id
 from posts
 where user_id in (" <> ids_slice <> ")"
@@ -348,7 +352,10 @@ pub type PostsByIdsAndTitle {
 }
 
 pub fn posts_by_ids_and_title(ids ids: List(Int), title title: String) {
-  let ids_slice = string.repeat(",?", list.length(ids))
+  let ids_slice = case ids {
+    [] -> "NULL"
+    _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
+  }
   let sql = "select id
 from posts
 where user_id in (" <> ids_slice <> ") and title = ?"
@@ -371,7 +378,10 @@ pub type PostsByIdsAndStatus {
 }
 
 pub fn posts_by_ids_and_status(title title: String, ids ids: List(Int)) {
-  let ids_slice = string.repeat(",?", list.length(ids))
+  let ids_slice = case ids {
+    [] -> "NULL"
+    _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
+  }
   let sql = "select id
 from posts
 where title = ? and user_id in (" <> ids_slice <> ")"
@@ -394,8 +404,14 @@ pub type MultipleSlices {
 }
 
 pub fn multiple_slices(titles titles: List(String), ids ids: List(Int)) {
-  let titles_slice = string.repeat(",?", list.length(titles))
-  let ids_slice = string.repeat(",?", list.length(ids))
+  let titles_slice = case titles {
+    [] -> "NULL"
+    _ -> list.map(titles, fn(_) { "?" }) |> string.join(",")
+  }
+  let ids_slice = case ids {
+    [] -> "NULL"
+    _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
+  }
   let sql = "select id
 from posts
 where title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"
@@ -420,8 +436,14 @@ pub fn multiple_slices_and_argument(
   titles titles: List(String),
   ids ids: List(Int),
 ) {
-  let titles_slice = string.repeat(",?", list.length(titles))
-  let ids_slice = string.repeat(",?", list.length(ids))
+  let titles_slice = case titles {
+    [] -> "NULL"
+    _ -> list.map(titles, fn(_) { "?" }) |> string.join(",")
+  }
+  let ids_slice = case ids {
+    [] -> "NULL"
+    _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
+  }
   let sql = "select id
 from posts
 where user_id = ? and title in (" <> titles_slice <> ") and user_id in (" <> ids_slice <> ")"

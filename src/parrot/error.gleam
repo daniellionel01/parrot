@@ -1,3 +1,6 @@
+import gleam/int
+import gleam/string
+
 pub type ParrotError {
   EnvironmentVariableEmpty(String)
   UnknownEngine(String)
@@ -20,6 +23,9 @@ pub type ParrotError {
   DuplicateDefinitionError(String, String)
   EmptyEnumError(String)
   DuplicateEnumValueError(String, String, String)
+  UnnamedParameterError(query: String, position: Int)
+  UnsupportedQueryCommandError(query: String, command: String)
+  SqlcIntegrityError(expected: String, received: String)
 }
 
 pub fn to_string(error: ParrotError) {
@@ -89,6 +95,30 @@ pub fn to_string(error: ParrotError) {
       <> enum2
       <> "'. "
       <> "Enum values must be unique across all enums to avoid naming conflicts in generated Gleam code."
+    }
+    UnnamedParameterError(query:, position:) -> {
+      "parameter $"
+      <> int.to_string(position)
+      <> " of query '"
+      <> query
+      <> "' has no name, so parrot can not generate a function argument for it. "
+      <> "Please use a named parameter instead, f.e. \"sqlc.arg(name)\" or \"@name\"."
+    }
+    UnsupportedQueryCommandError(query:, command:) -> {
+      "query '"
+      <> query
+      <> "' uses the annotation :"
+      <> string.replace(command, "_", "")
+      <> ", which parrot does not support. "
+      <> "Supported annotations are :one, :many, :exec and :execresult."
+    }
+    SqlcIntegrityError(expected:, received:) -> {
+      "the sqlc binary does not match the expected checksum. "
+      <> "This could mean the download was corrupted or tampered with.\n"
+      <> "expected: "
+      <> expected
+      <> "\nreceived: "
+      <> received
     }
   }
 }

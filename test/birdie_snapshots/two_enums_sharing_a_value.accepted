@@ -1,0 +1,22 @@
+---
+version: 2.0.2
+title: two enums sharing a value
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type ticket_status as enum ('open', 'closed');
+create type door_status as enum ('open', 'locked');
+create table tickets (id serial primary key, status ticket_status not null);
+create table doors (id serial primary key, status door_status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: TicketStatuses :many
+select status from tickets;
+
+-- name: DoorStatuses :many
+select status from doors;
+
+-- error -----------------------------------------------------------------------
+
+duplicate enum value 'Open' found in both 'TicketStatus' and 'DoorStatus'. Enum values must be unique across all enums to avoid naming conflicts in generated Gleam code.

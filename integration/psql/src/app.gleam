@@ -86,6 +86,7 @@ fn parrot_to_pog(param: sql.Param) -> pog.Value {
     sql.ParamNullable(x) -> pog.nullable(parrot_to_pog, x)
     sql.ParamDate(x) -> pog.calendar_date(x)
     sql.ParamTimestamp(x) -> pog.timestamp(x)
+    sql.ParamTimeOfDay(x) -> pog.calendar_time_of_day(x)
     sql.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
   }
 }

@@ -15,6 +15,7 @@ pub type Param {
   ParamBool(Bool)
   ParamBitArray(BitArray)
   ParamTimestamp(Timestamp)
+  ParamTimeOfDay(TimeOfDay)
   ParamDate(Date)
   ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
@@ -78,7 +79,7 @@ fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
 
 fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
   use date <- decode.field(0, date_decoder())
-  use time <- decode.field(1, time_decoder())
+  use time <- decode.field(1, time_of_day_decoder())
 
   timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
   |> decode.success()
@@ -101,7 +102,7 @@ fn date_decoder() -> decode.Decoder(Date) {
   decode.success(Date(year:, month:, day:))
 }
 
-fn time_decoder() -> decode.Decoder(TimeOfDay) {
+pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
   use hours <- decode.field(0, decode.int)
   use minutes <- decode.field(1, decode.int)
   use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())

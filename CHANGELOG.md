@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
 
+- Postgres `time` and `timetz` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant, so database wrapper functions need to handle it (see `pages/wrappers.md`).
+
+- Postgres `interval` columns are now `decode.Dynamic`, as documented. Previously they were wrongly decoded as `Int`.
+
+### Fixes
+
+- `sqlc.slice` queries generated invalid sql with a leading comma (`in (,?,?)`). Empty lists are now replaced with `NULL`, same as sqlc does for go.
+
+- Unnamed parameters, unsupported query annotations (`:execrows`, `:execlastid`, ...) and a sqlc binary checksum mismatch now return an error instead of crashing parrot.
+
+- Fixed a crash on the very first run, when no sqlc binary had been downloaded yet.
+
+- Parrot now always uses the sqlc binary it manages itself, instead of whichever `sqlc` is first in the `PATH`.
+
 ## [2.3.0] - 2026-05-04
 
 - Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)

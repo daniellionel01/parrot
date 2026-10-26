@@ -1,0 +1,16 @@
+---
+version: 2.0.2
+title: unsupported execlastid annotation
+---
+-- schema.sql ------------------------------------------------------------------
+
+create table books (id int not null auto_increment primary key, title text not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: CreateBook :execlastid
+insert into books (title) values (?);
+
+-- error -----------------------------------------------------------------------
+
+query 'CreateBook' uses the annotation :execlastid, which parrot does not support. Supported annotations are :one, :many, :exec and :execresult.

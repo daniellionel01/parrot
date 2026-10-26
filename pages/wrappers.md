@@ -9,18 +9,19 @@ we do not have to provide implementations for booleans and timestamps.
 you can provide your own implementation.
 
 ```gleam
-pub fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+pub fn parrot_to_sqlight(param: sql.Param) -> sqlight.Value {
   case param {
-    dev.ParamFloat(x) -> sqlight.float(x)
-    dev.ParamInt(x) -> sqlight.int(x)
-    dev.ParamString(x) -> sqlight.text(x)
-    dev.ParamBitArray(x) -> sqlight.blob(x)
-    dev.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
-    dev.ParamList(_) -> panic as "sqlite does not implement lists"
-    dev.ParamBool(_) -> panic as "sqlite does not support booleans"
-    dev.ParamDate(_) -> panic as "sqlite does not support dates"
-    dev.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
-    dev.ParamDynamic(_) -> todo
+    sql.ParamFloat(x) -> sqlight.float(x)
+    sql.ParamInt(x) -> sqlight.int(x)
+    sql.ParamString(x) -> sqlight.text(x)
+    sql.ParamBitArray(x) -> sqlight.blob(x)
+    sql.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
+    sql.ParamList(_) -> panic as "sqlite does not implement lists"
+    sql.ParamBool(_) -> panic as "sqlite does not support booleans"
+    sql.ParamDate(_) -> panic as "sqlite does not support dates"
+    sql.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
+    sql.ParamTimeOfDay(_) -> panic as "sqlite does not support time of day"
+    sql.ParamDynamic(_) -> todo
   }
 }
 ```
@@ -31,18 +32,19 @@ Postgresql provides a vast amount of simple and complex data types. Parrot is ab
 but might struggle with more complex data types such as `polygon`.
 
 ```gleam
-pub fn parrot_to_pog(param: dev.Param) -> pog.Value {
+pub fn parrot_to_pog(param: sql.Param) -> pog.Value {
   case param {
-    dev.ParamDynamic(_) -> todo
-    dev.ParamBool(x) -> pog.bool(x)
-    dev.ParamFloat(x) -> pog.float(x)
-    dev.ParamInt(x) -> pog.int(x)
-    dev.ParamString(x) -> pog.text(x)
-    dev.ParamBitArray(x) -> pog.bytea(x)
-    dev.ParamList(x) -> pog.array(parrot_to_pog, x)
-    dev.ParamNullable(x) -> pog.nullable(fn(a) { parrot_to_pog(a) }, x)
-    dev.ParamDate(x) -> pog.calendar_date(x)
-    dev.ParamTimestamp(x) -> pog.timestamp(x)
+    sql.ParamDynamic(_) -> todo
+    sql.ParamBool(x) -> pog.bool(x)
+    sql.ParamFloat(x) -> pog.float(x)
+    sql.ParamInt(x) -> pog.int(x)
+    sql.ParamString(x) -> pog.text(x)
+    sql.ParamBitArray(x) -> pog.bytea(x)
+    sql.ParamList(x) -> pog.array(parrot_to_pog, x)
+    sql.ParamNullable(x) -> pog.nullable(fn(a) { parrot_to_pog(a) }, x)
+    sql.ParamDate(x) -> pog.calendar_date(x)
+    sql.ParamTimestamp(x) -> pog.timestamp(x)
+    sql.ParamTimeOfDay(x) -> pog.calendar_time_of_day(x)
   }
 }
 ```

@@ -21,6 +21,8 @@ jobs:
           rebar3-version: "3"
       - run: gleam deps download
       - run: gleam format --check src test
+      - run: gleam test
+      - run: gleam run -m birdie stale check
 
   integration-sqlite:
     runs-on: ubuntu-latest

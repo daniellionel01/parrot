@@ -339,7 +339,7 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
     case cmd {
       ":one" -> decode.success(One)
       ":many" -> decode.success(Many)
-      ":exec" -> decode.success(ExecResult)
+      ":exec" -> decode.success(Exec)
       ":execresult" -> decode.success(ExecResult)
       ":execrows" -> decode.success(ExecRows)
       ":execlastid" -> decode.success(ExecLastId)
@@ -475,12 +475,15 @@ fn get_download_path_and_hash() -> Result(#(String, String), error.ParrotError) 
   Ok(#(download_base <> platform, hash))
 }
 
-fn check_sqlc_integrity(bin: BitArray, expected_hash: String) {
+fn check_sqlc_integrity(
+  bin: BitArray,
+  expected_hash: String,
+) -> Result(Nil, error.ParrotError) {
   let hash = crypto.hash(crypto.Sha256, bin)
-  let hash_string = bit_array.base16_encode(hash)
-  case string.lowercase(hash_string) == string.lowercase(expected_hash) {
-    True -> Nil
-    False -> panic as "sqlc binary hash did not match expected hash!"
+  let hash_string = string.lowercase(bit_array.base16_encode(hash))
+  case hash_string == string.lowercase(expected_hash) {
+    True -> Ok(Nil)
+    False -> Error(error.SqlcIntegrityError(expected_hash, hash_string))
   }
 }
 
@@ -562,7 +565,6 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
       |> result.map_error(fn(_) { error.SqlcDownloadError("could not verify") }),
     )
     check_sqlc_integrity(bin, hash)
-    Ok(Nil)
   })
 
   use tarball <- result.try(
@@ -578,7 +580,7 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
       error.SqlcDownloadError("could not unzip the sqlc binary")
     }),
   )
-  check_sqlc_integrity(bin, hash)
+  use _ <- result.try(check_sqlc_integrity(bin, hash))
 
   let assert Ok(_) = simplifile.write_bits(path, bin)
 

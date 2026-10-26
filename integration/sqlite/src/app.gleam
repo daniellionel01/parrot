@@ -44,6 +44,7 @@ fn parrot_to_sqlight(param: sql.Param) -> sqlight.Value {
     sql.ParamList(_) -> panic as "sqlite does not implement lists"
     sql.ParamDate(_) -> panic as "date parameter needs to be implemented"
     sql.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
+    sql.ParamTimeOfDay(_) -> panic as "sqlite does not support time of day"
     sql.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
   }
 }

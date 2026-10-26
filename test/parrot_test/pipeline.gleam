@@ -1,0 +1,112 @@
+//// Runs the parrot pipeline without a database connection:
+////
+//// schema.sql + queries.sql -> sqlc generate -> sqlc json -> gleam module
+////
+//// sqlc can build up the database catalog by parsing the schema file on its
+//// own, so the only part of parrot that needs a real database is fetching
+//// the schema. That part is tested separately.
+////
+//// Every fixture is generated inside its own directory in
+//// `build/.parrot/test/<name>`, so that the file paths sqlc includes in its
+//// error messages stay the same between runs.
+////
+
+import child_process
+import filepath
+import gleam/dynamic/decode
+import gleam/json
+import gleam/result
+import gleam/string
+import parrot/error
+import parrot/internal/codegen
+import parrot/internal/sqlc
+import simplifile
+
+pub type Fixture {
+  Fixture(name: String, engine: sqlc.Engine, schema: String, queries: String)
+}
+
+pub type Output {
+  Output(
+    context: sqlc.SQLC,
+    /// The formatted gleam module, exactly as parrot would write it.
+    module: String,
+    /// Same as `module`, but with the seed code that is identical in every
+    /// generated module (`Param` type, shared decoders) replaced by a
+    /// placeholder comment, to keep snapshots focused on what differs.
+    module_without_seed: String,
+  )
+}
+
+pub const seed_placeholder = "// <seed code, see the `seed code` snapshot>"
+
+/// Loads a fixture from `test/fixtures/<name>/{schema,queries}.sql`.
+///
+pub fn from_files(name: String, engine: sqlc.Engine) -> Fixture {
+  let dir = filepath.join("test/fixtures", name)
+  let assert Ok(schema) = simplifile.read(filepath.join(dir, "schema.sql"))
+  let assert Ok(queries) = simplifile.read(filepath.join(dir, "queries.sql"))
+  Fixture(name:, engine:, schema:, queries:)
+}
+
+pub fn run(fixture: Fixture) -> Result(Output, error.ParrotError) {
+  let sqlc_dir = filepath.directory_name(sqlc.sqlc_binary_path())
+  let relative_dir = filepath.join("test", fixture.name)
+  let dir = filepath.join(sqlc_dir, relative_dir)
+
+  let _ = simplifile.delete(dir)
+  let assert Ok(_) = simplifile.create_directory_all(dir)
+  let assert Ok(_) =
+    simplifile.write(filepath.join(dir, "schema.sql"), fixture.schema)
+  let assert Ok(_) =
+    simplifile.write(filepath.join(dir, "queries.sql"), fixture.queries)
+  let assert Ok(_) =
+    simplifile.write(
+      filepath.join(dir, "sqlc.json"),
+      sqlc.gen_sqlc_json(fixture.engine, ["queries.sql"]),
+    )
+
+  use _ <- result.try(
+    case
+      sqlc.exec(["generate", "--file", filepath.join(relative_dir, "sqlc.json")])
+    {
+      Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
+      Ok(child_process.Output(status_code: _, output:)) ->
+        Error(error.SqlcGenerateError(output))
+      Error(e) ->
+        Error(error.SqlcGenerateError(child_process.describe_start_error(e)))
+    },
+  )
+
+  let assert Ok(json_string) =
+    simplifile.read(filepath.join(dir, "queries.json"))
+  let assert Ok(dyn_json) = json.parse(from: json_string, using: decode.dynamic)
+  let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
+  use module <- result.try(codegen.gen_gleam_module(context))
+
+  let module_without_seed =
+    string.replace(
+      in: module,
+      each: string.trim(codegen.output_gleam_module_seed_code),
+      with: seed_placeholder,
+    )
+
+  Ok(Output(
+    context:,
+    module: format(module, in: dir),
+    module_without_seed: format(module_without_seed, in: dir),
+  ))
+}
+
+/// Parrot always runs `gleam format` on the generated module, so we do the
+/// same to snapshot exactly what users end up with. This also makes sure the
+/// generated module is at least syntactically valid gleam.
+///
+pub fn format(module: String, in dir: String) -> String {
+  let path = filepath.join(dir, "sql.gleam")
+  let assert Ok(_) = simplifile.write(path, module)
+  let assert Ok(child_process.Output(status_code: 0, output: _)) =
+    child_process.exec(run: "gleam", with: ["format", "sql.gleam"], in: dir)
+  let assert Ok(module) = simplifile.read(path)
+  module
+}
