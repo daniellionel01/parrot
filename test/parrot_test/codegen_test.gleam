@@ -321,6 +321,19 @@ select status from doors;",
   |> snap_error(title: "two enums sharing a value")
 }
 
+pub fn enum_values_colliding_in_pascal_case_error_test() {
+  fixture(
+    sqlc.PostgreSQL,
+    schema: "
+create type ticket_status as enum ('open', 'OPEN', 'closed');
+create table tickets (id serial primary key, status ticket_status not null);",
+    queries: "
+-- name: TicketStatuses :many
+select status from tickets;",
+  )
+  |> snap_error(title: "enum values that collide in pascal case")
+}
+
 pub fn postgres_unnamed_parameter_error_test() {
   fixture(
     sqlc.PostgreSQL,

@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
 
-- Postgres `time` and `timetz` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant, so database wrapper functions need to handle it (see `pages/wrappers.md`).
+- Postgres `time` and `timetz` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant.
 
 - Postgres `interval` columns are now `decode.Dynamic`, as documented. Previously they were wrongly decoded as `Int`.
 
@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed a crash on the very first run, when no sqlc binary had been downloaded yet.
 
 - Parrot now always uses the sqlc binary it manages itself, instead of whichever `sqlc` is first in the `PATH`.
+
+- Parrot no longer crashes on any error, it always exits with a descriptive error message.
+
+- Parrot no longer loops forever when it is run outside of a gleam project.
 
 ## [2.3.0] - 2026-05-04
 

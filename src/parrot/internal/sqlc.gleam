@@ -541,28 +541,31 @@ pub fn exec(
 pub fn download_binary() -> Result(Nil, error.ParrotError) {
   let path = sqlc_binary_path()
   let dir = filepath.directory_name(path)
-  let assert Ok(_) = simplifile.create_directory_all(dir)
+  use _ <- result.try(
+    simplifile.create_directory_all(dir)
+    |> result.map_error(error.FileError("create directory", dir, _)),
+  )
 
   use #(download, hash) <- result.try(get_download_path_and_hash())
 
   // delete current version if version does not match
-  let _ = case binary_exists(path) {
+  use _ <- result.try(case binary_exists(path) {
     False -> Ok(Nil)
     True -> {
       case verify_binary() {
-        Error(error.SqlcVersionError(_)) -> {
-          let assert Ok(_) = simplifile.delete(path)
-        }
+        Error(error.SqlcVersionError(_)) ->
+          simplifile.delete(path)
+          |> result.map_error(error.FileError("delete", path, _))
         _ -> Ok(Nil)
       }
     }
-  }
+  })
 
   let exists = binary_exists(path)
   use <- bool.lazy_guard(when: exists, return: fn() {
     use bin <- result.try(
       simplifile.read_bits(path)
-      |> result.map_error(fn(_) { error.SqlcDownloadError("could not verify") }),
+      |> result.map_error(error.FileError("read", path, _)),
     )
     check_sqlc_integrity(bin, hash)
   })
@@ -582,7 +585,10 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
   )
   use _ <- result.try(check_sqlc_integrity(bin, hash))
 
-  let assert Ok(_) = simplifile.write_bits(path, bin)
+  use _ <- result.try(
+    simplifile.write_bits(path, bin)
+    |> result.map_error(error.FileError("write", path, _)),
+  )
 
   let permissions =
     FilePermissions(
@@ -590,9 +596,8 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
       group: set.from_list([Read, Execute]),
       other: set.from_list([Read, Execute]),
     )
-  let _ = simplifile.set_permissions(path, permissions)
-
-  Ok(Nil)
+  simplifile.set_permissions(path, permissions)
+  |> result.map_error(error.FileError("make executable", path, _))
 }
 
 @external(erlang, "parrot_ffi", "get_os")

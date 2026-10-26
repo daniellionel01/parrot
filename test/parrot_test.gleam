@@ -13,7 +13,7 @@ pub fn main() {
 }
 
 pub fn project_name_test() {
-  assert project.name() == "parrot"
+  assert project.name() == Ok("parrot")
 }
 
 pub fn os_cpu_test() {

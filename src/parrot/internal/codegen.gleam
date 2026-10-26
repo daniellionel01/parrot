@@ -8,7 +8,6 @@ import gleam/json
 import gleam/list
 import gleam/option
 import gleam/result
-import gleam/set
 import gleam/string
 import parrot/error
 import parrot/internal/config
@@ -23,17 +22,29 @@ pub type Codegen {
 pub fn from_config(
   config: config.Config,
 ) -> Result(Codegen, error.ParrotError) {
-  use json_string <- result.try(
-    config.json_file(config)
-    |> result.map_error(fn(_) { error.CodegenError }),
-  )
+  use json_string <- result.try(config.json_file(config))
 
   use dyn_json <- result.try(
     json.parse(from: json_string, using: d.dynamic)
-    |> result.map_error(fn(_) { error.CodegenError }),
+    |> result.replace_error(error.SqlcOutputError("invalid json")),
   )
 
-  let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
+  use context <- result.try(
+    sqlc.decode_sqlc(dyn_json)
+    |> result.map_error(fn(errors) {
+      errors
+      |> list.map(fn(e) {
+        "expected "
+        <> e.expected
+        <> " but found "
+        <> e.found
+        <> " at "
+        <> string.join(e.path, ".")
+      })
+      |> string.join(", ")
+      |> error.SqlcOutputError
+    }),
+  )
 
   let unknowns =
     list.flat_map(context.queries, fn(query) {
@@ -51,17 +62,15 @@ pub fn from_config(
 
   use module_contents <- result.try(gen_gleam_module(context))
 
+  let output_directory = config.output_directory(config)
   use _ <- result.try(
-    config.output_directory(config)
-    |> simplifile.create_directory_all()
-    |> result.map_error(fn(_) { error.CodegenError }),
+    simplifile.create_directory_all(output_directory)
+    |> result.map_error(error.FileError("create directory", output_directory, _)),
   )
+  let output_path = config.output_module_path(config)
   use _ <- result.try(
-    simplifile.write(
-      to: config.output_module_path(config),
-      contents: module_contents,
-    )
-    |> result.map_error(fn(_) { error.CodegenError }),
+    simplifile.write(to: output_path, contents: module_contents)
+    |> result.map_error(error.FileError("write", output_path, _)),
   )
 
   Ok(Codegen(unknowns))
@@ -157,12 +166,8 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
       list.filter_map(query.columns, fn(col) {
         case sqlc_col_to_gleam(col, context) {
           GleamOption(GleamEnum(_)) | GleamEnum(_) -> {
-            let type_ = normalise_col_type(col)
-            let schema = find_col_schema(col, context)
-            case list.find(schema.enums, fn(e) { e.name == type_ }) {
-              Ok(enum) -> Ok(#(string_extra.pascal_case(enum.name), enum.vals))
-              Error(_) -> Error(Nil)
-            }
+            use enum <- result.map(find_col_enum(col, context))
+            #(string_extra.pascal_case(enum.name), enum.vals)
           }
           _ -> Error(Nil)
         }
@@ -171,13 +176,8 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
         list.filter_map(query.params, fn(param) {
           case sqlc_col_to_gleam(param.column, context) {
             GleamOption(GleamEnum(_)) | GleamEnum(_) -> {
-              let type_ = normalise_col_type(param.column)
-              let schema = find_col_schema(param.column, context)
-              case list.find(schema.enums, fn(e) { e.name == type_ }) {
-                Ok(enum) ->
-                  Ok(#(string_extra.pascal_case(enum.name), enum.vals))
-                Error(_) -> Error(Nil)
-              }
+              use enum <- result.map(find_col_enum(param.column, context))
+              #(string_extra.pascal_case(enum.name), enum.vals)
             }
             _ -> Error(Nil)
           }
@@ -186,35 +186,21 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
     })
     |> list.unique()
 
-  let query_names =
-    list.map(context.queries, fn(q) { string_extra.pascal_case(q.name) })
-    |> set.from_list
-    |> set.to_list
-
-  let has_duplicate =
-    list.any(enums_for_duplicate_check, fn(item) {
-      case item {
-        #(enum_name, _) ->
-          list.any(query_names, fn(query_name) { enum_name == query_name })
-      }
+  let duplicate =
+    list.find_map(enums_for_duplicate_check, fn(item) {
+      let #(enum_name, _) = item
+      use query <- result.map(
+        list.find(context.queries, fn(q) {
+          string_extra.pascal_case(q.name) == enum_name
+        }),
+      )
+      #(enum_name, query.name)
     })
 
-  case has_duplicate {
-    True -> {
-      let assert Ok(#(first, _)) =
-        list.find(enums_for_duplicate_check, fn(item) {
-          case item {
-            #(enum_name, _) ->
-              list.any(query_names, fn(query_name) { enum_name == query_name })
-          }
-        })
-      let assert Ok(query) =
-        list.find(context.queries, fn(q) {
-          string_extra.pascal_case(q.name) == first
-        })
-      Error(error.DuplicateDefinitionError(first, query.name))
-    }
-    False -> {
+  case duplicate {
+    Ok(#(enum_name, query_name)) ->
+      Error(error.DuplicateDefinitionError(enum_name, query_name))
+    Error(_) -> {
       case
         list.find(enums_for_duplicate_check, fn(item) {
           case item {
@@ -234,33 +220,13 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
               }
             })
 
-          case
-            list.find(all_enum_values, fn(item) {
-              case item {
-                #(val_name, _) -> {
-                  list.count(all_enum_values, fn(i) {
-                    case i {
-                      #(v, _) -> v == val_name
-                    }
-                  })
-                  > 1
-                }
-              }
-            })
-          {
-            Ok(#(val_name, first_enum)) -> {
-              let assert Ok(#(_, second_enum)) =
-                list.find(all_enum_values, fn(item) {
-                  case item {
-                    #(v, enum) -> v == val_name && enum != first_enum
-                  }
-                })
+          case find_duplicate_value(all_enum_values) {
+            Ok(#(val_name, first_enum, second_enum)) ->
               Error(error.DuplicateEnumValueError(
                 val_name,
                 first_enum,
                 second_enum,
               ))
-            }
             Error(_) -> Ok(Nil)
           }
         }
@@ -269,18 +235,41 @@ fn find_duplicates(context: SQLC) -> Result(Nil, error.ParrotError) {
   }
 }
 
-fn find_col_schema(col: sqlc.TableColumn, context: SQLC) {
-  let schema_name = col.type_ref.schema
-
-  let schema_name = case schema_name {
-    "" | "pg_catalog" -> context.catalog.default_schema
-    _ -> schema_name
+/// Finds the first value that occurs twice, together with the enums of
+/// both occurrences. Those can be the same enum, f.e. when an enum has
+/// both `open` and `OPEN` as values.
+///
+fn find_duplicate_value(
+  values: List(#(String, String)),
+) -> Result(#(String, String, String), Nil) {
+  case values {
+    [] -> Error(Nil)
+    [#(value, enum), ..rest] ->
+      case list.find(rest, fn(other) { other.0 == value }) {
+        Ok(#(_, other_enum)) -> Ok(#(value, enum, other_enum))
+        Error(_) -> find_duplicate_value(rest)
+      }
   }
+}
 
-  let assert Ok(schema) =
-    list.find(context.catalog.schemas, fn(s) { s.name == schema_name })
+/// Finds the enum a column's type refers to. Errors if the type is not a
+/// user defined enum, which includes types from a schema that is not part
+/// of the catalog sqlc built up (f.e. one created by an extension).
+///
+fn find_col_enum(
+  col: sqlc.TableColumn,
+  context: SQLC,
+) -> Result(sqlc.Enum, Nil) {
+  let schema_name = case col.type_ref.schema {
+    "" | "pg_catalog" -> context.catalog.default_schema
+    schema_name -> schema_name
+  }
+  let type_ = normalise_col_type(col)
 
-  schema
+  use schema <- result.try(
+    list.find(context.catalog.schemas, fn(s) { s.name == schema_name }),
+  )
+  list.find(schema.enums, fn(e) { e.name == type_ })
 }
 
 pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
@@ -302,18 +291,11 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     GleamList(type_)
   })
 
-  let sqltype = normalise_col_type(col)
-  let schema = find_col_schema(col, context)
-
-  let enum =
-    schema.enums
-    |> list.find(fn(e) { e.name == sqltype })
-
-  use <- bool.lazy_guard(when: result.is_ok(enum), return: fn() {
-    let assert Ok(enum) = enum
-    GleamEnum(enum.name)
-  })
-  let sqltype = string.lowercase(sqltype)
+  use <- result.lazy_unwrap(
+    find_col_enum(col, context)
+    |> result.map(fn(enum) { GleamEnum(enum.name) }),
+  )
+  let sqltype = string.lowercase(normalise_col_type(col))
 
   let tiny_bool = sqltype == "tinyint" && col.length == 1
   use <- bool.guard(tiny_bool, GleamBool)
@@ -371,15 +353,10 @@ pub fn gen_column_name(
   let occ =
     query.columns
     |> list.count(fn(col2) { col.name == col2.name })
-  let result = case occ {
-    0 -> panic as { "could not find column name: " <> col.name }
-    1 -> col.name
-    _ -> {
-      case col.table {
-        option.None -> col.name
-        option.Some(t) -> t.name <> "_" <> col.name
-      }
-    }
+  // `col` is one of the query's columns, so it occurs at least once.
+  let result = case occ > 1, col.table {
+    True, option.Some(t) -> t.name <> "_" <> col.name
+    _, _ -> col.name
   }
   let result = case string_extra.snake_case(result) {
     "" -> "col_" <> int.to_string(index)
@@ -775,32 +752,16 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
       let columns =
         list.filter_map(query.columns, fn(col) {
           case sqlc_col_to_gleam(col, context) {
-            GleamOption(GleamEnum(_)) | GleamEnum(_) -> {
-              let type_ = normalise_col_type(col)
-              let schema = find_col_schema(col, context)
-
-              let assert Ok(enum) =
-                schema.enums
-                |> list.find(fn(e) { e.name == type_ })
-
-              Ok(enum)
-            }
+            GleamOption(GleamEnum(_)) | GleamEnum(_) ->
+              find_col_enum(col, context)
             _ -> Error(Nil)
           }
         })
       let params =
         list.filter_map(query.params, fn(param) {
           case sqlc_col_to_gleam(param.column, context) {
-            GleamOption(GleamEnum(_)) | GleamEnum(_) -> {
-              let type_ = normalise_col_type(param.column)
-              let schema = find_col_schema(param.column, context)
-
-              let assert Ok(enum) =
-                schema.enums
-                |> list.find(fn(e) { e.name == type_ })
-
-              Ok(enum)
-            }
+            GleamOption(GleamEnum(_)) | GleamEnum(_) ->
+              find_col_enum(param.column, context)
             _ -> Error(Nil)
           }
         })
@@ -809,8 +770,8 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
     })
     |> list.unique()
 
-  let enums =
-    list.map(enums, fn(enum) {
+  use enums <- result.try(
+    list.try_map(enums, fn(enum) {
       let record_name = string_extra.pascal_case(enum.name)
       let fn_name = string_extra.snake_case(enum.name)
 
@@ -829,7 +790,10 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
           "    \"" <> val <> "\" -> " <> "decode.success(" <> type_ <> ")"
         })
 
-      let assert Ok(first_value) = list.first(enum.vals)
+      use first_value <- result.map(
+        list.first(enum.vals)
+        |> result.replace_error(error.EmptyEnumError(record_name)),
+      )
       let zero_value = string_extra.pascal_case(first_value)
 
       "pub type "
@@ -859,8 +823,9 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
       <> string.join(to_str_vals, "\n")
       <> "\n  }\n"
       <> "}"
-    })
-    |> string.join("\n\n")
+    }),
+  )
+  let enums = string.join(enums, "\n\n")
 
   let comment_dont_edit =
     "//// Code generated by parrot. DO NOT EDIT.

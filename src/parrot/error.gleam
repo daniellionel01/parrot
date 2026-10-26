@@ -1,31 +1,34 @@
 import gleam/int
 import gleam/string
+import simplifile
 
 pub type ParrotError {
   EnvironmentVariableEmpty(String)
   UnknownEngine(String)
 
-  SqliteDBNotFound(String)
-  MySqlDBNotFound(String)
-  PostgreSqlDBNotFound(String)
+  /// The project's `gleam.toml` could not be read or is missing a field.
+  GleamTomlError(String)
+  FileError(action: String, path: String, reason: simplifile.FileError)
+  NoQueriesFound
+
+  SqliteDBNotFound(path: String)
+  InvalidConnectionString(engine: String, expected: String)
+
+  SchemaDumpError(command: String, output: String)
 
   SqlcDownloadError(String)
   SqlcVersionError(String)
+  SqlcIntegrityError(expected: String, received: String)
   SqlcGenerateError(String)
+  SqlcOutputError(String)
 
   GleamFormatError(String)
 
-  NoQueriesFound
-  MysqldumpError
-  PgdumpError(String)
-
-  CodegenError
   DuplicateDefinitionError(String, String)
   EmptyEnumError(String)
   DuplicateEnumValueError(String, String, String)
   UnnamedParameterError(query: String, position: Int)
   UnsupportedQueryCommandError(query: String, command: String)
-  SqlcIntegrityError(expected: String, received: String)
 }
 
 pub fn to_string(error: ParrotError) {
@@ -33,17 +36,38 @@ pub fn to_string(error: ParrotError) {
     EnvironmentVariableEmpty(e) -> {
       "Environment Variable \"" <> e <> "\" is empty!"
     }
-    MySqlDBNotFound(_) -> {
-      "mysql db not found"
+    UnknownEngine(engine) -> {
+      "unknown engine: " <> engine
     }
-    PostgreSqlDBNotFound(_) -> {
-      "postgresql db not found"
+    GleamTomlError(e) -> {
+      "could not read the project's gleam.toml: " <> e
     }
-    SqliteDBNotFound(_) -> {
-      "sqlite db not found"
+    FileError(action:, path:, reason:) -> {
+      "could not "
+      <> action
+      <> " `"
+      <> path
+      <> "`: "
+      <> simplifile.describe_error(reason)
     }
-    MysqldumpError -> {
-      "there was an error with mysqldump"
+    NoQueriesFound -> {
+      "no queries were found. Parrot looks for `*.sql` files inside of "
+      <> "`sql` directories in `src`, f.e. `src/app/sql/users.sql`."
+    }
+    SqliteDBNotFound(path:) -> {
+      "sqlite database `" <> path <> "` does not exist"
+    }
+    InvalidConnectionString(engine:, expected:) -> {
+      "could not parse the "
+      <> engine
+      <> " connection string. Expected the format: "
+      <> expected
+    }
+    SchemaDumpError(command:, output:) -> {
+      "could not fetch the database schema with `"
+      <> command
+      <> "`:\n"
+      <> output
     }
     SqlcDownloadError(e) -> {
       "there was an error downloading sqlc: " <> e
@@ -51,20 +75,22 @@ pub fn to_string(error: ParrotError) {
     SqlcVersionError(e) -> {
       "incompatible sqlc version found: " <> e
     }
+    SqlcIntegrityError(expected:, received:) -> {
+      "the sqlc binary does not match the expected checksum. "
+      <> "This could mean the download was corrupted or tampered with.\n"
+      <> "expected: "
+      <> expected
+      <> "\nreceived: "
+      <> received
+    }
     SqlcGenerateError(e) -> {
       "could not call `sqlc generate`:\n" <> e
     }
-    PgdumpError(e) -> {
-      e
-    }
-    NoQueriesFound -> {
-      "no queries were found to codegen"
-    }
-    UnknownEngine(engine) -> {
-      "unknown engine: " <> engine
-    }
-    CodegenError -> {
-      "there was an error during codegen"
+    SqlcOutputError(e) -> {
+      "could not read the output of sqlc: "
+      <> e
+      <> "\nThis is most likely a bug in parrot, please open an issue: "
+      <> "https://github.com/daniellionel01/parrot/issues"
     }
     GleamFormatError(err) -> {
       "there was an error formatting the generated code:" <> err
@@ -85,6 +111,14 @@ pub fn to_string(error: ParrotError) {
       <> "' has no variants. "
       <> "Empty enums cannot be represented in Gleam. "
       <> "Please add values to the enum or remove it from your schema."
+    }
+    DuplicateEnumValueError(val_name, enum1, enum2) if enum1 == enum2 -> {
+      "enum '"
+      <> enum1
+      <> "' has multiple values that all become '"
+      <> val_name
+      <> "' in Gleam. "
+      <> "Enum values must still be unique after converting them to PascalCase."
     }
     DuplicateEnumValueError(val_name, enum1, enum2) -> {
       "duplicate enum value '"
@@ -111,14 +145,6 @@ pub fn to_string(error: ParrotError) {
       <> string.replace(command, "_", "")
       <> ", which parrot does not support. "
       <> "Supported annotations are :one, :many, :exec and :execresult."
-    }
-    SqlcIntegrityError(expected:, received:) -> {
-      "the sqlc binary does not match the expected checksum. "
-      <> "This could mean the download was corrupted or tampered with.\n"
-      <> "expected: "
-      <> expected
-      <> "\nreceived: "
-      <> received
     }
   }
 }

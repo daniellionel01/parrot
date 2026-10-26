@@ -4,6 +4,7 @@
 ////
 
 import filepath
+import gleam/result
 import parrot/error
 import parrot/internal/project
 import parrot/internal/sqlc
@@ -25,7 +26,7 @@ pub opaque type Config {
 /// Loads the config from gleam.toml and cli args
 ///
 pub fn load(queries_file: String) -> Result(Config, error.ParrotError) {
-  let project_name = project.name()
+  use project_name <- result.try(project.name())
   let output_module_path = "src/" <> project_name <> "/sql.gleam"
 
   // TODO: read these from `[tools.parrot]` in gleam.toml and cli args.
@@ -41,9 +42,10 @@ pub fn load(queries_file: String) -> Result(Config, error.ParrotError) {
   Ok(config)
 }
 
-pub fn json_file(config: Config) -> Result(String, simplifile.FileError) {
+pub fn json_file(config: Config) -> Result(String, error.ParrotError) {
   let path = filepath.join(project.root(), config.json_file_path)
   simplifile.read(path)
+  |> result.map_error(error.FileError("read", path, _))
 }
 
 pub fn output_module_path(config: Config) -> String {

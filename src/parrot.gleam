@@ -1,5 +1,6 @@
 import child_process
 import filepath
+import gleam/bool
 import gleam/dict
 import gleam/io
 import gleam/list
@@ -10,7 +11,6 @@ import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
 import parrot/internal/database
-
 import parrot/internal/project
 import parrot/internal/sqlc
 import simplifile
@@ -54,7 +54,7 @@ fn generate(
 ) -> Result(Nil, error.ParrotError) {
   let connection_string = database.connection_string(connection_string)
 
-  let files = project.walk(project.src())
+  use files <- result.try(project.walk(project.src()))
   let queries =
     files
     |> dict.to_list
@@ -75,13 +75,17 @@ fn generate(
     // system might return them in a different order.
     //
     |> list.sort(by: string.compare)
+  use <- bool.guard(when: queries == [], return: Error(error.NoQueriesFound))
 
   let sqlc_binary = sqlc.sqlc_binary_path()
   let sqlc_dir = filepath.directory_name(sqlc_binary)
   let schema_file = filepath.join(sqlc_dir, "schema.sql")
   let sqlc_file = filepath.join(sqlc_dir, "sqlc.json")
   let queries_file = filepath.join(sqlc_dir, "queries.json")
-  let _ = simplifile.create_directory_all(sqlc_dir)
+  use _ <- result.try(
+    simplifile.create_directory_all(sqlc_dir)
+    |> result.map_error(error.FileError("create directory", sqlc_dir, _)),
+  )
 
   io.println("\u{1F4E5} downloading sqlc binary...")
   use _ <- result.try(sqlc.download_binary())
@@ -90,12 +94,12 @@ fn generate(
   use _ <- result.try(sqlc.verify_binary())
 
   let sqlc_json = sqlc.gen_sqlc_json(engine, queries)
-  let _ = simplifile.write(sqlc_file, sqlc_json)
+  use _ <- result.try(write(sqlc_file, sqlc_json))
 
   io.println("\u{1F5C4} fetching schema...")
 
   use schema_sql <- result.try(database.fetch_schema(engine, connection_string))
-  let _ = simplifile.write(schema_file, schema_sql)
+  use _ <- result.try(write(schema_file, schema_sql))
 
   io.println("\u{2728} generating gleam code...")
 
@@ -143,4 +147,9 @@ fn generate(
   io.println("")
 
   Ok(Nil)
+}
+
+fn write(path: String, contents: String) -> Result(Nil, error.ParrotError) {
+  simplifile.write(path, contents)
+  |> result.map_error(error.FileError("write", path, _))
 }

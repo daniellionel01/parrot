@@ -5,6 +5,7 @@
 ////
 
 import child_process
+import gleam/bool
 import gleam/int
 import gleam/list
 import gleam/option
@@ -13,6 +14,7 @@ import gleam/string
 import gleam/uri
 import parrot/error
 import parrot/internal/sqlc
+import simplifile
 
 pub opaque type ConnectionString {
   ConnectionString(String)
@@ -32,16 +34,25 @@ pub fn fetch_schema(engine: sqlc.Engine, connection_string: ConnectionString) {
 
   case engine {
     sqlc.SQLite -> {
-      child_process.exec(
-        run: "sqlite3",
-        with: [connection_string, ".schema"],
-        in: ".",
+      // `sqlite3` would silently create an empty database otherwise.
+      use <- bool.guard(
+        when: simplifile.is_file(connection_string) != Ok(True),
+        return: Error(error.SqliteDBNotFound(connection_string)),
       )
-      |> result.replace_error(error.SqliteDBNotFound(""))
-      |> result.map(fn(out) { string.trim(out.output) })
+
+      exec("sqlite3", [connection_string, ".schema"])
+      |> result.map(string.trim)
     }
     sqlc.MySQL -> {
-      let assert Ok(conn) = uri.parse(connection_string)
+      let invalid_connection_string =
+        error.InvalidConnectionString(
+          "mysql",
+          "mysql://user:password@host:port/database",
+        )
+      use conn <- result.try(
+        uri.parse(connection_string)
+        |> result.replace_error(invalid_connection_string),
+      )
 
       let creds = case conn.userinfo {
         option.None -> option.None
@@ -56,7 +67,7 @@ pub fn fetch_schema(engine: sqlc.Engine, connection_string: ConnectionString) {
 
       use #(user, pass) <- result.try(option.to_result(
         creds,
-        error.MySqlDBNotFound(""),
+        invalid_connection_string,
       ))
 
       let port = case conn.port {
@@ -69,23 +80,18 @@ pub fn fetch_schema(engine: sqlc.Engine, connection_string: ConnectionString) {
       }
       let db = string.replace(conn.path, "/", "")
 
-      use child_process.Output(status_code: _, output:) <- result.try(
-        child_process.exec(
-          run: "mysqldump",
-          with: [
-            "--no-data",
-            "-u",
-            user,
-            "-p" <> pass,
-            "-h",
-            host,
-            "-P",
-            port,
-            db,
-          ],
-          in: ".",
-        )
-        |> result.replace_error(error.MysqldumpError),
+      use output <- result.try(
+        exec("mysqldump", [
+          "--no-data",
+          "-u",
+          user,
+          "-p" <> pass,
+          "-h",
+          host,
+          "-P",
+          port,
+          db,
+        ]),
       )
 
       output
@@ -95,24 +101,15 @@ pub fn fetch_schema(engine: sqlc.Engine, connection_string: ConnectionString) {
       |> Ok
     }
     sqlc.PostgreSQL -> {
-      child_process.exec(
-        run: "pg_dump",
-        with: [
-          "--no-privileges",
-          "--no-acl",
-          "--no-owner",
-          "--schema-only",
-          "--no-comments",
-          "--encoding=utf8",
-          connection_string,
-        ],
-        in: ".",
-      )
-      |> result.map_error(fn(e) {
-        let e = child_process.describe_start_error(e)
-        error.PgdumpError(e)
-      })
-      |> result.map(fn(out) { out.output })
+      exec("pg_dump", [
+        "--no-privileges",
+        "--no-acl",
+        "--no-owner",
+        "--schema-only",
+        "--no-comments",
+        "--encoding=utf8",
+        connection_string,
+      ])
       |> result.map(fn(schema) {
         // this is an edge case with the postgres schema dump.
         // sqlc does not like those lines from postgres 17.
@@ -126,5 +123,24 @@ pub fn fetch_schema(engine: sqlc.Engine, connection_string: ConnectionString) {
         |> string.join("\n")
       })
     }
+  }
+}
+
+/// Runs one of the database command line tools and returns its output,
+/// if it exited successfully.
+///
+fn exec(
+  command: String,
+  arguments: List(String),
+) -> Result(String, error.ParrotError) {
+  case child_process.exec(run: command, with: arguments, in: ".") {
+    Ok(child_process.Output(status_code: 0, output:)) -> Ok(output)
+    Ok(child_process.Output(status_code: _, output:)) ->
+      Error(error.SchemaDumpError(command, string.trim(output)))
+    Error(e) ->
+      Error(error.SchemaDumpError(
+        command,
+        child_process.describe_start_error(e),
+      ))
   }
 }

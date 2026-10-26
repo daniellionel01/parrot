@@ -1,0 +1,17 @@
+---
+version: 2.0.2
+title: enum values that collide in pascal case
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type ticket_status as enum ('open', 'OPEN', 'closed');
+create table tickets (id serial primary key, status ticket_status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: TicketStatuses :many
+select status from tickets;
+
+-- error -----------------------------------------------------------------------
+
+enum 'TicketStatus' has multiple values that all become 'Open' in Gleam. Enum values must still be unique after converting them to PascalCase.

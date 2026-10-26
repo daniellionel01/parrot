@@ -10,11 +10,20 @@ import gleam/bool
 import gleam/dict
 import gleam/list
 import gleam/result
+import parrot/error
 import simplifile
 import tom
 
 pub fn root() -> String {
-  find_root(".")
+  // Parrot runs through `gleam run`, which only works inside of a gleam
+  // project, so there always is a `gleam.toml`. Should there be none, we
+  // stop at the root of the file system instead of searching forever, fall
+  // back to the current directory and let reading `gleam.toml` fail.
+  let max_depth = case simplifile.current_directory() {
+    Ok(cwd) -> list.length(filepath.split(cwd))
+    Error(_) -> 0
+  }
+  find_root(".", max_depth)
 }
 
 pub fn src() -> String {
@@ -23,23 +32,28 @@ pub fn src() -> String {
 
 /// Name of the gleam application
 ///
-pub fn name() -> String {
-  let root = find_root(".")
-  let toml_path = filepath.join(root, "gleam.toml")
-  let assert Ok(toml) = simplifile.read(toml_path)
+pub fn name() -> Result(String, error.ParrotError) {
+  let toml_path = filepath.join(root(), "gleam.toml")
 
-  let assert Ok(parsed) = tom.parse(toml)
-  let assert Ok(name) = tom.get_string(parsed, ["name"])
-
-  name
+  use toml <- result.try(
+    simplifile.read(toml_path)
+    |> result.map_error(error.FileError("read", toml_path, _)),
+  )
+  use parsed <- result.try(
+    tom.parse(toml)
+    |> result.replace_error(error.GleamTomlError("invalid toml")),
+  )
+  tom.get_string(parsed, ["name"])
+  |> result.replace_error(error.GleamTomlError("missing the `name` field"))
 }
 
-fn find_root(path: String) -> String {
+fn find_root(path: String, remaining: Int) -> String {
   let toml = filepath.join(path, "gleam.toml")
 
-  case simplifile.is_file(toml) {
-    Ok(False) | Error(_) -> find_root(filepath.join("..", path))
-    Ok(True) -> path
+  case simplifile.is_file(toml), remaining {
+    Ok(True), _ -> path
+    _, 0 -> "."
+    _, _ -> find_root(filepath.join("..", path), remaining - 1)
   }
 }
 
@@ -47,10 +61,16 @@ fn find_root(path: String) -> String {
 /// files inside each one.
 /// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
 ///
-pub fn walk(from: String) -> dict.Dict(String, List(String)) {
+pub fn walk(
+  from: String,
+) -> Result(dict.Dict(String, List(String)), error.ParrotError) {
+  use files <- result.try(
+    simplifile.read_directory(from)
+    |> result.map_error(error.FileError("read directory", from, _)),
+  )
+
   case filepath.base_name(from) {
     "sql" -> {
-      let assert Ok(files) = simplifile.read_directory(from)
       let files = {
         use file <- list.filter_map(files)
         use extension <- result.try(filepath.extension(file))
@@ -61,11 +81,10 @@ pub fn walk(from: String) -> dict.Dict(String, List(String)) {
           Ok(False) | Error(_) -> Error(Nil)
         }
       }
-      dict.from_list([#(from, files)])
+      Ok(dict.from_list([#(from, files)]))
     }
 
     _ -> {
-      let assert Ok(files) = simplifile.read_directory(from)
       let directories = {
         use file <- list.filter_map(files)
         let file_name = filepath.join(from, file)
@@ -75,8 +94,8 @@ pub fn walk(from: String) -> dict.Dict(String, List(String)) {
         }
       }
 
-      list.map(directories, walk)
-      |> list.fold(from: dict.new(), with: dict.merge)
+      use dicts <- result.map(list.try_map(directories, walk))
+      list.fold(dicts, from: dict.new(), with: dict.merge)
     }
   }
 }
