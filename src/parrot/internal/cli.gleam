@@ -8,7 +8,8 @@ import gleam/result
 import parrot/error
 import parrot/internal/sqlc
 
-pub const usage_text = "
+pub const usage_text =
+  "
   🦜 Parrot - type-safe SQL in gleam for sqlite, postgresql & mysql
 
   USAGE:

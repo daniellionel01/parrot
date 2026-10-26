@@ -2,11 +2,130 @@
 ////
 
 import gleam/dynamic/decode
+import gleam/float
 import gleam/list
-import gleam/option.{type Option}
-import gleam/time/calendar.{type Date}
+import gleam/option
+import gleam/time/calendar.{type Date, type TimeOfDay, Date}
 import gleam/time/timestamp.{type Timestamp}
-import parrot/dev
+
+pub type Param {
+  ParamInt(Int)
+  ParamString(String)
+  ParamFloat(Float)
+  ParamBool(Bool)
+  ParamBitArray(BitArray)
+  ParamTimestamp(Timestamp)
+  ParamDate(Date)
+  ParamList(List(Param))
+  ParamDynamic(decode.Dynamic)
+  ParamNullable(option.Option(Param))
+}
+
+pub fn bool_decoder() {
+  let int_to_bool = {
+    decode.int
+    |> decode.then(fn(v) {
+      case v {
+        0 -> decode.success(False)
+        1 -> decode.success(True)
+        _ -> decode.failure(False, "could not decode int to boolean")
+      }
+    })
+  }
+  decode.one_of(decode.bool, or: [int_to_bool])
+}
+
+pub fn datetime_decoder() -> decode.Decoder(Timestamp) {
+  decode.one_of(datetime_string_decoder(), or: [
+    datetime_tuple_decoder(),
+    timestamp_decoder(),
+  ])
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L394
+fn timestamp_decoder() -> decode.Decoder(Timestamp) {
+  use microseconds <- decode.map(decode.int)
+  let seconds = microseconds / 1_000_000
+  let nanoseconds = { microseconds % 1_000_000 } * 1000
+  timestamp.from_unix_seconds_and_nanoseconds(seconds, nanoseconds)
+}
+
+/// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L873
+pub fn calendar_date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(1, decode.int)
+  use day <- decode.field(2, decode.int)
+  case calendar.month_from_int(month) {
+    Ok(month) -> decode.success(calendar.Date(year:, month:, day:))
+    Error(_) ->
+      decode.failure(calendar.Date(0, calendar.January, 1), "Calendar date")
+  }
+}
+
+fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
+  decode.string
+  |> decode.then(fn(datetime_str) {
+    case timestamp.parse_rfc3339(datetime_str) {
+      Ok(ts) -> decode.success(ts)
+      Error(_) ->
+        decode.failure(
+          timestamp.from_unix_seconds(0),
+          "Invalid datetime format",
+        )
+    }
+  })
+}
+
+fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
+  use date <- decode.field(0, date_decoder())
+  use time <- decode.field(1, time_decoder())
+
+  timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
+  |> decode.success()
+}
+
+fn date_decoder() -> decode.Decoder(Date) {
+  use year <- decode.field(0, decode.int)
+  use month <- decode.field(
+    1,
+    decode.int
+      |> decode.then(fn(month) {
+        case calendar.month_from_int(month) {
+          Error(_) -> decode.failure(calendar.January, "Month")
+          Ok(month) -> decode.success(month)
+        }
+      }),
+  )
+  use day <- decode.field(2, decode.int)
+
+  decode.success(Date(year:, month:, day:))
+}
+
+fn time_decoder() -> decode.Decoder(TimeOfDay) {
+  use hours <- decode.field(0, decode.int)
+  use minutes <- decode.field(1, decode.int)
+  use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())
+
+  calendar.TimeOfDay(hours:, minutes:, seconds:, nanoseconds:)
+  |> decode.success()
+}
+
+fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
+  let int = {
+    decode.int
+    |> decode.map(fn(i) { #(i, 0) })
+  }
+  let float = {
+    decode.float
+    |> decode.map(fn(f) {
+      let floored = float.floor(f)
+      let seconds = float.round(floored)
+      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
+      #(seconds, nanoseconds)
+    })
+  }
+  decode.one_of(int, [float])
+}
 
 pub type UserRole {
   Admin
@@ -72,7 +191,7 @@ pub type CreatedAtAsText {
 
 pub fn created_at_as_text(id id: Int) {
   let sql = "SELECT created_at::text FROM users WHERE id = $1"
-  #(sql, [dev.ParamInt(id)], created_at_as_text_decoder())
+  #(sql, [ParamInt(id)], created_at_as_text_decoder())
 }
 
 pub fn created_at_as_text_decoder() -> decode.Decoder(CreatedAtAsText) {
@@ -86,7 +205,7 @@ pub type CreateUserWithRole {
 
 pub fn create_user_with_role(
   username username: String,
-  role role: Option(UserRole),
+  role role: option.Option(UserRole),
 ) {
   let sql =
     "INSERT INTO
@@ -95,9 +214,9 @@ VALUES
   ($1, $2)
 RETURNING id"
   #(sql, [
-    dev.ParamString(username),
-    dev.ParamNullable(
-      option.map(role, fn(v) { dev.ParamString(user_role_to_string(v)) }),
+    ParamString(username),
+    ParamNullable(
+      option.map(role, fn(v) { ParamString(user_role_to_string(v)) }),
     ),
   ])
 }
@@ -112,13 +231,13 @@ pub type GetUser {
     id: Int,
     email: String,
     username: String,
-    created_at: Option(Timestamp),
-    date_of_birth: Option(Date),
-    profile: Option(String),
-    extra_info: Option(String),
-    favorite_numbers: Option(List(Int)),
-    role: Option(UserRole),
-    document: Option(BitArray),
+    created_at: option.Option(Timestamp),
+    date_of_birth: option.Option(Date),
+    profile: option.Option(String),
+    extra_info: option.Option(String),
+    favorite_numbers: option.Option(List(Int)),
+    role: option.Option(UserRole),
+    document: option.Option(BitArray),
   )
 }
 
@@ -132,18 +251,15 @@ WHERE
   id = $1
 LIMIT
   1"
-  #(sql, [dev.ParamInt(id)], get_user_decoder())
+  #(sql, [ParamInt(id)], get_user_decoder())
 }
 
 pub fn get_user_decoder() -> decode.Decoder(GetUser) {
   use id <- decode.field(0, decode.int)
   use email <- decode.field(1, decode.string)
   use username <- decode.field(2, decode.string)
-  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
-  use date_of_birth <- decode.field(
-    4,
-    decode.optional(dev.calendar_date_decoder()),
-  )
+  use created_at <- decode.field(3, decode.optional(datetime_decoder()))
+  use date_of_birth <- decode.field(4, decode.optional(calendar_date_decoder()))
   use profile <- decode.field(5, decode.optional(decode.string))
   use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
@@ -171,13 +287,13 @@ pub type ListUsers {
     id: Int,
     email: String,
     username: String,
-    created_at: Option(Timestamp),
-    date_of_birth: Option(Date),
-    profile: Option(String),
-    extra_info: Option(String),
-    favorite_numbers: Option(List(Int)),
-    role: Option(UserRole),
-    document: Option(BitArray),
+    created_at: option.Option(Timestamp),
+    date_of_birth: option.Option(Date),
+    profile: option.Option(String),
+    extra_info: option.Option(String),
+    favorite_numbers: option.Option(List(Int)),
+    role: option.Option(UserRole),
+    document: option.Option(BitArray),
   )
 }
 
@@ -196,11 +312,8 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   use id <- decode.field(0, decode.int)
   use email <- decode.field(1, decode.string)
   use username <- decode.field(2, decode.string)
-  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
-  use date_of_birth <- decode.field(
-    4,
-    decode.optional(dev.calendar_date_decoder()),
-  )
+  use created_at <- decode.field(3, decode.optional(datetime_decoder()))
+  use date_of_birth <- decode.field(4, decode.optional(calendar_date_decoder()))
   use profile <- decode.field(5, decode.optional(decode.string))
   use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
@@ -229,7 +342,7 @@ pub fn create_user(name name: String) {
   users (username)
 VALUES
   ($1)"
-  #(sql, [dev.ParamString(name)])
+  #(sql, [ParamString(name)])
 }
 
 pub fn create_user_at(username username: String, created_at created_at: Float) {
@@ -238,7 +351,7 @@ pub fn create_user_at(username username: String, created_at created_at: Float) {
   users (username, created_at)
 VALUES
   ($1, to_timestamp($2::float))"
-  #(sql, [dev.ParamString(username), dev.ParamFloat(created_at)])
+  #(sql, [ParamString(username), ParamFloat(created_at)])
 }
 
 pub fn create_user_with_date_of_birth(
@@ -248,14 +361,14 @@ pub fn create_user_with_date_of_birth(
   let sql =
     "INSERT INTO users (username, created_at, date_of_birth)
 VALUES ($1, CURRENT_TIMESTAMP, TO_TIMESTAMP($2::text, 'YYYY-MM-DDZ'))"
-  #(sql, [dev.ParamString(username), dev.ParamString(date_of_birth)])
+  #(sql, [ParamString(username), ParamString(date_of_birth)])
 }
 
 pub fn create_user_with_email(username username: String, email email: String) {
   let sql =
     "INSERT INTO users (username, email)
 VALUES ($1, $2)"
-  #(sql, [dev.ParamString(username), dev.ParamString(email)])
+  #(sql, [ParamString(username), ParamString(email)])
 }
 
 pub fn update_user_username(username username: String, id id: Int) {
@@ -265,7 +378,7 @@ SET
   username = $1
 WHERE
   id = $2"
-  #(sql, [dev.ParamString(username), dev.ParamInt(id)])
+  #(sql, [ParamString(username), ParamInt(id)])
 }
 
 pub fn delete_user(id id: Int) {
@@ -273,7 +386,7 @@ pub fn delete_user(id id: Int) {
     "DELETE FROM users
 WHERE
   id = $1"
-  #(sql, [dev.ParamInt(id)])
+  #(sql, [ParamInt(id)])
 }
 
 pub type GetUserByUsername {
@@ -281,13 +394,13 @@ pub type GetUserByUsername {
     id: Int,
     email: String,
     username: String,
-    created_at: Option(Timestamp),
-    date_of_birth: Option(Date),
-    profile: Option(String),
-    extra_info: Option(String),
-    favorite_numbers: Option(List(Int)),
-    role: Option(UserRole),
-    document: Option(BitArray),
+    created_at: option.Option(Timestamp),
+    date_of_birth: option.Option(Date),
+    profile: option.Option(String),
+    extra_info: option.Option(String),
+    favorite_numbers: option.Option(List(Int)),
+    role: option.Option(UserRole),
+    document: option.Option(BitArray),
   )
 }
 
@@ -310,18 +423,15 @@ WHERE
   username = $1
 LIMIT
   1"
-  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
+  #(sql, [ParamString(username)], get_user_by_username_decoder())
 }
 
 pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use id <- decode.field(0, decode.int)
   use email <- decode.field(1, decode.string)
   use username <- decode.field(2, decode.string)
-  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
-  use date_of_birth <- decode.field(
-    4,
-    decode.optional(dev.calendar_date_decoder()),
-  )
+  use created_at <- decode.field(3, decode.optional(datetime_decoder()))
+  use date_of_birth <- decode.field(4, decode.optional(calendar_date_decoder()))
   use profile <- decode.field(5, decode.optional(decode.string))
   use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
@@ -349,13 +459,13 @@ pub type GetUserByLowerUsername {
     id: Int,
     email: String,
     username: String,
-    created_at: Option(Timestamp),
-    date_of_birth: Option(Date),
-    profile: Option(String),
-    extra_info: Option(String),
-    favorite_numbers: Option(List(Int)),
-    role: Option(UserRole),
-    document: Option(BitArray),
+    created_at: option.Option(Timestamp),
+    date_of_birth: option.Option(Date),
+    profile: option.Option(String),
+    extra_info: option.Option(String),
+    favorite_numbers: option.Option(List(Int)),
+    role: option.Option(UserRole),
+    document: option.Option(BitArray),
   )
 }
 
@@ -369,7 +479,7 @@ WHERE
   username = lower($1)
 LIMIT
   1"
-  #(sql, [dev.ParamString(lower)], get_user_by_lower_username_decoder())
+  #(sql, [ParamString(lower)], get_user_by_lower_username_decoder())
 }
 
 pub fn get_user_by_lower_username_decoder() -> decode.Decoder(
@@ -378,11 +488,8 @@ pub fn get_user_by_lower_username_decoder() -> decode.Decoder(
   use id <- decode.field(0, decode.int)
   use email <- decode.field(1, decode.string)
   use username <- decode.field(2, decode.string)
-  use created_at <- decode.field(3, decode.optional(dev.datetime_decoder()))
-  use date_of_birth <- decode.field(
-    4,
-    decode.optional(dev.calendar_date_decoder()),
-  )
+  use created_at <- decode.field(3, decode.optional(datetime_decoder()))
+  use date_of_birth <- decode.field(4, decode.optional(calendar_date_decoder()))
   use profile <- decode.field(5, decode.optional(decode.string))
   use extra_info <- decode.field(6, decode.optional(decode.string))
   use favorite_numbers <- decode.field(
@@ -416,7 +523,7 @@ FROM users
 WHERE username LIKE ANY($1::text[])"
   #(
     sql,
-    [dev.ParamList(list.map(patterns, dev.ParamString))],
+    [ParamList(list.map(patterns, ParamString))],
     search_users_by_username_pattern_decoder(),
   )
 }
@@ -445,7 +552,7 @@ where user_id = (
   from users
   where username = $1
 )"
-  #(sql, [dev.ParamString(username)], posts_by_username_decoder())
+  #(sql, [ParamString(username)], posts_by_username_decoder())
 }
 
 pub fn posts_by_username_decoder() -> decode.Decoder(PostsByUsername) {
@@ -510,7 +617,7 @@ pub fn get_tournament_champion_bets_decoder() -> decode.Decoder(
   use id <- decode.field(0, decode.bit_array)
   use created_by <- decode.field(1, decode.bit_array)
   use updated_by <- decode.field(2, decode.bit_array)
-  use updated_at <- decode.field(3, dev.datetime_decoder())
+  use updated_at <- decode.field(3, datetime_decoder())
   use tournament_name <- decode.field(4, decode.string)
   use team_name <- decode.field(5, decode.string)
   decode.success(GetTournamentChampionBets(

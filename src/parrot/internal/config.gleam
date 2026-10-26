@@ -6,6 +6,7 @@
 import filepath
 import parrot/error
 import parrot/internal/project
+import parrot/internal/sqlc
 import simplifile
 
 /// All file paths are relative to the project's root.
@@ -26,16 +27,16 @@ pub opaque type Config {
 pub fn load(queries_file: String) -> Result(Config, error.ParrotError) {
   let project_name = project.name()
   let output_module_path = "src/" <> project_name <> "/sql.gleam"
-  let env = ""
 
+  // TODO: read these from `[tools.parrot]` in gleam.toml and cli args.
   let config =
     Config(
       json_file_path: queries_file,
       output_module_path:,
-      env:,
-      sqlc_binary: todo,
-      sqlc_version: todo,
-      sqlc_schema: todo,
+      env: "DATABASE_URL",
+      sqlc_binary: "build/.parrot/sqlc",
+      sqlc_version: sqlc.sqlc_version,
+      sqlc_schema: "",
     )
   Ok(config)
 }

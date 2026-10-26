@@ -17,7 +17,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "29"
-          gleam-version: "1.17.0"
+          gleam-version: "1.19.2"
           rebar3-version: "3"
       - run: gleam deps download
       - run: gleam format --check src test
@@ -30,7 +30,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "29"
-          gleam-version: "1.17.0"
+          gleam-version: "1.19.2"
           rebar3-version: "3"
       - name: Install SQLite
         run: sudo apt-get update && sudo apt-get install -y sqlite3
@@ -52,7 +52,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "29"
-          gleam-version: "1.17.0"
+          gleam-version: "1.19.2"
           rebar3-version: "3"
       - name: Install SQLite
         run: sudo apt-get update && sudo apt-get install -y sqlite3
@@ -88,7 +88,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "29"
-          gleam-version: "1.17.0"
+          gleam-version: "1.19.2"
           rebar3-version: "3"
       - name: Install MySQL Client
         run: sudo apt-get update && sudo apt-get install -y mysql-client
@@ -125,7 +125,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "29"
-          gleam-version: "1.17.0"
+          gleam-version: "1.19.2"
           rebar3-version: "3"
       - name: Install PostgreSQL 16 Client
         run: |
@@ -176,7 +176,7 @@ jobs:
       - uses: erlef/setup-beam@v1
         with:
           otp-version: "29"
-          gleam-version: "1.17.0"
+          gleam-version: "1.19.2"
           rebar3-version: "3"
       - name: Install PostgreSQL 17 Client
         run: |

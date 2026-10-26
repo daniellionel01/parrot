@@ -867,7 +867,8 @@ pub fn gen_gleam_module(context: SQLC) -> Result(String, error.ParrotError) {
   )
 }
 
-pub const output_gleam_module_seed_code = "
+pub const output_gleam_module_seed_code =
+  "
 pub type Param {
   ParamInt(Int)
   ParamString(String)

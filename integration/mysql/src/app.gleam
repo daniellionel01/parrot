@@ -2,7 +2,6 @@ import app/sql
 import gleam/dynamic/decode
 import gleam/list
 import gleam/option
-import parrot/dev
 import shork
 
 pub fn main() {
@@ -23,27 +22,26 @@ pub fn main() {
   Ok(Nil)
 }
 
-fn parrot_to_shork(param: dev.Param) {
+fn parrot_to_shork(param: sql.Param) {
   case param {
-    dev.ParamBool(x) -> shork.bool(x)
-    dev.ParamFloat(x) -> shork.float(x)
-    dev.ParamInt(x) -> shork.int(x)
-    dev.ParamString(x) -> shork.text(x)
-    dev.ParamNullable(_) ->
-      panic as "shork does not support nullable parameters"
-    dev.ParamList(_) -> panic as "shork does not support lists"
-    dev.ParamBitArray(_) -> panic as "shork does not support bit arrays"
-    dev.ParamDate(_) -> panic as "date parameter needs to be implemented"
-    dev.ParamTimestamp(_) ->
+    sql.ParamBool(x) -> shork.bool(x)
+    sql.ParamFloat(x) -> shork.float(x)
+    sql.ParamInt(x) -> shork.int(x)
+    sql.ParamString(x) -> shork.text(x)
+    sql.ParamNullable(_) -> panic as "shork does not support nullable parameters"
+    sql.ParamList(_) -> panic as "shork does not support lists"
+    sql.ParamBitArray(_) -> panic as "shork does not support bit arrays"
+    sql.ParamDate(_) -> panic as "date parameter needs to be implemented"
+    sql.ParamTimestamp(_) ->
       panic as "timestamp parameter needs to be implemented"
-    dev.ParamDynamic(_) -> panic as "dynamic parameter need to implemented"
+    sql.ParamDynamic(_) -> panic as "dynamic parameter need to implemented"
   }
 }
 
 fn query(
   db db: shork.Connection,
   sql sql: String,
-  with with: List(dev.Param),
+  with with: List(sql.Param),
   expecting expecting: decode.Decoder(a),
 ) {
   sql

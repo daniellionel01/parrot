@@ -2,6 +2,7 @@
 //// decodes the JSON that sqlc generates.
 
 import child_process
+import child_process/stdio
 import filepath
 import gleam/bit_array
 import gleam/bool
@@ -487,10 +488,8 @@ pub fn verify_binary() -> Result(Nil, error.ParrotError) {
   use #(download, _) <- result.try(get_download_path_and_hash())
 
   let path = sqlc_binary_path()
-  let dir = filepath.directory_name(path)
-  let gen_res = child_process.exec(run: "./sqlc", with: ["version"], in: dir)
 
-  case gen_res {
+  case exec(["version"]) {
     Error(_) -> {
       let information =
         [
@@ -521,6 +520,21 @@ pub fn verify_binary() -> Result(Nil, error.ParrotError) {
   }
 }
 
+pub fn exec(
+  arguments: List(String),
+) -> Result(child_process.Output, child_process.StartError) {
+  let path = sqlc_binary_path()
+  let path = case filepath.is_absolute(path), simplifile.current_directory() {
+    False, Ok(cwd) -> filepath.join(cwd, path)
+    _, _ -> path
+  }
+
+  child_process.from_file(path)
+  |> child_process.args(arguments)
+  |> child_process.cwd(filepath.directory_name(path))
+  |> child_process.run(stdio.capture(True))
+}
+
 pub fn download_binary() -> Result(Nil, error.ParrotError) {
   let path = sqlc_binary_path()
   let dir = filepath.directory_name(path)
@@ -530,8 +544,8 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
 
   // delete current version if version does not match
   let _ = case binary_exists(path) {
-    True -> Ok(Nil)
-    False -> {
+    False -> Ok(Nil)
+    True -> {
       case verify_binary() {
         Error(error.SqlcVersionError(_)) -> {
           let assert Ok(_) = simplifile.delete(path)

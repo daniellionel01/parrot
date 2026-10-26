@@ -6,7 +6,6 @@ import gleam/list
 import gleam/option
 import gleam/result
 import gleam/time/calendar
-import parrot/dev
 import pog
 
 pub fn main() {
@@ -76,25 +75,25 @@ fn test_creating_user_with_date(db: pog.Connection) {
   )) = result
 }
 
-fn parrot_to_pog(param: dev.Param) -> pog.Value {
+fn parrot_to_pog(param: sql.Param) -> pog.Value {
   case param {
-    dev.ParamBool(x) -> pog.bool(x)
-    dev.ParamFloat(x) -> pog.float(x)
-    dev.ParamInt(x) -> pog.int(x)
-    dev.ParamString(x) -> pog.text(x)
-    dev.ParamBitArray(x) -> pog.bytea(x)
-    dev.ParamList(x) -> pog.array(parrot_to_pog, x)
-    dev.ParamNullable(x) -> pog.nullable(parrot_to_pog, x)
-    dev.ParamDate(x) -> pog.calendar_date(x)
-    dev.ParamTimestamp(x) -> pog.timestamp(x)
-    dev.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
+    sql.ParamBool(x) -> pog.bool(x)
+    sql.ParamFloat(x) -> pog.float(x)
+    sql.ParamInt(x) -> pog.int(x)
+    sql.ParamString(x) -> pog.text(x)
+    sql.ParamBitArray(x) -> pog.bytea(x)
+    sql.ParamList(x) -> pog.array(parrot_to_pog, x)
+    sql.ParamNullable(x) -> pog.nullable(parrot_to_pog, x)
+    sql.ParamDate(x) -> pog.calendar_date(x)
+    sql.ParamTimestamp(x) -> pog.timestamp(x)
+    sql.ParamDynamic(_) -> panic as "cannot process dynamic parameter"
   }
 }
 
 fn query(
   db db: pog.Connection,
   sql sql: String,
-  with with: List(dev.Param),
+  with with: List(sql.Param),
   expecting expecting: decode.Decoder(a),
 ) {
   sql
@@ -107,7 +106,7 @@ fn query(
   |> pog.execute(db)
 }
 
-fn exec(db db: pog.Connection, sql sql: String, with with: List(dev.Param)) {
+fn exec(db db: pog.Connection, sql sql: String, with with: List(sql.Param)) {
   sql
   |> pog.query()
   |> list.fold(with, _, fn(acc, param) {

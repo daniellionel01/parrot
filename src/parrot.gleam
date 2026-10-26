@@ -45,7 +45,7 @@ pub fn main() {
 /// exit(0) -> success
 /// exit(1) -> failure
 ///
-@external(erlang, "parrot_ffi.erl", "exit")
+@external(erlang, "parrot_ffi", "exit")
 fn exit(n: Int) -> Nil
 
 fn generate(
@@ -84,17 +84,10 @@ fn generate(
   let _ = simplifile.create_directory_all(sqlc_dir)
 
   io.println("\u{1F4E5} downloading sqlc binary...")
-  let _ = case sqlc.download_binary() {
-    Error(_) -> io.println(cli.error_crossmark)
-    Ok(_) -> Nil
-  }
+  use _ <- result.try(sqlc.download_binary())
 
   io.println("\u{1F50D} verifying sqlc binary...")
-
-  let _ = case sqlc.verify_binary() {
-    Error(_) -> io.println(cli.error_crossmark)
-    Ok(_) -> Nil
-  }
+  use _ <- result.try(sqlc.verify_binary())
 
   let sqlc_json = sqlc.gen_sqlc_json(engine, queries)
   let _ = simplifile.write(sqlc_file, sqlc_json)
@@ -106,15 +99,13 @@ fn generate(
 
   io.println("\u{2728} generating gleam code...")
 
-  let gen_result =
-    child_process.exec(
-      run: "./sqlc",
-      with: ["generate", "--file", "sqlc.json"],
-      in: sqlc_dir,
-    )
+  let gen_result = sqlc.exec(["generate", "--file", "sqlc.json"])
 
   use _ <- result.try(case gen_result {
-    Ok(_) -> Ok(Nil)
+    Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
+    Ok(child_process.Output(status_code: _, output:)) -> {
+      Error(error.SqlcGenerateError(output))
+    }
     Error(error) -> {
       let error = child_process.describe_start_error(error)
       Error(error.SqlcGenerateError(error))
@@ -134,7 +125,10 @@ fn generate(
       in: project.root(),
     )
   use _ <- result.try(case stdout_format {
-    Ok(_) -> Ok(Nil)
+    Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
+    Ok(child_process.Output(status_code: _, output:)) -> {
+      Error(error.GleamFormatError(output))
+    }
     Error(error) -> {
       let error = child_process.describe_start_error(error)
       Error(error.GleamFormatError(error))
