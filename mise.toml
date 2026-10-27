@@ -52,3 +52,14 @@ run = [
   "gleam run -m parrot -- --sqlite file.db",
   "gleam test",
 ]
+
+[tasks.test-mysql]
+description = "round trip values through generated code, requires db-up"
+dir = "test_projects/mysql"
+env = { DATABASE_URL = "mysql://root:parrot@127.0.0.1:33306/parrot_test_project", MYSQL_PWD = "parrot" }
+run = [
+  "mysql --protocol=TCP -h 127.0.0.1 -P 33306 -u root -e 'drop database if exists parrot_test_project; create database parrot_test_project'",
+  "mysql --protocol=TCP -h 127.0.0.1 -P 33306 -u root parrot_test_project < priv/schema.sql",
+  "gleam run -m parrot",
+  "gleam test",
+]

@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixes
 
-- `calendar_date_decoder` and `time_of_day_decoder` also decode `YYYY-MM-DD` and `HH:MM:SS` strings.
+- `calendar_date_decoder` and `time_of_day_decoder` also decode `YYYY-MM-DD` and `HH:MM:SS` strings (sqlite) and `{0, {h, m, s}}` (mysql).
 
 - Postgres `char` columns (`bpchar`) are now decoded as `String` instead of `decode.Dynamic`.
 

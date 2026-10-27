@@ -943,7 +943,10 @@ fn date_decoder() -> decode.Decoder(Date) {
 }
 
 pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
-  decode.one_of(time_of_day_tuple_decoder(), or: [time_of_day_string_decoder()])
+  decode.one_of(time_of_day_tuple_decoder(), or: [
+    time_of_day_string_decoder(),
+    time_of_day_with_days_decoder(),
+  ])
 }
 
 /// `HH:MM:SS[.fraction]`, f.e. how sqlite stores times
@@ -952,6 +955,16 @@ fn time_of_day_string_decoder() -> decode.Decoder(TimeOfDay) {
   case timestamp.parse_rfc3339(\"1970-01-01T\" <> time <> \"Z\") {
     Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).1)
     Error(_) -> decode.failure(calendar.TimeOfDay(0, 0, 0, 0), \"Time of day\")
+  }
+}
+
+/// `{days, {hours, minutes, seconds}}`, how mysql returns times
+fn time_of_day_with_days_decoder() -> decode.Decoder(TimeOfDay) {
+  use days <- decode.field(0, decode.int)
+  use time <- decode.field(1, time_of_day_tuple_decoder())
+  case days {
+    0 -> decode.success(time)
+    _ -> decode.failure(time, \"Time of day\")
   }
 }
 
