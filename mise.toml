@@ -42,3 +42,13 @@ run = [
   "gleam run -m parrot",
   "gleam test",
 ]
+
+[tasks.test-sqlite]
+description = "round trip values through generated code"
+dir = "test_projects/sqlite"
+run = [
+  "rm -f file.db",
+  "sqlite3 file.db < priv/schema.sql",
+  "gleam run -m parrot -- --sqlite file.db",
+  "gleam test",
+]

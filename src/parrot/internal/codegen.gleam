@@ -301,8 +301,6 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
   use <- bool.guard(tiny_bool, GleamBool)
 
   case sqltype {
-    // `interval` has to come before `int` and `timetz` before `time`.
-    // `timetz` includes an offset, which `TimeOfDay` can not represent.
     "interval" | "timetz" | "time with time zone" -> GleamDynamic
     "int" <> _
     | "tinyint"
@@ -892,11 +890,14 @@ fn timestamp_decoder() -> decode.Decoder(Timestamp) {
 
 /// https://github.com/lpil/pog/blob/v4.1.0/src/pog.gleam#L873
 pub fn calendar_date_decoder() -> decode.Decoder(Date) {
-  use year <- decode.field(0, decode.int)
-  use month <- decode.field(1, decode.int)
-  use day <- decode.field(2, decode.int)
-  case calendar.month_from_int(month) {
-    Ok(month) -> decode.success(calendar.Date(year:, month:, day:))
+  decode.one_of(date_decoder(), or: [date_string_decoder()])
+}
+
+/// `YYYY-MM-DD`, f.e. how sqlite stores dates
+fn date_string_decoder() -> decode.Decoder(Date) {
+  use date <- decode.then(decode.string)
+  case timestamp.parse_rfc3339(date <> \"T00:00:00Z\") {
+    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).0)
     Error(_) ->
       decode.failure(calendar.Date(0, calendar.January, 1), \"Calendar date\")
   }
@@ -918,7 +919,7 @@ fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
 
 fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
   use date <- decode.field(0, date_decoder())
-  use time <- decode.field(1, time_of_day_decoder())
+  use time <- decode.field(1, time_of_day_tuple_decoder())
 
   timestamp.from_calendar(date:, time:, offset: calendar.utc_offset)
   |> decode.success()
@@ -942,6 +943,19 @@ fn date_decoder() -> decode.Decoder(Date) {
 }
 
 pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
+  decode.one_of(time_of_day_tuple_decoder(), or: [time_of_day_string_decoder()])
+}
+
+/// `HH:MM:SS[.fraction]`, f.e. how sqlite stores times
+fn time_of_day_string_decoder() -> decode.Decoder(TimeOfDay) {
+  use time <- decode.then(decode.string)
+  case timestamp.parse_rfc3339(\"1970-01-01T\" <> time <> \"Z\") {
+    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).1)
+    Error(_) -> decode.failure(calendar.TimeOfDay(0, 0, 0, 0), \"Time of day\")
+  }
+}
+
+fn time_of_day_tuple_decoder() -> decode.Decoder(TimeOfDay) {
   use hours <- decode.field(0, decode.int)
   use minutes <- decode.field(1, decode.int)
   use #(seconds, nanoseconds) <- decode.field(2, seconds_decoder())

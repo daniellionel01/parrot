@@ -86,3 +86,10 @@ jobs:
           gleam run -m parrot
           git diff --exit-code src/app/sql.gleam
           gleam test
+      - name: test_projects/sqlite
+        working-directory: test_projects/sqlite
+        run: |
+          sqlite3 file.db < priv/schema.sql
+          gleam run -m parrot -- --sqlite file.db
+          git diff --exit-code src/app/sql.gleam
+          gleam test
