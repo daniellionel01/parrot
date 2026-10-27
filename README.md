@@ -168,11 +168,7 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
 }
 ```
 
-If you want to see more code how this lirbary works in action, take a look at the integration tests:
-
-- PostgreSQL: [./integration/psql](./integration/psql)
-- MySQL: [./integration/mysql](./integration/mysql)
-- SQlite: [./integration/sqlite](./integration/sqlite)
+More examples: [snapshot tests](./test/birdie_snapshots)
 
 </details>
 
@@ -262,11 +258,13 @@ pub fn main() {
 
 ## Examples
 
-If you want to see how this library works in action, take a look at the integration tests:
+Schema, queries and generated code:
 
-- PostgreSQL: [integration/psql](https://github.com/daniellionel01/parrot/blob/main/integration/psql)
-- MySQL: [integration/mysql](https://github.com/daniellionel01/parrot/blob/main/integration/mysql)
-- SQlite: [integration/sqlite](https://github.com/daniellionel01/parrot/blob/main/integration/sqlite)
+- PostgreSQL: [postgres_app_fixture](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/postgres_app_fixture.accepted)
+- MySQL: [mysql_app_fixture](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/mysql_app_fixture.accepted)
+- SQlite: [sqlite_app_fixture](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/sqlite_app_fixture.accepted)
+
+Database driver wrappers: [wrappers.md](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md)
 
 ## Quirks
 
@@ -348,27 +346,19 @@ Contributions are welcomed!
 
 [just](https://github.com/casey/just) is used to run project commands.
 
-### Database
-
-There are scripts to spawn a MySQL or PostgreSQL Podman container:
-
-- [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
-- [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
-
-For example:
+### Tests
 
 ```sh
-$ ./bin/mysql.sh
-# or
-$ ./bin/psql.sh
+$ gleam test
+$ gleam run -m birdie # review snapshots
 ```
 
-### Integration Test Suite
+Integration tests (requires `sqlite3`, `psql`, `pg_dump`, `mysql`, `mysqldump`):
 
 ```sh
-$ just test-sqlite
-$ just test-mysql
-$ just test-psql
+$ just db-up
+$ just test-integration
+$ just db-down
 ```
 
 ## Acknowledgements

@@ -2,24 +2,32 @@ default:
     @just --choose
 
 clean:
-    find . -name build -type d -prune -o -name gleam.toml -execdir gleam clean \;
+    gleam clean
 
 choire:
     gleam run -m choire
 
 update:
     gleam update
-    find . -name build -type d -prune -o -name gleam.toml -execdir gleam update \;
 
 # count lines of code of (excluding tests)
 @loc:
     echo "SOURCE CODE"
-    cloc . --vcs=git --exclude-dir=integration,test
+    cloc . --vcs=git --exclude-dir=test
     echo "\TESTS"
-    cloc integration test --vcs=git
+    cloc test --vcs=git
 
-@integration:
-    just integration/sqlite/test
-    just integration/sqlite-no-optional/test
-    just integration/mysql/test
-    just integration/psql/test
+compose := `command -v podman >/dev/null && echo "podman compose" || echo "docker compose"`
+
+# start the databases used by the integration tests (see compose.yaml)
+db-up:
+    {{compose}} up -d --wait
+
+db-down:
+    {{compose}} down
+
+# needs `just db-up`, `sqlite3`, `psql`, `pg_dump`, `mysql` and `mysqldump`
+test-integration:
+    PARROT_TEST_POSTGRES_URL="postgresql://parrot:parrot@127.0.0.1:55432/parrot" \
+    PARROT_TEST_MYSQL_URL="mysql://root:parrot@127.0.0.1:33306/parrot" \
+    gleam test integration
