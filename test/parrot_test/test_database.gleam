@@ -115,8 +115,8 @@ fn base_url(env: String) -> Result(String, String) {
   |> result.replace_error(
     "environment variable `"
     <> env
-    <> "` is not set. Start the test databases with `just db-up` and run the "
-    <> "integration tests with `just test-integration`.",
+    <> "` is not set. Start the test databases with `mise run db-up` and run the "
+    <> "integration tests with `mise run test-integration`.",
   )
 }
 

@@ -1,4 +1,4 @@
-# Databases for the integration tests (`just test-integration`).
+# Databases for the integration tests (`mise run test-integration`).
 
 services:
   postgres:

@@ -1,0 +1,33 @@
+# keep in sync with .github/workflows/ci.yaml
+[tools]
+gleam = "1.19.2"
+erlang = "29"
+
+[tasks.clean]
+run = "gleam clean"
+
+[tasks.update]
+run = "gleam update"
+
+[tasks.choire]
+run = "gleam run -m choire"
+
+[tasks.loc]
+description = "count lines of code"
+run = [
+  "echo SOURCE && cloc . --vcs=git --exclude-dir=test",
+  "echo TESTS && cloc test --vcs=git",
+]
+
+[tasks.db-up]
+description = "start test databases (see compose.yaml)"
+run = "if command -v podman >/dev/null; then podman compose up -d --wait; else docker compose up -d --wait; fi"
+
+[tasks.db-down]
+description = "stop test databases"
+run = "if command -v podman >/dev/null; then podman compose down; else docker compose down; fi"
+
+[tasks.test-integration]
+description = "requires db-up, sqlite3, psql, pg_dump, mysql, mysqldump"
+env = { PARROT_TEST_POSTGRES_URL = "postgresql://parrot:parrot@127.0.0.1:55432/parrot", PARROT_TEST_MYSQL_URL = "mysql://root:parrot@127.0.0.1:33306/parrot" }
+run = "gleam test integration"

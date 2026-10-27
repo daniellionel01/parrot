@@ -344,7 +344,7 @@ Contributions are welcomed!
 
 ## Development
 
-[just](https://github.com/casey/just) is used to run project commands.
+[mise](https://mise.jdx.dev) is used to run project commands.
 
 ### Tests
 
@@ -356,9 +356,9 @@ $ gleam run -m birdie # review snapshots
 Integration tests (requires `sqlite3`, `psql`, `pg_dump`, `mysql`, `mysqldump`):
 
 ```sh
-$ just db-up
-$ just test-integration
-$ just db-down
+$ mise run db-up
+$ mise run test-integration
+$ mise run db-down
 ```
 
 ## Acknowledgements
