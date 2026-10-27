@@ -311,6 +311,8 @@ since they are too complex to handle with the current implementation.
 There is a plan for a better and more flexible implementation. Until then,
 it will be wrapped in a dynamic type.
 
+Postgres: `interval`, `timetz`, `inet`, `cidr`, `macaddr`, ranges, geometric types, `tsvector`, `tsquery`, …
+
 ### Targetting JavaScript
 
 So here is the catch: you can only execute parrot in an erlang gleam application.

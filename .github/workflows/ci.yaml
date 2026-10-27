@@ -75,3 +75,14 @@ jobs:
         env:
           PARROT_TEST_POSTGRES_URL: postgresql://parrot:parrot@127.0.0.1:55432/parrot
           PARROT_TEST_MYSQL_URL: mysql://root:parrot@127.0.0.1:33306/parrot
+      # same as `mise run test-postgres`
+      - name: test_projects/postgres
+        working-directory: test_projects/postgres
+        env:
+          DATABASE_URL: postgresql://parrot:parrot@127.0.0.1:55432/parrot_test_project
+        run: |
+          psql postgresql://parrot:parrot@127.0.0.1:55432/parrot -q -c 'create database parrot_test_project'
+          psql $DATABASE_URL -q -v ON_ERROR_STOP=1 -f priv/schema.sql
+          gleam run -m parrot
+          git diff --exit-code src/app/sql.gleam
+          gleam test

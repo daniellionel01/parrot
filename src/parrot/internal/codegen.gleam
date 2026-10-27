@@ -301,8 +301,9 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
   use <- bool.guard(tiny_bool, GleamBool)
 
   case sqltype {
-    // has to come before `int`, otherwise it would be matched as an integer
-    "interval" -> GleamDynamic
+    // `interval` has to come before `int` and `timetz` before `time`.
+    // `timetz` includes an offset, which `TimeOfDay` can not represent.
+    "interval" | "timetz" | "time with time zone" -> GleamDynamic
     "int" <> _
     | "tinyint"
     | "smallint"
@@ -320,6 +321,7 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     | "double"
     | "money" <> _ -> GleamFloat
     "char" <> _
+    | "bpchar"
     | "varchar" <> _
     | "text" <> _
     | "mediumtext" <> _
@@ -336,8 +338,7 @@ pub fn sqlc_col_to_gleam(col: sqlc.TableColumn, context: SQLC) -> GleamType {
     | "binary"
     | "varbinary"
     | "byte" <> _ -> GleamBitArray
-    "time" | "timetz" | "time without time zone" | "time with time zone" ->
-      GleamTimeOfDay
+    "time" | "time without time zone" -> GleamTimeOfDay
     "datetime" <> _ | "time" <> _ -> GleamTimestamp
     "date" <> _ -> GleamDate
     "bool" <> _ -> GleamBool
