@@ -2,11 +2,9 @@
 //// and rendering text in the terminal.
 ////
 
-import argv
-import envoy
-import gleam/result
+import gleam/list
+import gleam/option.{type Option, None, Some}
 import parrot/error
-import parrot/internal/sqlc
 
 pub const usage_text =
   "
@@ -16,47 +14,26 @@ pub const usage_text =
     gleam run -m parrot -- [OPTIONS]
     gleam run -m parrot help
 
-  DESCRIPTION:
-    This tool generates type-safe Gleam code from your raw SQL queries.
-    It connects to your database to introspect schemas and validate queries,
-    then generates Gleam functions that you can use in your application.
-
-    By default, it automatically detects your database driver (PostgreSQL,
-    MySQL, or SQLite) by reading the DATABASE_URL environment variable.
-
   OPTIONS:
-    --sqlite <FILE_PATH>
-      Directly specify the path to a SQLite database file. When this
-      option is used, it bypasses the DATABASE_URL environment
-      variable entirely.
+    --sqlite <PATH>        sqlite database file
+    -e, --env-var <NAME>   environment variable with the connection string (default: DATABASE_URL)
+    --output <PATH>        generated module (default: src/<project>/sql.gleam)
+    --schema <PATH>        schema or migration files instead of a database connection
+    --engine <ENGINE>      postgresql, mysql or sqlite (default: detected from the connection string)
+    --sqlc <PATH|system>   sqlc binary to use instead of the one parrot downloads
 
-    -e, --env-var <VAR_NAME>
-      Specify the name of an alternative environment variable to use
-      for the database connection URL.
-      Defaults to 'DATABASE_URL'.
+  Options can also be set in gleam.toml under [tools.parrot], see
+  https://github.com/daniellionel01/parrot/blob/main/pages/toml-reference.md
 
-  DATABASE_URL:
-    Parrot automatically detects the driver from the URL scheme.
-
-    Formats:
-    - PostgreSQL: postgres://user:password@host:port/dbname
-    - MySQL:      mysql://user:password@host:port/dbname
-    - SQLite:     file:/path/to/your/database.db
+  CONNECTION STRINGS:
+    postgresql://user:password@host:port/database
+    mysql://user:password@host:port/database
+    sqlite:path/to/database.db
 
   EXAMPLES:
-    # 1. The default: run with a DATABASE_URL environment variable set.
-    $ export DATABASE_URL=\"postgres://user:pass@localhost/mydb\"
-    $ gleam run -m parrot
-
-    # 2. Using Sqlite: directly point to a database file.
-    $ gleam run -m parrot -- --sqlite ./priv/app.db
-
-    # 3. Different environment variable
-    $ export STAGING_DB_URL=\"mysql://staging:pass@remote/db\"
-    $ gleam run -m parrot -- --env-var STAGING_DB_URL
-
-    # 4. Get help
-    $ gleam run -m parrot help
+    gleam run -m parrot
+    gleam run -m parrot -- --sqlite priv/app.db
+    gleam run -m parrot -- --schema priv/migrations --engine postgresql
 "
 
 pub const colorless = "\u{001b}[0m"
@@ -77,58 +54,75 @@ pub fn yellow(text: String) {
 
 pub type Command {
   Help
-  Generate(engine: sqlc.Engine, db: String)
+  Generate(Flags)
 }
 
-fn engine_from_env(str: String) -> Result(sqlc.Engine, error.ParrotError) {
-  case str {
-    "postgres" <> _ -> Ok(sqlc.PostgreSQL)
-    "mysql" <> _ -> Ok(sqlc.MySQL)
-    "file" | "sqlite" <> _ -> Ok(sqlc.SQLite)
-    _ -> Error(error.UnknownEngine(str))
+/// Options passed on the command line. These take precedence over
+/// `[tools.parrot]` in gleam.toml.
+///
+pub type Flags {
+  Flags(
+    sqlite: Option(String),
+    env: Option(String),
+    output: Option(String),
+    schema: Option(String),
+    engine: Option(String),
+    sqlc: Option(String),
+  )
+}
+
+pub const no_flags =
+  Flags(
+    sqlite: None,
+    env: None,
+    output: None,
+    schema: None,
+    engine: None,
+    sqlc: None,
+  )
+
+pub fn parse(arguments: List(String)) -> Result(Command, error.ParrotError) {
+  case arguments {
+    ["help"] | ["--help"] | ["-h"] -> Ok(Help)
+    _ -> parse_flags(arguments, no_flags)
   }
 }
 
-fn parse_env(env: String) -> Result(#(sqlc.Engine, String), error.ParrotError) {
-  let env_result = envoy.get(env)
-  use env_var <- result.try(result.replace_error(
-    env_result,
-    error.EnvironmentVariableEmpty(env),
-  ))
-
-  let engine_result = engine_from_env(env_var)
-  use engine <- result.try(engine_result)
-
-  Ok(#(engine, env_var))
-}
-
-pub fn command_from_args() -> Result(Command, error.ParrotError) {
-  case argv.load().arguments {
-    [] -> {
-      parse_env("DATABASE_URL")
-      |> result.map(fn(a) {
-        let #(engine, db) = a
-        Generate(engine:, db:)
-      })
-    }
-    ["--env-var", env] -> {
-      parse_env(env)
-      |> result.map(fn(a) {
-        let #(engine, db) = a
-        Generate(engine:, db:)
-      })
-    }
-    ["-e", env] -> {
-      parse_env(env)
-      |> result.map(fn(a) {
-        let #(engine, db) = a
-        Generate(engine:, db:)
-      })
-    }
-    ["--sqlite", file_path] -> {
-      Ok(Generate(sqlc.SQLite, file_path))
-    }
-    ["help"] -> Ok(Help)
-    _ -> Ok(Help)
+fn parse_flags(
+  arguments: List(String),
+  flags: Flags,
+) -> Result(Command, error.ParrotError) {
+  case arguments {
+    [] -> Ok(Generate(flags))
+    ["--sqlite", value, ..rest] ->
+      parse_flags(rest, Flags(..flags, sqlite: Some(value)))
+    ["-e", value, ..rest] | ["--env-var", value, ..rest] ->
+      parse_flags(rest, Flags(..flags, env: Some(value)))
+    ["--output", value, ..rest] ->
+      parse_flags(rest, Flags(..flags, output: Some(value)))
+    ["--schema", value, ..rest] ->
+      parse_flags(rest, Flags(..flags, schema: Some(value)))
+    ["--engine", value, ..rest] ->
+      parse_flags(rest, Flags(..flags, engine: Some(value)))
+    ["--sqlc", value, ..rest] ->
+      parse_flags(rest, Flags(..flags, sqlc: Some(value)))
+    [argument, ..] ->
+      case
+        list.contains(
+          [
+            "--sqlite",
+            "-e",
+            "--env-var",
+            "--output",
+            "--schema",
+            "--engine",
+            "--sqlc",
+          ],
+          argument,
+        )
+      {
+        True -> Error(error.MissingArgumentValue(argument))
+        False -> Error(error.UnknownArgument(argument))
+      }
   }
 }

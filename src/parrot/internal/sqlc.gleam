@@ -391,11 +391,17 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
   decode.run(data, decoder)
 }
 
-pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
+/// `schema` and `queries` are relative to `work_dir()`.
+///
+pub fn gen_sqlc_json(
+  engine: Engine,
+  schema: String,
+  queries: List(String),
+) -> String {
   let config =
     Config(version: Version2, sql: [
       Sql(
-        schema: Some("schema.sql"),
+        schema: Some(schema),
         queries: Some(QueriesMultiple(queries)),
         engine:,
         gen: Some(
@@ -412,8 +418,16 @@ pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
   config_to_json_string(config)
 }
 
-pub fn sqlc_binary_path() {
-  filepath.join(project.root(), "build/.parrot/sqlc")
+/// Where parrot runs sqlc and keeps its intermediate files.
+///
+pub fn work_dir() -> String {
+  filepath.join(project.root(), "build/.parrot")
+}
+
+/// The sqlc binary parrot downloads and manages itself.
+///
+pub fn sqlc_binary_path() -> String {
+  filepath.join(work_dir(), "sqlc")
 }
 
 fn binary_exists(path) {
@@ -487,25 +501,14 @@ fn check_sqlc_integrity(
   }
 }
 
-pub fn verify_binary() -> Result(Nil, error.ParrotError) {
-  use #(download, _) <- result.try(get_download_path_and_hash())
-
-  let path = sqlc_binary_path()
-
-  case exec(["version"]) {
-    Error(_) -> {
-      let information =
-        [
-          "download path: " <> download,
-          "os: " <> get_os(),
-          "cpu: " <> get_cpu(),
-          "sqlc binary path: " <> path,
-        ]
-        |> string.join("\n")
-      Error(error.SqlcDownloadError(
-        "could not verify sqlc binary. information:\n" <> information,
+/// Checks that `binary` runs and is the sqlc version parrot supports.
+///
+pub fn verify_binary(binary: String) -> Result(Nil, error.ParrotError) {
+  case exec(binary, ["version"]) {
+    Error(e) ->
+      Error(error.SqlcNotFound(
+        binary <> ": " <> child_process.describe_start_error(e),
       ))
-    }
     Ok(child_process.Output(status_code: _, output: v)) -> {
       let sqlc_version = "v" <> sqlc_version
       let v = string.trim(v)
@@ -523,19 +526,23 @@ pub fn verify_binary() -> Result(Nil, error.ParrotError) {
   }
 }
 
+/// Runs `binary` (a path) inside of `work_dir()`.
+///
 pub fn exec(
+  binary: String,
   arguments: List(String),
 ) -> Result(child_process.Output, child_process.StartError) {
-  let path = sqlc_binary_path()
-  let path = case filepath.is_absolute(path), simplifile.current_directory() {
+  child_process.from_file(absolute(binary))
+  |> child_process.args(arguments)
+  |> child_process.cwd(absolute(work_dir()))
+  |> child_process.run(stdio.capture(True))
+}
+
+fn absolute(path: String) -> String {
+  case filepath.is_absolute(path), simplifile.current_directory() {
     False, Ok(cwd) -> filepath.join(cwd, path)
     _, _ -> path
   }
-
-  child_process.from_file(path)
-  |> child_process.args(arguments)
-  |> child_process.cwd(filepath.directory_name(path))
-  |> child_process.run(stdio.capture(True))
 }
 
 pub fn download_binary() -> Result(Nil, error.ParrotError) {
@@ -552,7 +559,7 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
   use _ <- result.try(case binary_exists(path) {
     False -> Ok(Nil)
     True -> {
-      case verify_binary() {
+      case verify_binary(path) {
         Error(error.SqlcVersionError(_)) ->
           simplifile.delete(path)
           |> result.map_error(error.FileError("delete", path, _))

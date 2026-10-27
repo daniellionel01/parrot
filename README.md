@@ -29,7 +29,7 @@
 ☑️ Supports SQlite, PostgreSQL and MySQL.<br />
 ☑️ Multiple queries per file.<br />
 ☑️ Database client agnostic.<br />
-☑️ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
+☑️ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog), [ninanomenon/shork](https://github.com/ninanomenon/shork)).<br />
 ☑️ Automatically pulls the schema of your database.<br />
 ☑️ Automatically downloads [sqlc](https://sqlc.dev/) binary.<br />
 ☑️ Named parameters.<sup>*1</sup> <br />
@@ -91,9 +91,9 @@ values
   ($1, $2)
 returning id"
   #(sql, [
-    dev.ParamString(username),
-    dev.ParamNullable(
-      option.map(role, fn(v) { dev.ParamString(user_role_to_string(v)) }),
+    ParamString(username),
+    ParamNullable(
+      option.map(role, fn(v) { ParamString(user_role_to_string(v)) }),
     ),
   ])
 }
@@ -135,16 +135,16 @@ where
   username = $1
 limit
   1"
-  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
+  #(sql, [ParamString(username)], get_user_by_username_decoder())
 }
 
 pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use id <- decode.field(0, decode.int)
   use username <- decode.field(1, decode.string)
-  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use created_at <- decode.field(2, decode.optional(datetime_decoder()))
   use date_of_birth <- decode.field(
     3,
-    decode.optional(dev.calendar_date_decoder()),
+    decode.optional(calendar_date_decoder()),
   )
   use profile <- decode.field(4, decode.optional(decode.string))
   use extra_info <- decode.field(5, decode.optional(decode.string))
@@ -177,7 +177,7 @@ More examples: [snapshot tests](./test/birdie_snapshots)
 ### Installation
 
 ```sh
-$ gleam add parrot
+$ gleam add --dev parrot
 ```
 
 ### Define your Queries
@@ -218,9 +218,14 @@ $ gleam run -m parrot -- -e PG_DATABASE_URL
 # specify sqlite file
 $ gleam run -m parrot -- --sqlite <file_path>
 
+# schema or migration files instead of a database
+$ gleam run -m parrot -- --schema priv/migrations --engine postgresql
+
 # see all options
 $ gleam run -m parrot help
 ```
+
+All options can also be set in `gleam.toml`: [TOML reference](./pages/toml-reference.md)
 
 If you use SQLite, you also need to have installed [sqlite3](https://sqlite.org/index.html).
 
@@ -232,16 +237,14 @@ If you use PostgreSQL, you also need to have installed [pg_dump](https://www.pos
 
 You now have type safe access to your sql queries.
 
-You might want to write wrapper functions for the database client library of your choice. If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
-You can find functions to copy & paste into your codebase here: [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md)
+Wrappers for [pog](https://github.com/lpil/pog), [sqlight](https://github.com/lpil/sqlight) and [shork](https://github.com/ninanomenon/shork): [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md)
 
 An example with [lpil/sqlight](https://github.com/lpil/sqlight):
 
 ```gleam
 import app/sql
-import parrot/dev
 
-fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+fn to_sqlight(param: sql.Param) -> sqlight.Value {
   // ...
 }
 
@@ -249,7 +252,7 @@ pub fn main() {
   // ...
 
   let #(sql, with, expecting) = sql.get_user_by_username("alice")
-  let with = parrot_to_sqlight(with)
+  let with = list.map(with, to_sqlight)
   let row = sqlight.query(sql, on:, with:, expecting:)
 
   // ...

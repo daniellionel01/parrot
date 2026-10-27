@@ -1,6 +1,7 @@
 //// The functionality of generating the output gleam module.
 ////
 
+import filepath
 import gleam/bool
 import gleam/dynamic/decode as d
 import gleam/int
@@ -10,7 +11,6 @@ import gleam/option
 import gleam/result
 import gleam/string
 import parrot/error
-import parrot/internal/config
 import parrot/internal/sqlc.{type SQLC}
 import parrot/internal/string_extra
 import simplifile
@@ -19,10 +19,16 @@ pub type Codegen {
   Codegen(unknown_types: List(String))
 }
 
-pub fn from_config(
-  config: config.Config,
+/// Generates the gleam module at `output` from the JSON sqlc generated.
+///
+pub fn generate(
+  sqlc_json: String,
+  output: String,
 ) -> Result(Codegen, error.ParrotError) {
-  use json_string <- result.try(config.json_file(config))
+  use json_string <- result.try(
+    simplifile.read(sqlc_json)
+    |> result.map_error(error.FileError("read", sqlc_json, _)),
+  )
 
   use dyn_json <- result.try(
     json.parse(from: json_string, using: d.dynamic)
@@ -62,15 +68,14 @@ pub fn from_config(
 
   use module_contents <- result.try(gen_gleam_module(context))
 
-  let output_directory = config.output_directory(config)
+  let output_directory = filepath.directory_name(output)
   use _ <- result.try(
     simplifile.create_directory_all(output_directory)
     |> result.map_error(error.FileError("create directory", output_directory, _)),
   )
-  let output_path = config.output_module_path(config)
   use _ <- result.try(
-    simplifile.write(to: output_path, contents: module_contents)
-    |> result.map_error(error.FileError("write", output_path, _)),
+    simplifile.write(to: output, contents: module_contents)
+    |> result.map_error(error.FileError("write", output, _)),
   )
 
   Ok(Codegen(unknowns))

@@ -30,20 +30,30 @@ pub fn src() -> String {
   filepath.join(root(), "src")
 }
 
-/// Name of the gleam application
+/// The parsed `gleam.toml` of the project.
 ///
-pub fn name() -> Result(String, error.ParrotError) {
+pub fn toml() -> Result(dict.Dict(String, tom.Toml), error.ParrotError) {
   let toml_path = filepath.join(root(), "gleam.toml")
 
   use toml <- result.try(
     simplifile.read(toml_path)
     |> result.map_error(error.FileError("read", toml_path, _)),
   )
-  use parsed <- result.try(
-    tom.parse(toml)
-    |> result.replace_error(error.GleamTomlError("invalid toml")),
-  )
-  tom.get_string(parsed, ["name"])
+  tom.parse(toml)
+  |> result.replace_error(error.GleamTomlError("invalid toml"))
+}
+
+/// Name of the gleam application
+///
+pub fn name() -> Result(String, error.ParrotError) {
+  use toml <- result.try(toml())
+  name_from_toml(toml)
+}
+
+pub fn name_from_toml(
+  toml: dict.Dict(String, tom.Toml),
+) -> Result(String, error.ParrotError) {
+  tom.get_string(toml, ["name"])
   |> result.replace_error(error.GleamTomlError("missing the `name` field"))
 }
 

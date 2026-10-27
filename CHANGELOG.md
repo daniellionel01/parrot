@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+- Configuration in `gleam.toml` under `[tools.parrot]`: `output`, `env`, `engine`, `sqlc.bin`, `sqlc.schema`. See `pages/toml-reference.md`.
+  - `--output`, `--engine`, `--schema` and `--sqlc` flags, which take precedence over `gleam.toml`.
+  - `schema` generates code from schema or migration files without a database connection. (https://github.com/daniellionel01/parrot/issues/66)
+  - `sqlc.bin` uses your own sqlc binary instead of downloading one. (https://github.com/daniellionel01/parrot/issues/96)
+
+- Unknown command line arguments are an error instead of printing the help text.
+
 - Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
 
 - Postgres `time` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant.

@@ -1,3 +1,4 @@
+import argv
 import child_process
 import filepath
 import gleam/bool
@@ -16,30 +17,28 @@ import parrot/internal/sqlc
 import simplifile
 
 pub fn main() {
-  let #(text, status_code) = case cli.command_from_args() {
-    Ok(cli.Help) -> {
-      #(cli.usage_text, 0)
-    }
-    Ok(cli.Generate(engine:, db:)) -> {
-      let result = generate(engine, db)
-      case result {
-        Ok(_) -> {
-          #("\u{1F99C} SQL successfully generated!", 0)
-        }
-        Error(e) -> {
-          let error_message = error.to_string(e)
-          #(cli.red("\nError: " <> error_message), 1)
-        }
+  let result = {
+    use command <- result.try(cli.parse(argv.load().arguments))
+    case command {
+      cli.Help -> Ok(cli.usage_text)
+      cli.Generate(flags) -> {
+        use config <- result.try(config.load(flags))
+        use _ <- result.map(generate(config))
+        "\u{1F99C} SQL successfully generated!"
       }
-    }
-    Error(e) -> {
-      let error_message = error.to_string(e)
-      #(cli.red("Error: " <> error_message), 1)
     }
   }
 
-  io.println(text)
-  exit(status_code)
+  case result {
+    Ok(text) -> {
+      io.println(text)
+      exit(0)
+    }
+    Error(e) -> {
+      io.println(cli.red("\nError: " <> error.to_string(e)))
+      exit(1)
+    }
+  }
 }
 
 /// exit(0) -> success
@@ -48,27 +47,13 @@ pub fn main() {
 @external(erlang, "parrot_ffi", "exit")
 fn exit(n: Int) -> Nil
 
-fn generate(
-  engine: sqlc.Engine,
-  connection_string: String,
-) -> Result(Nil, error.ParrotError) {
-  let connection_string = database.connection_string(connection_string)
-
+fn generate(config: config.Config) -> Result(Nil, error.ParrotError) {
   use files <- result.try(project.walk(project.src()))
   let queries =
     files
-    |> dict.to_list
-    |> list.map(fn(file) {
-      let #(_, files) = file
-      list.map(files, fn(file) {
-        let file = case file {
-          "./" <> rest -> rest
-          x -> x
-        }
-        filepath.join("../..", file)
-      })
-    })
-    |> list.flatten()
+    |> dict.values
+    |> list.flatten
+    |> list.map(from_work_dir)
     // We want the generated `sql.gleam` module to be deterministic
     // on all operating systems, so we order all queries in a
     // predictable manner, since operating system calls to the file
@@ -77,67 +62,60 @@ fn generate(
     |> list.sort(by: string.compare)
   use <- bool.guard(when: queries == [], return: Error(error.NoQueriesFound))
 
-  let sqlc_binary = sqlc.sqlc_binary_path()
-  let sqlc_dir = filepath.directory_name(sqlc_binary)
-  let schema_file = filepath.join(sqlc_dir, "schema.sql")
-  let sqlc_file = filepath.join(sqlc_dir, "sqlc.json")
-  let queries_file = filepath.join(sqlc_dir, "queries.json")
+  let work_dir = sqlc.work_dir()
   use _ <- result.try(
-    simplifile.create_directory_all(sqlc_dir)
-    |> result.map_error(error.FileError("create directory", sqlc_dir, _)),
+    simplifile.create_directory_all(work_dir)
+    |> result.map_error(error.FileError("create directory", work_dir, _)),
   )
 
-  io.println("\u{1F4E5} downloading sqlc binary...")
-  use _ <- result.try(sqlc.download_binary())
+  use binary <- result.try(sqlc_binary(config.sqlc))
 
-  io.println("\u{1F50D} verifying sqlc binary...")
-  use _ <- result.try(sqlc.verify_binary())
+  use schema <- result.try(case config.schema {
+    config.FromFiles(path) -> Ok(from_work_dir(path))
+    config.FromDatabase(connection_string) -> {
+      io.println("\u{1F5C4} fetching schema...")
+      let connection_string = database.connection_string(connection_string)
+      use schema <- result.try(database.fetch_schema(
+        config.engine,
+        connection_string,
+      ))
+      use _ <- result.map(write(filepath.join(work_dir, "schema.sql"), schema))
+      "schema.sql"
+    }
+  })
 
-  let sqlc_json = sqlc.gen_sqlc_json(engine, queries)
-  use _ <- result.try(write(sqlc_file, sqlc_json))
-
-  io.println("\u{1F5C4} fetching schema...")
-
-  use schema_sql <- result.try(database.fetch_schema(engine, connection_string))
-  use _ <- result.try(write(schema_file, schema_sql))
+  let sqlc_json = sqlc.gen_sqlc_json(config.engine, schema, queries)
+  use _ <- result.try(write(filepath.join(work_dir, "sqlc.json"), sqlc_json))
 
   io.println("\u{2728} generating gleam code...")
 
-  let gen_result = sqlc.exec(["generate", "--file", "sqlc.json"])
+  use _ <- result.try(
+    case sqlc.exec(binary, ["generate", "--file", "sqlc.json"]) {
+      Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
+      Ok(child_process.Output(status_code: _, output:)) ->
+        Error(error.SqlcGenerateError(output))
+      Error(e) ->
+        Error(error.SqlcGenerateError(child_process.describe_start_error(e)))
+    },
+  )
 
-  use _ <- result.try(case gen_result {
-    Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
-    Ok(child_process.Output(status_code: _, output:)) -> {
-      Error(error.SqlcGenerateError(output))
-    }
-    Error(error) -> {
-      let error = child_process.describe_start_error(error)
-      Error(error.SqlcGenerateError(error))
-    }
-  })
-
-  use config <- result.try(config.load(queries_file))
-  use gen_result <- result.try(codegen.from_config(config))
+  let output = from_root(config.output)
+  use gen_result <- result.try(codegen.generate(
+    filepath.join(work_dir, "queries.json"),
+    output,
+  ))
 
   io.println("\u{1F9F9} formatting generated code...")
 
-  let output_path = config.output_module_path(config)
-  let stdout_format =
-    child_process.exec(
-      run: "gleam",
-      with: ["format", output_path],
-      in: project.root(),
-    )
-  use _ <- result.try(case stdout_format {
-    Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
-    Ok(child_process.Output(status_code: _, output:)) -> {
-      Error(error.GleamFormatError(output))
-    }
-    Error(error) -> {
-      let error = child_process.describe_start_error(error)
-      Error(error.GleamFormatError(error))
-    }
-  })
+  use _ <- result.try(
+    case child_process.exec(run: "gleam", with: ["format", output], in: ".") {
+      Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
+      Ok(child_process.Output(status_code: _, output:)) ->
+        Error(error.GleamFormatError(output))
+      Error(e) ->
+        Error(error.GleamFormatError(child_process.describe_start_error(e)))
+    },
+  )
 
   gen_result.unknown_types
   |> list.unique()
@@ -147,6 +125,57 @@ fn generate(
   io.println("")
 
   Ok(Nil)
+}
+
+fn sqlc_binary(sqlc: config.Sqlc) -> Result(String, error.ParrotError) {
+  case sqlc {
+    config.Managed -> {
+      io.println("\u{1F4E5} downloading sqlc binary...")
+      use _ <- result.try(sqlc.download_binary())
+      io.println("\u{1F50D} verifying sqlc binary...")
+      let binary = sqlc.sqlc_binary_path()
+      use _ <- result.map(sqlc.verify_binary(binary))
+      binary
+    }
+    config.System ->
+      child_process.find_executable("sqlc")
+      |> result.replace_error(error.SqlcNotFound("`sqlc` is not in the PATH"))
+      |> result.try(check_sqlc_version)
+    config.Binary(path) -> check_sqlc_version(from_root(path))
+  }
+}
+
+/// A binary parrot does not manage can be any version, so a different
+/// version only results in a warning.
+///
+fn check_sqlc_version(binary: String) -> Result(String, error.ParrotError) {
+  case sqlc.verify_binary(binary) {
+    Ok(Nil) -> Ok(binary)
+    Error(error.SqlcVersionError(e)) -> {
+      io.println(cli.yellow("warning: " <> e))
+      Ok(binary)
+    }
+    Error(e) -> Error(e)
+  }
+}
+
+/// Paths in the config are relative to the project's root.
+///
+fn from_root(path: String) -> String {
+  case filepath.is_absolute(path) {
+    True -> path
+    False -> filepath.join(project.root(), path)
+  }
+}
+
+/// sqlc runs inside of `build/.parrot`, so paths given to it have to be
+/// relative to that directory.
+///
+fn from_work_dir(path: String) -> String {
+  case filepath.is_absolute(path), path {
+    True, _ -> path
+    False, "./" <> path | False, path -> filepath.join("../..", path)
+  }
 }
 
 fn write(path: String, contents: String) -> Result(Nil, error.ParrotError) {

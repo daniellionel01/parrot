@@ -63,12 +63,16 @@ pub fn run(fixture: Fixture) -> Result(Output, error.ParrotError) {
   let assert Ok(_) =
     simplifile.write(
       filepath.join(dir, "sqlc.json"),
-      sqlc.gen_sqlc_json(fixture.engine, ["queries.sql"]),
+      sqlc.gen_sqlc_json(fixture.engine, "schema.sql", ["queries.sql"]),
     )
 
   use _ <- result.try(
     case
-      sqlc.exec(["generate", "--file", filepath.join(relative_dir, "sqlc.json")])
+      sqlc.exec(sqlc.sqlc_binary_path(), [
+        "generate",
+        "--file",
+        filepath.join(relative_dir, "sqlc.json"),
+      ])
     {
       Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
       Ok(child_process.Output(status_code: _, output:)) ->

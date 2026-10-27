@@ -1,50 +1,15 @@
 # Wrappers
 
-## https://github.com/lpil/sqlight
+Convert `sql.Param` to your database driver's value type. Copy the `to_*` function into your project.
 
-Since [sqlite](https://sqlite.org/) only supports a limited set of data types (https://sqlite.org/datatype3.html),
-we do not have to provide implementations for booleans and timestamps.
+These are tested against real databases in [test_projects](../test_projects).
 
-`dynamic` data types are unlikely in sqlite, but if they should occur (maybe through using an extension)
-you can provide your own implementation.
+- [pog](https://github.com/lpil/pog) (PostgreSQL): [driver.gleam](../test_projects/postgres/src/app/driver.gleam)
+- [sqlight](https://github.com/lpil/sqlight) (SQLite): [driver.gleam](../test_projects/sqlite/src/app/driver.gleam)
+- [shork](https://github.com/ninanomenon/shork) (MySQL): [driver.gleam](../test_projects/mysql/src/app/driver.gleam)
 
-```gleam
-pub fn parrot_to_sqlight(param: sql.Param) -> sqlight.Value {
-  case param {
-    sql.ParamFloat(x) -> sqlight.float(x)
-    sql.ParamInt(x) -> sqlight.int(x)
-    sql.ParamString(x) -> sqlight.text(x)
-    sql.ParamBitArray(x) -> sqlight.blob(x)
-    sql.ParamNullable(x) -> sqlight.nullable(fn(a) { parrot_to_sqlight(a) }, x)
-    sql.ParamList(_) -> panic as "sqlite does not implement lists"
-    sql.ParamBool(_) -> panic as "sqlite does not support booleans"
-    sql.ParamDate(_) -> panic as "sqlite does not support dates"
-    sql.ParamTimestamp(_) -> panic as "sqlite does not support timestamps"
-    sql.ParamTimeOfDay(_) -> panic as "sqlite does not support time of day"
-    sql.ParamDynamic(_) -> todo
-  }
-}
-```
+## Quirks
 
-## https://github.com/lpil/pog
-
-Postgresql provides a vast amount of simple and complex data types. Parrot is able to map all commonly used data types,
-but might struggle with more complex data types such as `polygon`.
-
-```gleam
-pub fn parrot_to_pog(param: sql.Param) -> pog.Value {
-  case param {
-    sql.ParamDynamic(_) -> todo
-    sql.ParamBool(x) -> pog.bool(x)
-    sql.ParamFloat(x) -> pog.float(x)
-    sql.ParamInt(x) -> pog.int(x)
-    sql.ParamString(x) -> pog.text(x)
-    sql.ParamBitArray(x) -> pog.bytea(x)
-    sql.ParamList(x) -> pog.array(parrot_to_pog, x)
-    sql.ParamNullable(x) -> pog.nullable(fn(a) { parrot_to_pog(a) }, x)
-    sql.ParamDate(x) -> pog.calendar_date(x)
-    sql.ParamTimestamp(x) -> pog.timestamp(x)
-    sql.ParamTimeOfDay(x) -> pog.calendar_time_of_day(x)
-  }
-}
-```
+- SQLite has no date and time types. Dates, timestamps and times are stored as ISO 8601 text.
+- MySQL: `shork.bool` crashes as a query parameter, booleans are sent as `1` / `0`.
+- MySQL has no arrays, so `ParamList` is not supported.

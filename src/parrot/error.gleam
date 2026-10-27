@@ -5,6 +5,11 @@ import simplifile
 pub type ParrotError {
   EnvironmentVariableEmpty(String)
   UnknownEngine(String)
+  /// Using schema files without a connection string, so the engine can't be
+  /// detected.
+  MissingEngine
+  UnknownArgument(String)
+  MissingArgumentValue(String)
 
   /// The project's `gleam.toml` could not be read or is missing a field.
   GleamTomlError(String)
@@ -17,6 +22,7 @@ pub type ParrotError {
   SchemaDumpError(command: String, output: String)
 
   SqlcDownloadError(String)
+  SqlcNotFound(String)
   SqlcVersionError(String)
   SqlcIntegrityError(expected: String, received: String)
   SqlcGenerateError(String)
@@ -37,7 +43,17 @@ pub fn to_string(error: ParrotError) {
       "Environment Variable \"" <> e <> "\" is empty!"
     }
     UnknownEngine(engine) -> {
-      "unknown engine: " <> engine
+      "unknown engine: " <> engine <> ". Expected postgresql, mysql or sqlite."
+    }
+    MissingEngine -> {
+      "could not detect the database engine. Set `engine` in "
+      <> "`[tools.parrot]` or pass `--engine`."
+    }
+    UnknownArgument(argument) -> {
+      "unknown argument: " <> argument <> ". See `gleam run -m parrot help`."
+    }
+    MissingArgumentValue(flag) -> {
+      "missing value for " <> flag
     }
     GleamTomlError(e) -> {
       "could not read the project's gleam.toml: " <> e
@@ -68,6 +84,9 @@ pub fn to_string(error: ParrotError) {
       <> command
       <> "`:\n"
       <> output
+    }
+    SqlcNotFound(e) -> {
+      "could not run sqlc: " <> e
     }
     SqlcDownloadError(e) -> {
       "there was an error downloading sqlc: " <> e
