@@ -1,5 +1,5 @@
 import parrot/internal/sqlc
-import parrot_test/pipeline.{type Fixture, Fixture}
+import parrot_test/tooling/pipeline.{type Fixture, Fixture}
 
 pub fn sqlite() -> List(Fixture) {
   [

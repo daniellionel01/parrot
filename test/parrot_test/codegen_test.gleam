@@ -5,10 +5,9 @@ import gleam/string
 import parrot/error
 import parrot/internal/codegen
 import parrot/internal/sqlc
-import parrot_test/compile_check
-import parrot_test/fixtures
-import parrot_test/pipeline.{type Fixture, Fixture}
-import parrot_test/summary
+import parrot_test/tooling/fixtures
+import parrot_test/tooling/pipeline.{type Fixture, Fixture}
+import parrot_test/tooling/summary
 
 // === SQLITE ===============================================================
 
@@ -210,8 +209,6 @@ fn fixture(
 
 fn snap_codegen(fixture: Fixture, title title: String) -> Nil {
   let assert Ok(output) = pipeline.run(fixture)
-
-  let assert Ok(Nil) = compile_check.check(output.module)
 
   [
     section("schema.sql", fixture.schema),

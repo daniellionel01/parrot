@@ -48,8 +48,10 @@ pub fn to_string(error: ParrotError) {
       "could not detect the database engine. Set `engine` in "
       <> "`[tools.parrot]` or pass `--engine`."
     }
-    InvalidArgument(e) -> {
-      e <> ". See `gleam run -m parrot help`."
+    InvalidArgument(argument) -> {
+      "invalid argument `"
+      <> argument
+      <> "`. See `gleam run -m parrot -- --help`."
     }
     GleamTomlError(e) -> {
       "could not read the project's gleam.toml: " <> e

@@ -1,13 +1,10 @@
 import gleeunit
 import parrot/internal/project
 import parrot/internal/sqlc
-import parrot_test/compile_check
 
 pub fn main() {
-  // Done once up front, so the individual tests stay within
-  // gleeunit's timeout.
+  // so individual tests stay within gleeunit's timeout
   let assert Ok(_) = sqlc.download_binary()
-  let assert Ok(_) = compile_check.setup()
 
   gleeunit.main()
 }

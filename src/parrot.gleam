@@ -20,7 +20,7 @@ pub fn main() {
   let result = {
     use command <- result.try(cli.parse(argv.load().arguments))
     case command {
-      cli.Help -> Ok(cli.usage_text)
+      cli.Help -> Ok(cli.usage)
       cli.Generate(flags) -> {
         use config <- result.try(config.load(flags))
         use _ <- result.map(generate(config))
@@ -35,7 +35,7 @@ pub fn main() {
       exit(0)
     }
     Error(e) -> {
-      io.println(cli.red("\nError: " <> error.to_string(e)))
+      io.println_error(cli.red("\nError: " <> error.to_string(e)))
       exit(1)
     }
   }
@@ -120,7 +120,7 @@ fn generate(config: config.Config) -> Result(Nil, error.ParrotError) {
   gen_result.unknown_types
   |> list.unique()
   |> list.each(fn(unknown) {
-    io.println(cli.yellow("unknown column type: " <> unknown))
+    io.println_error(cli.yellow("unknown column type: " <> unknown))
   })
   io.println("")
 
@@ -152,7 +152,7 @@ fn check_sqlc_version(binary: String) -> Result(String, error.ParrotError) {
   case sqlc.verify_binary(binary) {
     Ok(Nil) -> Ok(binary)
     Error(error.SqlcVersionError(e)) -> {
-      io.println(cli.yellow("warning: " <> e))
+      io.println_error(cli.yellow("warning: " <> e))
       Ok(binary)
     }
     Error(e) -> Error(e)

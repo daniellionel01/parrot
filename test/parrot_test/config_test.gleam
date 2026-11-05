@@ -20,6 +20,11 @@ pub fn parse_test() {
     ))
 }
 
+pub fn parse_help_test() {
+  assert cli.parse(["help"]) == Ok(cli.Help)
+  assert cli.parse(["--sqlite", "app.db", "-h"]) == Ok(cli.Help)
+}
+
 pub fn parse_invalid_test() {
   let assert Error(error.InvalidArgument(_)) = cli.parse(["--wibble"])
   let assert Error(error.InvalidArgument(_)) = cli.parse(["generate"])

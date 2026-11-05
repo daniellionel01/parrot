@@ -18,8 +18,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Unknown command line arguments are an error instead of printing the help text.
 
-- Command line parsing with [hoist](https://github.com/pevensie/hoist), which also supports `--output=path` and `-h`.
-
 - Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
 
 - Postgres `time` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant.

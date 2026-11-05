@@ -8,7 +8,7 @@ import gleam/result
 import gleam/string
 import gleam/uri
 import parrot/internal/sqlc
-import parrot_test/pipeline.{type Fixture}
+import parrot_test/tooling/pipeline.{type Fixture}
 import simplifile
 
 pub const postgres_env = "PARROT_TEST_POSTGRES_URL"

@@ -4,9 +4,9 @@
 import argv
 import gleam/list
 import parrot/internal/database
-import parrot_test/fixtures
-import parrot_test/pipeline.{type Fixture, Fixture}
-import parrot_test/test_database
+import parrot_test/tooling/fixtures
+import parrot_test/tooling/pipeline.{type Fixture, Fixture}
+import parrot_test/tooling/test_database
 
 pub fn sqlite_schema_test() {
   check(fixtures.sqlite())
