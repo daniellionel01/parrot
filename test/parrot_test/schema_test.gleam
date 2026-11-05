@@ -37,5 +37,5 @@ fn check_fixture(fixture: Fixture) -> Nil {
     pipeline.run(Fixture(..fixture, name: fixture.name <> "_fetched", schema:))
     as { "could not generate code from the fetched schema:\n" <> schema }
 
-  assert actual.module_without_seed == expected.module_without_seed
+  assert actual.module == expected.module
 }

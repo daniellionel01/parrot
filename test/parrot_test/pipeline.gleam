@@ -5,7 +5,6 @@ import filepath
 import gleam/dynamic/decode
 import gleam/json
 import gleam/result
-import gleam/string
 import parrot/error
 import parrot/internal/codegen
 import parrot/internal/sqlc
@@ -16,18 +15,8 @@ pub type Fixture {
 }
 
 pub type Output {
-  Output(
-    context: sqlc.SQLC,
-    /// The formatted gleam module, exactly as parrot would write it.
-    module: String,
-    /// Same as `module`, but with the seed code that is identical in every
-    /// generated module (`Param` type, shared decoders) replaced by a
-    /// placeholder comment, to keep snapshots focused on what differs.
-    module_without_seed: String,
-  )
+  Output(context: sqlc.SQLC, module: String)
 }
-
-pub const seed_placeholder = "// <seed code, see the `seed code` snapshot>"
 
 /// Loads a fixture from `test/fixtures/<name>/{schema,queries}.sql`.
 ///
@@ -76,19 +65,7 @@ pub fn run(fixture: Fixture) -> Result(Output, error.ParrotError) {
   let assert Ok(dyn_json) = json.parse(from: json_string, using: decode.dynamic)
   let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
   use module <- result.try(codegen.gen_gleam_module(context))
-
-  let module_without_seed =
-    string.replace(
-      in: module,
-      each: string.trim(codegen.output_gleam_module_seed_code),
-      with: seed_placeholder,
-    )
-
-  Ok(Output(
-    context:,
-    module: format(module, in: dir),
-    module_without_seed: format(module_without_seed, in: dir),
-  ))
+  Ok(Output(context:, module: format(module, in: dir)))
 }
 
 /// Parrot formats the generated module, so the snapshots do too.

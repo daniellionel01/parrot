@@ -217,7 +217,7 @@ fn snap_codegen(fixture: Fixture, title title: String) -> Nil {
     section("schema.sql", fixture.schema),
     section("queries.sql", fixture.queries),
     section("sqlc", summary.render(output.context)),
-    section("sql.gleam", output.module_without_seed),
+    section("sql.gleam", without_seed(output.module)),
   ]
   |> string.join("\n\n")
   |> birdie.snap(title:)
@@ -234,6 +234,15 @@ fn snap_error(fixture: Fixture, title title: String) -> Nil {
   ]
   |> string.join("\n\n")
   |> birdie.snap(title:)
+}
+
+/// The seed code is the same in every module and has its own snapshot.
+fn without_seed(module: String) -> String {
+  string.replace(
+    in: module,
+    each: string.trim(codegen.output_gleam_module_seed_code),
+    with: "// <seed code, see the `seed code` snapshot>",
+  )
 }
 
 fn section(name: String, content: String) -> String {
