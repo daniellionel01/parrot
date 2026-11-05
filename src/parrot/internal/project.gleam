@@ -10,6 +10,7 @@ import gleam/bool
 import gleam/dict
 import gleam/list
 import gleam/result
+import gleam/string
 import parrot/error
 import simplifile
 import tom
@@ -108,4 +109,14 @@ pub fn walk(
       list.fold(dicts, from: dict.new(), with: dict.merge)
     }
   }
+}
+
+/// The files found by `walk`, sorted so the generated module is the same on
+/// every operating system.
+///
+pub fn sql_files(walked: dict.Dict(String, List(String))) -> List(String) {
+  walked
+  |> dict.values
+  |> list.flatten
+  |> list.sort(by: string.compare)
 }

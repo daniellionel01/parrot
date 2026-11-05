@@ -2,11 +2,9 @@ import argv
 import child_process
 import filepath
 import gleam/bool
-import gleam/dict
 import gleam/io
 import gleam/list
 import gleam/result
-import gleam/string
 import parrot/error
 import parrot/internal/cli
 import parrot/internal/codegen
@@ -49,17 +47,7 @@ fn exit(n: Int) -> Nil
 
 fn generate(config: config.Config) -> Result(Nil, error.ParrotError) {
   use files <- result.try(project.walk(project.src()))
-  let queries =
-    files
-    |> dict.values
-    |> list.flatten
-    |> list.map(from_work_dir)
-    // We want the generated `sql.gleam` module to be deterministic
-    // on all operating systems, so we order all queries in a
-    // predictable manner, since operating system calls to the file
-    // system might return them in a different order.
-    //
-    |> list.sort(by: string.compare)
+  let queries = list.map(project.sql_files(files), from_work_dir)
   use <- bool.guard(when: queries == [], return: Error(error.NoQueriesFound))
 
   let work_dir = sqlc.work_dir()

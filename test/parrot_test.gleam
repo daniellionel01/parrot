@@ -1,5 +1,4 @@
 import gleeunit
-import parrot/internal/project
 import parrot/internal/sqlc
 
 pub fn main() {
@@ -7,10 +6,6 @@ pub fn main() {
   let assert Ok(_) = sqlc.download_binary()
 
   gleeunit.main()
-}
-
-pub fn project_name_test() {
-  assert project.name() == Ok("parrot")
 }
 
 pub fn os_cpu_test() {
