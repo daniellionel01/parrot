@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: sqlite named and slice parameters
+title: sqlite named and slice params
 ---
 -- schema.sql ------------------------------------------------------------------
 

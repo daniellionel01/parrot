@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: postgres enums as columns and parameters
+title: postgres enums
 ---
 -- schema.sql ------------------------------------------------------------------
 

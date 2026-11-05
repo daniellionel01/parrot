@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: postgres query on a table that does not exist
+title: unknown table
 ---
 -- schema.sql ------------------------------------------------------------------
 

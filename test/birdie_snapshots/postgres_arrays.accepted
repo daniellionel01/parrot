@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: postgres array columns and parameters
+title: postgres arrays
 ---
 -- schema.sql ------------------------------------------------------------------
 

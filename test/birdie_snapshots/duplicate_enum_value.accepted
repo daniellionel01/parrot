@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: two enums sharing a value
+title: duplicate enum value
 ---
 -- schema.sql ------------------------------------------------------------------
 

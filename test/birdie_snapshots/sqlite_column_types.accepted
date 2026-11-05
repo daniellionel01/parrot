@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: sqlite column types and nullability
+title: sqlite column types
 ---
 -- schema.sql ------------------------------------------------------------------
 

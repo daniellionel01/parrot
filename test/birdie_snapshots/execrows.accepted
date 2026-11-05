@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: unsupported execrows annotation
+title: execrows
 ---
 -- schema.sql ------------------------------------------------------------------
 

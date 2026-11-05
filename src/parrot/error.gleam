@@ -8,8 +8,7 @@ pub type ParrotError {
   /// Using schema files without a connection string, so the engine can't be
   /// detected.
   MissingEngine
-  UnknownArgument(String)
-  MissingArgumentValue(String)
+  InvalidArgument(String)
 
   /// The project's `gleam.toml` could not be read or is missing a field.
   GleamTomlError(String)
@@ -49,11 +48,8 @@ pub fn to_string(error: ParrotError) {
       "could not detect the database engine. Set `engine` in "
       <> "`[tools.parrot]` or pass `--engine`."
     }
-    UnknownArgument(argument) -> {
-      "unknown argument: " <> argument <> ". See `gleam run -m parrot help`."
-    }
-    MissingArgumentValue(flag) -> {
-      "missing value for " <> flag
+    InvalidArgument(e) -> {
+      e <> ". See `gleam run -m parrot help`."
     }
     GleamTomlError(e) -> {
       "could not read the project's gleam.toml: " <> e

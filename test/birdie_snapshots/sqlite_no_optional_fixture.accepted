@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: sqlite fixture without optional columns
+title: sqlite no optional fixture
 ---
 -- schema.sql ------------------------------------------------------------------
 

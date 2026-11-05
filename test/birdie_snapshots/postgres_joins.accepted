@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: postgres left joins narg and query commands
+title: postgres joins
 ---
 -- schema.sql ------------------------------------------------------------------
 

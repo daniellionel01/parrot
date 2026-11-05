@@ -1,10 +1,4 @@
-//// Checks that a generated module compiles, by building it inside of a
-//// minimal gleam project with the same dependencies a parrot user needs.
-////
-//// The project is created once by `setup` (so dependencies are only
-//// downloaded and compiled a single time) and every `check` only replaces
-//// the one module inside of it.
-////
+//// Builds a generated module inside of a minimal gleam project.
 
 import child_process
 import filepath

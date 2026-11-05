@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: enum and query with the same name
+title: enum and query name clash
 ---
 -- schema.sql ------------------------------------------------------------------
 

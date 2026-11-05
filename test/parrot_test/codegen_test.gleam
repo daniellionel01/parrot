@@ -1,12 +1,4 @@
-//// Snapshot tests for code generation. No database connection is needed:
-//// sqlc parses the schema on its own (see `parrot_test/pipeline`).
-////
-//// Every codegen snapshot contains the input schema and queries, a summary
-//// of what sqlc made of them and the generated gleam module. Every generated
-//// module is also compiled (see `parrot_test/compile_check`).
-////
-//// Review new or changed snapshots with `gleam run -m birdie`.
-////
+//// Review snapshots with `gleam run -m birdie`.
 
 import birdie
 import gleam/string
@@ -27,12 +19,12 @@ pub fn sqlite_basic_test() {
 
 pub fn sqlite_column_types_test() {
   fixtures.sqlite_column_types()
-  |> snap_codegen(title: "sqlite column types and nullability")
+  |> snap_codegen(title: "sqlite column types")
 }
 
 pub fn sqlite_named_and_slice_params_test() {
   fixtures.sqlite_named_and_slice_params()
-  |> snap_codegen(title: "sqlite named and slice parameters")
+  |> snap_codegen(title: "sqlite named and slice params")
 }
 
 pub fn sqlite_app_fixture_test() {
@@ -42,29 +34,29 @@ pub fn sqlite_app_fixture_test() {
 
 pub fn sqlite_no_optional_fixture_test() {
   fixtures.sqlite_no_optional_fixture()
-  |> snap_codegen(title: "sqlite fixture without optional columns")
+  |> snap_codegen(title: "sqlite no optional fixture")
 }
 
 // === POSTGRESQL ===========================================================
 
 pub fn postgres_enums_test() {
   fixtures.postgres_enums()
-  |> snap_codegen(title: "postgres enums as columns and parameters")
+  |> snap_codegen(title: "postgres enums")
 }
 
 pub fn postgres_arrays_test() {
   fixtures.postgres_arrays()
-  |> snap_codegen(title: "postgres array columns and parameters")
+  |> snap_codegen(title: "postgres arrays")
 }
 
 pub fn postgres_column_types_test() {
   fixtures.postgres_column_types()
-  |> snap_codegen(title: "postgres column types including unsupported ones")
+  |> snap_codegen(title: "postgres column types")
 }
 
 pub fn postgres_joins_and_commands_test() {
   fixtures.postgres_joins_and_commands()
-  |> snap_codegen(title: "postgres left joins narg and query commands")
+  |> snap_codegen(title: "postgres joins")
 }
 
 pub fn postgres_app_fixture_test() {
@@ -76,7 +68,7 @@ pub fn postgres_app_fixture_test() {
 
 pub fn mysql_column_types_test() {
   fixtures.mysql_column_types()
-  |> snap_codegen(title: "mysql column types enums and slices")
+  |> snap_codegen(title: "mysql column types")
 }
 
 pub fn mysql_app_fixture_test() {
@@ -94,7 +86,7 @@ pub fn sqlite_postgres_style_parameter_error_test() {
 -- name: GetUser :one
 select * from users where id = $1;",
   )
-  |> snap_error(title: "sqlite rejects postgres style parameters")
+  |> snap_error(title: "sqlite postgres style param")
 }
 
 pub fn postgres_unknown_table_error_test() {
@@ -105,7 +97,7 @@ pub fn postgres_unknown_table_error_test() {
 -- name: GetPost :one
 select * from posts where id = $1;",
   )
-  |> snap_error(title: "postgres query on a table that does not exist")
+  |> snap_error(title: "unknown table")
 }
 
 pub fn enum_and_query_name_collision_error_test() {
@@ -118,7 +110,7 @@ create table tickets (id serial primary key, status status not null);",
 -- name: Status :many
 select status from tickets;",
   )
-  |> snap_error(title: "enum and query with the same name")
+  |> snap_error(title: "enum and query name clash")
 }
 
 pub fn empty_enum_error_test() {
@@ -131,7 +123,7 @@ create table things (id serial primary key, value nothing not null);",
 -- name: GetThings :many
 select value from things;",
   )
-  |> snap_error(title: "enum without any values")
+  |> snap_error(title: "empty enum")
 }
 
 pub fn duplicate_enum_value_error_test() {
@@ -149,7 +141,7 @@ select status from tickets;
 -- name: DoorStatuses :many
 select status from doors;",
   )
-  |> snap_error(title: "two enums sharing a value")
+  |> snap_error(title: "duplicate enum value")
 }
 
 pub fn enum_values_colliding_in_pascal_case_error_test() {
@@ -162,7 +154,7 @@ create table tickets (id serial primary key, status ticket_status not null);",
 -- name: TicketStatuses :many
 select status from tickets;",
   )
-  |> snap_error(title: "enum values that collide in pascal case")
+  |> snap_error(title: "enum values clash in pascal case")
 }
 
 pub fn postgres_unnamed_parameter_error_test() {
@@ -173,7 +165,7 @@ pub fn postgres_unnamed_parameter_error_test() {
 -- name: PostsWithTag :many
 select id from posts where $1::text = any(tags);",
   )
-  |> snap_error(title: "postgres parameter without a name")
+  |> snap_error(title: "unnamed param")
 }
 
 pub fn execrows_unsupported_error_test() {
@@ -184,7 +176,7 @@ pub fn execrows_unsupported_error_test() {
 -- name: DeleteBook :execrows
 delete from books where id = $1;",
   )
-  |> snap_error(title: "unsupported execrows annotation")
+  |> snap_error(title: "execrows")
 }
 
 pub fn execlastid_unsupported_error_test() {
@@ -195,7 +187,7 @@ pub fn execlastid_unsupported_error_test() {
 -- name: CreateBook :execlastid
 insert into books (title) values (?);",
   )
-  |> snap_error(title: "unsupported execlastid annotation")
+  |> snap_error(title: "execlastid")
 }
 
 // === SEED CODE ============================================================
@@ -208,9 +200,6 @@ pub fn seed_code_test() {
 
 // === HELPERS ==============================================================
 
-/// The fixture's name is filled in from the snapshot title by the
-/// `snap_*` functions.
-///
 fn fixture(
   engine: sqlc.Engine,
   schema schema: String,
@@ -222,11 +211,7 @@ fn fixture(
 fn snap_codegen(fixture: Fixture, title title: String) -> Nil {
   let assert Ok(output) = pipeline.run(fixture)
 
-  case compile_check.check(output.module) {
-    Ok(Nil) -> Nil
-    Error(output) ->
-      panic as { "generated module does not compile:\n" <> output }
-  }
+  let assert Ok(Nil) = compile_check.check(output.module)
 
   [
     section("schema.sql", fixture.schema),

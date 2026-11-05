@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: unsupported execlastid annotation
+title: execlastid
 ---
 -- schema.sql ------------------------------------------------------------------
 

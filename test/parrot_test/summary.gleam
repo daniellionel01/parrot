@@ -1,11 +1,5 @@
-//// A compact, human readable rendering of the JSON that sqlc generates.
-////
-//// The raw JSON is not suitable for snapshots: for postgres it contains the
-//// entire `pg_catalog` and `information_schema` (tens of thousands of lines
-//// even for a single table). This only renders what parrot actually reads:
-//// the user defined tables and enums, and every query with its parameters
-//// and columns.
-////
+//// Compact rendering of sqlc's JSON for snapshots. The raw JSON includes all
+//// of `pg_catalog`.
 
 import gleam/int
 import gleam/list

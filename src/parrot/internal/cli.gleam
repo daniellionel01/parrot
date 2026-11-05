@@ -4,6 +4,8 @@
 
 import gleam/list
 import gleam/option.{type Option, None, Some}
+import gleam/result
+import hoist
 import parrot/error
 
 pub const usage_text =
@@ -82,47 +84,50 @@ pub const no_flags =
   )
 
 pub fn parse(arguments: List(String)) -> Result(Command, error.ParrotError) {
-  case arguments {
-    ["help"] | ["--help"] | ["-h"] -> Ok(Help)
-    _ -> parse_flags(arguments, no_flags)
+  use specs <- result.try(
+    hoist.validate_flag_specs([
+      hoist.new_flag("sqlite"),
+      hoist.new_flag("env-var") |> hoist.with_short_alias("e"),
+      hoist.new_flag("output"),
+      hoist.new_flag("schema"),
+      hoist.new_flag("engine"),
+      hoist.new_flag("sqlc"),
+      hoist.new_flag("help") |> hoist.with_short_alias("h") |> hoist.as_toggle,
+    ])
+    |> result.replace_error(error.InvalidArgument(
+      "invalid flag definitions, please open an issue",
+    )),
+  )
+  use args <- result.try(
+    hoist.parse(arguments, specs)
+    |> result.map_error(fn(e) {
+      error.InvalidArgument(case e {
+        hoist.UnknownFlag(flag) -> "unknown flag `" <> flag <> "`"
+        hoist.ValueNotProvided(flag) -> "missing value for `--" <> flag <> "`"
+        hoist.ValueNotSupported(flag:, ..) ->
+          "`--" <> flag <> "` does not take a value"
+        hoist.CustomError(Nil) -> "invalid arguments"
+      })
+    }),
+  )
+
+  let help = list.contains(args.flags, hoist.ToggleFlag("help"))
+  case args.arguments, help {
+    ["help"], _ | [], True -> Ok(Help)
+    [], False -> Ok(Generate(list.fold(args.flags, no_flags, add_flag)))
+    [argument, ..], _ ->
+      Error(error.InvalidArgument("unknown argument `" <> argument <> "`"))
   }
 }
 
-fn parse_flags(
-  arguments: List(String),
-  flags: Flags,
-) -> Result(Command, error.ParrotError) {
-  case arguments {
-    [] -> Ok(Generate(flags))
-    ["--sqlite", value, ..rest] ->
-      parse_flags(rest, Flags(..flags, sqlite: Some(value)))
-    ["-e", value, ..rest] | ["--env-var", value, ..rest] ->
-      parse_flags(rest, Flags(..flags, env: Some(value)))
-    ["--output", value, ..rest] ->
-      parse_flags(rest, Flags(..flags, output: Some(value)))
-    ["--schema", value, ..rest] ->
-      parse_flags(rest, Flags(..flags, schema: Some(value)))
-    ["--engine", value, ..rest] ->
-      parse_flags(rest, Flags(..flags, engine: Some(value)))
-    ["--sqlc", value, ..rest] ->
-      parse_flags(rest, Flags(..flags, sqlc: Some(value)))
-    [argument, ..] ->
-      case
-        list.contains(
-          [
-            "--sqlite",
-            "-e",
-            "--env-var",
-            "--output",
-            "--schema",
-            "--engine",
-            "--sqlc",
-          ],
-          argument,
-        )
-      {
-        True -> Error(error.MissingArgumentValue(argument))
-        False -> Error(error.UnknownArgument(argument))
-      }
+fn add_flag(flags: Flags, flag: hoist.Flag) -> Flags {
+  case flag {
+    hoist.ValueFlag("sqlite", value) -> Flags(..flags, sqlite: Some(value))
+    hoist.ValueFlag("env-var", value) -> Flags(..flags, env: Some(value))
+    hoist.ValueFlag("output", value) -> Flags(..flags, output: Some(value))
+    hoist.ValueFlag("schema", value) -> Flags(..flags, schema: Some(value))
+    hoist.ValueFlag("engine", value) -> Flags(..flags, engine: Some(value))
+    hoist.ValueFlag("sqlc", value) -> Flags(..flags, sqlc: Some(value))
+    _ -> flags
   }
 }

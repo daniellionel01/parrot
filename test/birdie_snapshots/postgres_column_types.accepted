@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: postgres column types including unsupported ones
+title: postgres column types
 ---
 -- schema.sql ------------------------------------------------------------------
 

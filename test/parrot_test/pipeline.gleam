@@ -1,15 +1,4 @@
-//// Runs the parrot pipeline without a database connection:
-////
-//// schema.sql + queries.sql -> sqlc generate -> sqlc json -> gleam module
-////
-//// sqlc can build up the database catalog by parsing the schema file on its
-//// own, so the only part of parrot that needs a real database is fetching
-//// the schema. That part is tested separately.
-////
-//// Every fixture is generated inside its own directory in
-//// `build/.parrot/test/<name>`, so that the file paths sqlc includes in its
-//// error messages stay the same between runs.
-////
+//// schema.sql + queries.sql -> sqlc -> gleam module, without a database.
 
 import child_process
 import filepath
@@ -102,9 +91,7 @@ pub fn run(fixture: Fixture) -> Result(Output, error.ParrotError) {
   ))
 }
 
-/// Parrot always runs `gleam format` on the generated module, so we do the
-/// same to snapshot exactly what users end up with. This also makes sure the
-/// generated module is at least syntactically valid gleam.
+/// Parrot formats the generated module, so the snapshots do too.
 ///
 pub fn format(module: String, in dir: String) -> String {
   let path = filepath.join(dir, "sql.gleam")

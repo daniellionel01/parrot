@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: enum values that collide in pascal case
+title: enum values clash in pascal case
 ---
 -- schema.sql ------------------------------------------------------------------
 
