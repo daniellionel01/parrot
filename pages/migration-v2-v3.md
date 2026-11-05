@@ -43,18 +43,3 @@ See [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers
 | postgres `timetz`   | `Timestamp`      | `decode.Dynamic` |
 | postgres `interval` | `Int`            | `decode.Dynamic` |
 | postgres `char`     | `decode.Dynamic` | `String`         |
-
-## Configuration
-
-Optional. Flags can now also be set in `gleam.toml`, see [TOML reference](https://parrot.hexdocs.pm/toml-reference.html).
-
-```toml
-[tools.parrot]
-env = "PG_DATABASE_URL"
-```
-
-Unknown command line arguments are an error now instead of printing the help text.
-
-## Errors
-
-Variants in `parrot/error` changed. Only relevant if you use parrot as a library.
