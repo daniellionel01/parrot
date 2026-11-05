@@ -37,12 +37,12 @@ See [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers
 
 ## Changed types
 
-| Column | v2 | v3 |
-| --- | --- | --- |
-| postgres `time` | `Timestamp` | `TimeOfDay` |
-| postgres `timetz` | `Timestamp` | `decode.Dynamic` |
-| postgres `interval` | `Int` | `decode.Dynamic` |
-| postgres `char` | `decode.Dynamic` | `String` |
+| Column              | v2               | v3               |
+| ------------------- | ---------------- | ---------------- |
+| postgres `time`     | `Timestamp`      | `TimeOfDay`      |
+| postgres `timetz`   | `Timestamp`      | `decode.Dynamic` |
+| postgres `interval` | `Int`            | `decode.Dynamic` |
+| postgres `char`     | `decode.Dynamic` | `String`         |
 
 ## Configuration
 
