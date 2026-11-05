@@ -1,7 +1,7 @@
 # 🦜 Parrot / type-safe SQL in [Gleam](https://gleam.run/)
 
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://parrot.hexdocs.pm/)
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
 > 🚨 **Exciting News**<br />

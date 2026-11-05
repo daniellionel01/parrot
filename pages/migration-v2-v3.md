@@ -46,7 +46,7 @@ See [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers
 
 ## Configuration
 
-Optional. Flags can now also be set in `gleam.toml`, see [TOML reference](https://hexdocs.pm/parrot/toml-reference.html).
+Optional. Flags can now also be set in `gleam.toml`, see [TOML reference](https://parrot.hexdocs.pm/toml-reference.html).
 
 ```toml
 [tools.parrot]
