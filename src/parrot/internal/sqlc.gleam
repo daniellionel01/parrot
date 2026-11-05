@@ -509,20 +509,15 @@ pub fn verify_binary(binary: String) -> Result(Nil, error.ParrotError) {
       Error(error.SqlcNotFound(
         binary <> ": " <> child_process.describe_start_error(e),
       ))
-    Ok(child_process.Output(status_code: _, output: v)) -> {
-      let sqlc_version = "v" <> sqlc_version
-      let v = string.trim(v)
-      case v == sqlc_version {
-        True -> Ok(Nil)
-        False ->
-          Error(error.SqlcVersionError(
-            "Could not match sqlc version. Wanted "
-            <> sqlc_version
-            <> ". Received "
-            <> v,
-          ))
+    Ok(child_process.Output(status_code: 0, output:)) -> {
+      let expected = "v" <> sqlc_version
+      case string.trim(output) {
+        received if received == expected -> Ok(Nil)
+        received -> Error(error.SqlcVersionError(expected:, received:))
       }
     }
+    Ok(child_process.Output(status_code: _, output:)) ->
+      Error(error.SqlcNotFound(binary <> ": " <> string.trim(output)))
   }
 }
 
@@ -560,7 +555,7 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
     False -> Ok(Nil)
     True -> {
       case verify_binary(path) {
-        Error(error.SqlcVersionError(_)) ->
+        Error(error.SqlcVersionError(..)) ->
           simplifile.delete(path)
           |> result.map_error(error.FileError("delete", path, _))
         _ -> Ok(Nil)

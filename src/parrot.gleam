@@ -1,5 +1,6 @@
 import argv
 import child_process
+import envoy
 import filepath
 import gleam/bool
 import gleam/io
@@ -20,7 +21,16 @@ pub fn main() {
     case command {
       cli.Help -> Ok(cli.usage)
       cli.Generate(flags) -> {
-        use config <- result.try(config.load(flags))
+        use toml <- result.try(project.toml())
+        case project.parrot_is_dependency(toml) {
+          True ->
+            io.println_error(cli.yellow(
+              "warning: parrot is only needed during development, move it to "
+              <> "[dev-dependencies]: gleam remove parrot && gleam add --dev parrot",
+            ))
+          False -> Nil
+        }
+        use config <- result.try(config.resolve(flags, toml, envoy.get))
         use _ <- result.map(generate(config))
         "\u{1F99C} SQL successfully generated!"
       }
@@ -139,8 +149,8 @@ fn sqlc_binary(sqlc: config.Sqlc) -> Result(String, error.ParrotError) {
 fn check_sqlc_version(binary: String) -> Result(String, error.ParrotError) {
   case sqlc.verify_binary(binary) {
     Ok(Nil) -> Ok(binary)
-    Error(error.SqlcVersionError(e)) -> {
-      io.println_error(cli.yellow("warning: " <> e))
+    Error(error.SqlcVersionError(..) as e) -> {
+      io.println_error(cli.yellow("warning: " <> error.to_string(e)))
       Ok(binary)
     }
     Error(e) -> Error(e)

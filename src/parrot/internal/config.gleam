@@ -5,7 +5,6 @@
 //// Command line arguments take precedence over `gleam.toml`.
 ////
 
-import envoy
 import gleam/dict.{type Dict}
 import gleam/option.{type Option, None, Some}
 import gleam/result
@@ -36,11 +35,6 @@ pub type Sqlc {
   Managed
   System
   Binary(path: String)
-}
-
-pub fn load(flags: cli.Flags) -> Result(Config, ParrotError) {
-  use toml <- result.try(project.toml())
-  resolve(flags, toml, envoy.get)
 }
 
 pub fn resolve(

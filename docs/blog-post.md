@@ -15,7 +15,7 @@ I quite like the quote "Yes is forever. No is for now.".
 
 Notes:
 
-- Using hoist package
+- hoist, used it but switched back to plain argv
 - child_process!
 - Dev dependency!
 - Testing this is hard!

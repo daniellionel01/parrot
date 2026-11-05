@@ -120,3 +120,12 @@ pub fn sql_files(walked: dict.Dict(String, List(String))) -> List(String) {
   |> list.flatten
   |> list.sort(by: string.compare)
 }
+
+/// Makes sure parrot is a dev dependency.
+///
+pub fn parrot_is_dependency(toml: dict.Dict(String, tom.Toml)) -> Bool {
+  case tom.get(toml, ["dependencies", "parrot"]) {
+    Ok(_) -> True
+    Error(_) -> False
+  }
+}

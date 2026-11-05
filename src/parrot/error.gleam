@@ -22,7 +22,7 @@ pub type ParrotError {
 
   SqlcDownloadError(String)
   SqlcNotFound(String)
-  SqlcVersionError(String)
+  SqlcVersionError(expected: String, received: String)
   SqlcIntegrityError(expected: String, received: String)
   SqlcGenerateError(String)
   SqlcOutputError(String)
@@ -89,8 +89,8 @@ pub fn to_string(error: ParrotError) {
     SqlcDownloadError(e) -> {
       "there was an error downloading sqlc: " <> e
     }
-    SqlcVersionError(e) -> {
-      "incompatible sqlc version found: " <> e
+    SqlcVersionError(expected:, received:) -> {
+      "expected sqlc " <> expected <> ", found " <> received
     }
     SqlcIntegrityError(expected:, received:) -> {
       "the sqlc binary does not match the expected checksum. "
