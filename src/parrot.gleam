@@ -6,11 +6,11 @@ import gleam/bool
 import gleam/io
 import gleam/list
 import gleam/result
-import parrot/error
 import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
 import parrot/internal/database
+import parrot/internal/error
 import parrot/internal/project
 import parrot/internal/sqlc
 
@@ -57,8 +57,12 @@ fn generate(
   root: String,
 ) -> Result(Nil, error.ParrotError) {
   let work_dir = project.work_dir(root)
-  use queries <- result.try(project.sql_files(filepath.join(root, "src")))
-  use <- bool.guard(when: queries == [], return: Error(error.NoQueriesFound))
+  let src = filepath.join(root, "src")
+  use queries <- result.try(project.sql_files(src))
+  use <- bool.guard(
+    when: queries == [],
+    return: Error(error.NoQueriesFound(src)),
+  )
 
   use binary <- result.try(sqlc_binary(config.sqlc, root, work_dir))
 
@@ -100,7 +104,7 @@ fn sqlc_binary(
     config.Managed -> sqlc.managed_binary(in: work_dir)
     config.System ->
       child_process.find_executable("sqlc")
-      |> result.replace_error(error.SqlcNotFound("`sqlc` is not in the PATH"))
+      |> result.replace_error(error.SqlcNotInPath)
       |> result.try(check_version)
     config.Binary(path) -> check_version(from_root(path, root))
   }

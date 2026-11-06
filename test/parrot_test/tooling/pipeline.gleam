@@ -2,9 +2,9 @@
 
 import filepath
 import gleam/result
-import parrot/error
 import parrot/internal/codegen
 import parrot/internal/database.{type Engine}
+import parrot/internal/error
 import parrot/internal/project
 import parrot/internal/sqlc
 import simplifile

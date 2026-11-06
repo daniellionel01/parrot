@@ -2,9 +2,9 @@ import argv
 import child_process
 import gleam/list
 import gleam/string
-import parrot/error
 import parrot/internal/command
 import parrot/internal/database
+import parrot/internal/error
 import parrot_test/tooling/fixture
 import parrot_test/tooling/pipeline
 import parrot_test/tooling/test_database

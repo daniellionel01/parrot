@@ -153,5 +153,7 @@ fn exec(
   |> child_process.envs(env)
   |> command.run
   |> result.replace(Nil)
-  |> result.map_error(fn(e) { "`" <> executable <> "` failed:\n" <> e })
+  |> result.map_error(fn(error) {
+    "`" <> executable <> "` failed:\n" <> command.describe_error(error)
+  })
 }

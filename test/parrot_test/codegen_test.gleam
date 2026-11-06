@@ -8,9 +8,9 @@ import argv
 import birdie
 import gleam/list
 import gleam/string
-import parrot/error
 import parrot/internal/codegen/runtime
 import parrot/internal/database.{Mysql, Postgresql, Sqlite}
+import parrot/internal/error
 import parrot_test/tooling/fixture
 import parrot_test/tooling/pipeline.{type Fixture, Fixture}
 import parrot_test/tooling/summary

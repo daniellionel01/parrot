@@ -11,8 +11,8 @@ import gleam/option
 import gleam/result
 import gleam/string
 import gleam/uri
-import parrot/error.{type ParrotError}
 import parrot/internal/command
+import parrot/internal/error.{type ParrotError}
 import simplifile
 
 pub type Engine {
@@ -38,12 +38,12 @@ pub fn engine_from_name(name: String) -> Result(Engine, ParrotError) {
   }
 }
 
-pub fn engine_from_url(url: String) -> Result(Engine, ParrotError) {
+pub fn engine_from_url(url: String) -> Result(Engine, Nil) {
   case url {
     "postgres" <> _ -> Ok(Postgresql)
     "mysql" <> _ -> Ok(Mysql)
     "sqlite" <> _ | "file:" <> _ -> Ok(Sqlite)
-    _ -> Error(error.MissingEngine)
+    _ -> Error(Nil)
   }
 }
 
@@ -92,10 +92,7 @@ fn fetch_sqlite(path: String) -> Result(String, ParrotError) {
 
 fn fetch_mysql(url: String) -> Result(String, ParrotError) {
   let invalid =
-    error.InvalidConnectionString(
-      "mysql",
-      "mysql://user:password@host:port/database",
-    )
+    error.InvalidConnectionString("mysql://user:password@host:port/database")
   use conn <- result.try(uri.parse(url) |> result.replace_error(invalid))
   use userinfo <- result.try(option.to_result(conn.userinfo, invalid))
   let #(user, password) =
@@ -156,5 +153,5 @@ fn dump(
   |> child_process.args(arguments)
   |> child_process.envs(env)
   |> command.output
-  |> result.map_error(error.SchemaDumpError(executable, _))
+  |> result.map_error(error.CouldNotFetchSchema(executable, _))
 }

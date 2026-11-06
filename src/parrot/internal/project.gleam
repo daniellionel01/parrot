@@ -9,7 +9,7 @@ import gleam/dict
 import gleam/list
 import gleam/result
 import gleam/string
-import parrot/error
+import parrot/internal/error
 import simplifile
 import tom
 
@@ -47,17 +47,17 @@ pub fn toml(
 
   use toml <- result.try(
     simplifile.read(toml_path)
-    |> result.map_error(error.FileError("read", toml_path, _)),
+    |> result.map_error(error.CouldNotReadGleamToml(toml_path, _)),
   )
   tom.parse(toml)
-  |> result.replace_error(error.GleamTomlError("invalid toml"))
+  |> result.map_error(error.InvalidGleamToml(toml_path, _))
 }
 
 pub fn name(
   toml: dict.Dict(String, tom.Toml),
 ) -> Result(String, error.ParrotError) {
   tom.get_string(toml, ["name"])
-  |> result.replace_error(error.GleamTomlError("missing the `name` field"))
+  |> result.map_error(error.InvalidGleamTomlValue)
 }
 
 /// Whether parrot is a regular dependency instead of a dev dependency.
@@ -78,7 +78,7 @@ pub fn sql_files(dir: String) -> Result(List(String), error.ParrotError) {
 fn walk(dir: String) -> Result(List(String), error.ParrotError) {
   use entries <- result.try(
     simplifile.read_directory(dir)
-    |> result.map_error(error.FileError("read directory", dir, _)),
+    |> result.map_error(error.CouldNotReadQueries(dir, _)),
   )
   let paths = list.map(entries, filepath.join(dir, _))
 

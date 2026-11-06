@@ -7,10 +7,10 @@ import gleam/bit_array
 import gleam/bool
 import gleam/crypto
 import gleam/dynamic/decode
+import gleam/http
 import gleam/http/request
 import gleam/http/response
 import gleam/httpc
-import gleam/int
 import gleam/io
 import gleam/json
 import gleam/list
@@ -18,14 +18,12 @@ import gleam/option.{type Option}
 import gleam/result
 import gleam/set
 import gleam/string
-import parrot/error.{type ParrotError}
 import parrot/internal/command
 import parrot/internal/database.{type Engine}
+import parrot/internal/error.{type ParrotError}
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 pub const sqlc_version = "1.31.1"
-
-const download_base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
 
 /// sha256 of the sqlc release for each `<os>_<cpu>`, printed by
 /// `gleam run -m parrot_dev/sqlc_hash`.
@@ -129,7 +127,7 @@ pub fn generate(
   schema schema: SchemaSource,
   queries queries: List(String),
 ) -> Result(Output, ParrotError) {
-  use _ <- result.try(create_directory(dir))
+  use _ <- result.try(create_work_directory(dir))
   use schema <- result.try(case schema {
     SchemaFiles(path) -> Ok(path)
     SchemaSql(sql) -> write(filepath.join(dir, "schema.sql"), sql)
@@ -146,15 +144,15 @@ pub fn generate(
     |> child_process.args(["generate", "--file", "sqlc.json"])
     |> child_process.cwd(dir)
     |> command.run
-    |> result.map_error(error.SqlcGenerateError),
+    |> result.map_error(error.SqlcFailed),
   )
 
   use output <- result.try(
     simplifile.read(output_path)
-    |> result.map_error(error.FileError("read", output_path, _)),
+    |> result.map_error(error.CouldNotUseWorkDirectory(output_path, _)),
   )
   json.parse(output, output_decoder())
-  |> result.map_error(fn(e) { error.SqlcOutputError(describe_json_error(e)) })
+  |> result.map_error(error.UnexpectedSqlcOutput)
 }
 
 /// sqlc resolves every path, even absolute ones, from the directory of its
@@ -196,14 +194,14 @@ fn config(
   |> json.to_string
 }
 
-fn create_directory(dir: String) -> Result(Nil, ParrotError) {
+fn create_work_directory(dir: String) -> Result(Nil, ParrotError) {
   simplifile.create_directory_all(dir)
-  |> result.map_error(error.FileError("create directory", dir, _))
+  |> result.map_error(error.CouldNotUseWorkDirectory(dir, _))
 }
 
 fn write(path: String, contents: String) -> Result(String, ParrotError) {
   simplifile.write(path, contents)
-  |> result.map_error(error.FileError("write", path, _))
+  |> result.map_error(error.CouldNotUseWorkDirectory(path, _))
   |> result.replace(path)
 }
 
@@ -223,23 +221,6 @@ fn drop_common_prefix(
   case a, b {
     [x, ..a_rest], [y, ..b_rest] if x == y -> drop_common_prefix(a_rest, b_rest)
     _, _ -> #(a, b)
-  }
-}
-
-fn describe_json_error(e: json.DecodeError) -> String {
-  case e {
-    json.UnableToDecode(errors) ->
-      errors
-      |> list.map(fn(e) {
-        "expected "
-        <> e.expected
-        <> " but found "
-        <> e.found
-        <> " at "
-        <> string.join(e.path, ".")
-      })
-      |> string.join(", ")
-    _ -> "invalid json"
   }
 }
 
@@ -332,12 +313,11 @@ pub fn managed_binary(in dir: String) -> Result(String, ParrotError) {
       let received = sha256(binary)
       use <- bool.guard(
         when: received != expected,
-        return: Error(error.SqlcIntegrityError(expected:, received:)),
-      )
-      use _ <- result.try(create_directory(dir))
-      use _ <- result.try(
-        simplifile.write_bits(path, binary)
-        |> result.map_error(error.FileError("write", path, _)),
+        return: Error(error.SqlcChecksumMismatch(
+          url: release_url(platform),
+          expected:,
+          received:,
+        )),
       )
       let permissions =
         FilePermissions(
@@ -345,8 +325,12 @@ pub fn managed_binary(in dir: String) -> Result(String, ParrotError) {
           group: set.from_list([Read, Execute]),
           other: set.from_list([Read, Execute]),
         )
-      simplifile.set_permissions(path, permissions)
-      |> result.map_error(error.FileError("make executable", path, _))
+      {
+        use _ <- result.try(simplifile.create_directory_all(dir))
+        use _ <- result.try(simplifile.write_bits(path, binary))
+        simplifile.set_permissions(path, permissions)
+      }
+      |> result.map_error(error.CouldNotInstallSqlc(path, _))
       |> result.replace(path)
     }
   }
@@ -359,7 +343,7 @@ pub fn version(binary: String) -> Result(String, ParrotError) {
   |> child_process.args(["version"])
   |> command.output
   |> result.map(string.trim)
-  |> result.map_error(fn(e) { error.SqlcNotFound(binary <> ": " <> e) })
+  |> result.map_error(error.CouldNotRunSqlc(binary, _))
 }
 
 pub fn sha256(binary: BitArray) -> String {
@@ -368,46 +352,52 @@ pub fn sha256(binary: BitArray) -> String {
   |> string.lowercase
 }
 
+/// The platform as it is called in `platforms` and its checksum.
+///
 fn current_platform() -> Result(#(String, String), ParrotError) {
+  let os = get_os()
   let cpu = case get_cpu() {
     "aarch64" -> "arm64"
     "x86_64" | "x64" -> "amd64"
     cpu -> cpu
   }
-  let platform = get_os() <> "_" <> cpu
+  let platform = os <> "_" <> cpu
   list.key_find(platforms, platform)
   |> result.map(fn(hash) { #(platform, hash) })
-  |> result.replace_error(error.SqlcDownloadError(
-    "unsupported platform: " <> platform,
-  ))
+  |> result.replace_error(error.UnsupportedPlatform(os:, cpu:))
+}
+
+const release_host = "downloads.sqlc.dev"
+
+fn release_path(platform: String) -> String {
+  "/sqlc_" <> sqlc_version <> "_" <> platform <> ".tar.gz"
+}
+
+fn release_url(platform: String) -> String {
+  "https://" <> release_host <> release_path(platform)
 }
 
 /// Downloads the sqlc release for `platform` and returns the sqlc binary
 /// inside of it.
 ///
 pub fn download_and_extract(platform: String) -> Result(BitArray, ParrotError) {
-  let url = download_base <> "_" <> platform <> ".tar.gz"
-  use tarball <- result.try(download(url))
-  extract_sqlc_binary(tarball)
-  |> result.replace_error(error.SqlcDownloadError(
-    "could not extract sqlc from " <> url,
-  ))
-}
+  let failed = error.SqlcDownloadFailed(release_url(platform), _)
+  let request =
+    request.new()
+    |> request.set_scheme(http.Https)
+    |> request.set_host(release_host)
+    |> request.set_path(release_path(platform))
+    |> request.set_body(<<>>)
 
-fn download(url: String) -> Result(BitArray, ParrotError) {
-  let failed = fn(reason) {
-    error.SqlcDownloadError("could not download " <> url <> ": " <> reason)
-  }
-  use req <- result.try(
-    request.to(url) |> result.replace_error(failed("invalid url")),
-  )
-  let req = request.set_body(req, <<>>)
-
-  case httpc.configure() |> httpc.timeout(60_000) |> httpc.dispatch_bits(req) {
-    Ok(response.Response(status: 200, body:, ..)) -> Ok(body)
+  let response =
+    httpc.configure() |> httpc.timeout(60_000) |> httpc.dispatch_bits(request)
+  case response {
+    Ok(response.Response(status: 200, body:, ..)) ->
+      extract_sqlc_binary(body)
+      |> result.replace_error(failed(error.BinaryNotInArchive))
     Ok(response.Response(status:, ..)) ->
-      Error(failed("status " <> int.to_string(status)))
-    Error(e) -> Error(failed(string.inspect(e)))
+      Error(failed(error.UnexpectedStatus(status)))
+    Error(reason) -> Error(failed(error.RequestFailed(reason)))
   }
 }
 

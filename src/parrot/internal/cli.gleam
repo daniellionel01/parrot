@@ -1,6 +1,6 @@
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import parrot/error
+import parrot/internal/error
 
 pub const usage =
   "Generate type-safe Gleam code from SQL queries
@@ -91,6 +91,15 @@ fn parse_flags(
       parse_flags(rest, Flags(..flags, engine: Some(value)))
     ["--sqlc", value, ..rest] ->
       parse_flags(rest, Flags(..flags, sqlc: Some(value)))
-    [argument, ..] -> Error(error.InvalidArgument(argument))
+    [flag]
+      if flag == "--sqlite"
+      || flag == "-e"
+      || flag == "--env-var"
+      || flag == "--output"
+      || flag == "--schema"
+      || flag == "--engine"
+      || flag == "--sqlc"
+    -> Error(error.MissingFlagValue(flag))
+    [argument, ..] -> Error(error.UnknownArgument(argument))
   }
 }

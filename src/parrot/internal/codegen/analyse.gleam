@@ -10,7 +10,6 @@ import gleam/pair
 import gleam/result
 import gleam/set.{type Set}
 import gleam/string
-import parrot/error.{type ParrotError}
 import parrot/internal/codegen/model.{
   type EnumNames, type GleamType, EnumNames, Field, GleamBitArray, GleamBool,
   GleamDate, GleamDynamic, GleamEnum, GleamFloat, GleamInet, GleamInt,
@@ -18,6 +17,7 @@ import parrot/internal/codegen/model.{
   GleamTimeOfDay, GleamTimestamp, Scalar,
 }
 import parrot/internal/codegen/runtime
+import parrot/internal/error.{type ParrotError}
 import parrot/internal/sqlc
 import parrot/internal/string_extra
 
@@ -47,13 +47,13 @@ fn query(
 ) -> Result(model.Query, ParrotError) {
   use <- bool.guard(
     when: list.any(query.columns, fn(col) { col.is_embed }),
-    return: Error(error.UnsupportedEmbedError(query.name)),
+    return: Error(error.UnsupportedEmbed(query.name)),
   )
 
   use labels <- result.try(
     list.try_map(query.params, fn(param) {
       case escape_keyword(param.column.name) {
-        "" -> Error(error.UnnamedParameterError(query.name, param.number))
+        "" -> Error(error.UnnamedParameter(query.name, param.number))
         label -> Ok(label)
       }
     }),
@@ -61,7 +61,7 @@ fn query(
 
   use command <- result.try(
     list.key_find(commands, query.cmd)
-    |> result.replace_error(error.UnsupportedQueryCommandError(
+    |> result.replace_error(error.UnsupportedAnnotation(
       query.name,
       query.cmd,
       list.map(commands, fn(command) { command.0 }),
@@ -579,7 +579,7 @@ fn enums(
   case variants {
     [first, ..rest] ->
       Ok(#(enum.name, model.Enum(names: enum_names(enum.name), first:, rest:)))
-    [] -> Error(error.EmptyEnumError(enum.name))
+    [] -> Error(error.EmptyEnum(enum.name))
   }
 }
 
@@ -648,7 +648,7 @@ fn check_names(
   |> list.try_fold(dict.new(), fn(defined, definition) {
     let #(namespace, name, second) = definition
     case dict.get(defined, #(namespace, name)) {
-      Ok(first) -> Error(error.DuplicateDefinitionError(name:, first:, second:))
+      Ok(first) -> Error(error.DuplicateDefinition(name:, first:, second:))
       Error(_) -> Ok(dict.insert(defined, #(namespace, name), second))
     }
   })

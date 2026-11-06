@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Unknown command line arguments are an error instead of printing the help text.
 
+- `parrot/error` moved to `parrot/internal/error` and is no longer part of the public API.
+
 - Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
 
 - Postgres `time` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant.
@@ -49,6 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parrot now always uses the sqlc binary it manages itself, instead of whichever `sqlc` is first in the `PATH`.
 
 - Parrot no longer crashes on any error, it always exits with a descriptive error message.
+
+- Clearer error messages, f.e. for invalid `gleam.toml` values and failed sqlc downloads.
 
 - Parrot no longer loops forever when it is run outside of a gleam project.
 

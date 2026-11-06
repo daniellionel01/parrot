@@ -8,10 +8,9 @@
 import gleam/dict.{type Dict}
 import gleam/option.{type Option, None, Some}
 import gleam/result
-import gleam/string
-import parrot/error.{type ParrotError}
 import parrot/internal/cli
 import parrot/internal/database.{type Engine}
+import parrot/internal/error.{type ParrotError}
 import parrot/internal/project
 import tom
 
@@ -69,22 +68,29 @@ pub fn resolve(
         Ok(connection_string) -> Some(connection_string)
       }
   }
-  let engine = case engine, connection_string {
-    Some(engine), _ -> Ok(engine)
-    None, Some(connection_string) -> database.engine_from_url(connection_string)
-    None, None -> Error(error.MissingEngine)
+  // A connection string from `--sqlite` always has a known engine.
+  let detect_engine = fn(connection_string) {
+    database.engine_from_url(connection_string)
+    |> result.replace_error(error.UnknownConnectionString(env))
   }
 
   case schema, connection_string {
     Some(path), _ -> {
-      use engine <- result.map(engine)
+      use engine <- result.map(case engine, connection_string {
+        Some(engine), _ -> Ok(engine)
+        None, Some(connection_string) -> detect_engine(connection_string)
+        None, None -> Error(error.MissingEngine(schema: path))
+      })
       Config(output:, engine:, schema: FromFiles(path), sqlc:)
     }
     None, Some(connection_string) -> {
-      use engine <- result.map(engine)
+      use engine <- result.map(case engine {
+        Some(engine) -> Ok(engine)
+        None -> detect_engine(connection_string)
+      })
       Config(output:, engine:, schema: FromDatabase(connection_string), sqlc:)
     }
-    None, None -> Error(error.EnvironmentVariableEmpty(env))
+    None, None -> Error(error.MissingConnectionString(env))
   }
 }
 
@@ -101,10 +107,8 @@ fn setting(
       case tom.get_string(toml, ["tools", "parrot", ..key]) {
         Ok(value) -> Ok(Some(value))
         Error(tom.NotFound(_)) -> Ok(None)
-        Error(tom.WrongType(..)) ->
-          Error(error.GleamTomlError(
-            "`tools.parrot." <> string.join(key, ".") <> "` must be a string",
-          ))
+        Error(tom.WrongType(..) as reason) ->
+          Error(error.InvalidGleamTomlValue(reason))
       }
   }
 }

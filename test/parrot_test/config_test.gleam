@@ -1,9 +1,9 @@
 import gleam/list
 import gleam/option.{Some}
-import parrot/error
 import parrot/internal/cli.{Flags, no_flags}
 import parrot/internal/config.{Config}
 import parrot/internal/database
+import parrot/internal/error
 import tom
 
 const url = "postgresql://user:pass@localhost/app"
@@ -42,8 +42,10 @@ pub fn parse_help_test() {
 }
 
 pub fn parse_invalid_test() {
-  let assert Error(error.InvalidArgument(_)) = cli.parse(["--wibble"])
-  let assert Error(error.InvalidArgument(_)) = cli.parse(["generate"])
+  assert cli.parse(["--wibble"]) == Error(error.UnknownArgument("--wibble"))
+  assert cli.parse(["generate"]) == Error(error.UnknownArgument("generate"))
+  assert cli.parse(["--output", "a.gleam", "--sqlite"])
+    == Error(error.MissingFlagValue("--sqlite"))
 }
 
 pub fn defaults_test() {
@@ -101,7 +103,10 @@ pub fn schema_without_database_test() {
   )) = resolve(flags, "", [])
 
   let flags = Flags(..no_flags, schema: Some("priv/schema.sql"))
-  assert resolve(flags, "", []) == Error(error.MissingEngine)
+  assert resolve(flags, "", [])
+    == Error(error.MissingEngine(schema: "priv/schema.sql"))
+  assert resolve(flags, "", [#("DATABASE_URL", "wibble://db")])
+    == Error(error.UnknownConnectionString("DATABASE_URL"))
 }
 
 pub fn sqlite_overrides_env_test() {
@@ -112,17 +117,20 @@ pub fn sqlite_overrides_env_test() {
 
 pub fn errors_test() {
   assert resolve(no_flags, "", [])
-    == Error(error.EnvironmentVariableEmpty("DATABASE_URL"))
+    == Error(error.MissingConnectionString("DATABASE_URL"))
   assert resolve(no_flags, "[tools.parrot]\nenv = \"APP_DB\"\n", [
       #("APP_DB", ""),
     ])
-    == Error(error.EnvironmentVariableEmpty("APP_DB"))
+    == Error(error.MissingConnectionString("APP_DB"))
   assert resolve(no_flags, "", [#("DATABASE_URL", "wibble://db")])
-    == Error(error.MissingEngine)
+    == Error(error.UnknownConnectionString("DATABASE_URL"))
   assert resolve(Flags(..no_flags, engine: Some("oracle")), "", [
       #("DATABASE_URL", url),
     ])
     == Error(error.UnknownEngine("oracle"))
-  let assert Error(error.GleamTomlError(_)) =
+  let assert Error(error.InvalidGleamTomlValue(tom.WrongType(
+    key: ["tools", "parrot", "output"],
+    ..,
+  ))) =
     resolve(no_flags, "[tools.parrot]\noutput = 1\n", [#("DATABASE_URL", url)])
 }
