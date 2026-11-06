@@ -275,10 +275,10 @@ pub fn name_collisions(
   }
   let sql = "select bool_decoder, active, count(*), count(*)
 from name_collisions
-where sql = ?1
-  and ids_slice = ?2
+where sql = ?
+  and ids_slice = ?
   and bool_decoder in (" <> ids_slice_2 <> ")
-  and active = ?4
+  and active = ?
 group by bool_decoder, active"
   #(
     sql,
@@ -703,4 +703,40 @@ pub fn select_slice(
 pub fn select_slice_decoder() -> decode.Decoder(SelectSlice) {
   use value <- decode.field(0, decode.int)
   decode.success(SelectSlice(value:))
+}
+
+pub type SelectSliceBetween {
+  SelectSliceBetween(value: Int)
+}
+
+pub fn select_slice_between(
+  min min: Int,
+  values values: List(Int),
+  max max: Int,
+) -> #(String, List(Param), decode.Decoder(SelectSliceBetween)) {
+  let values_slice = case values {
+    [] -> "NULL"
+    _ -> list.map(values, fn(_) { "?" }) |> string.join(",")
+  }
+  let sql = "select value from slices
+where (value > ? or value = ?)
+  and value in (" <> values_slice <> ")
+  and value <= ?
+  and '?1' = '?1'
+order by value"
+  #(
+    sql,
+    list.flatten([
+      [ParamInt(min)],
+      [ParamInt(min)],
+      list.map(values, ParamInt),
+      [ParamInt(max)],
+    ]),
+    select_slice_between_decoder(),
+  )
+}
+
+pub fn select_slice_between_decoder() -> decode.Decoder(SelectSliceBetween) {
+  use value <- decode.field(0, decode.int)
+  decode.success(SelectSliceBetween(value:))
 }

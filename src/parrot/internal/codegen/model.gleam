@@ -26,12 +26,15 @@ pub type Variant {
   Variant(name: String, value: String)
 }
 
-/// `function` is the name of the generated function.
+/// `function` is the name of the generated function, `params` are its
+/// arguments and `values` the params in the order the sql binds them, which
+/// can include a param more than once.
 pub type Query {
   Query(
     function: String,
     sql: List(SqlPart),
     params: List(Param),
+    values: List(Param),
     returns: Returns,
   )
 }

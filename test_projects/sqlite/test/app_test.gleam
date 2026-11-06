@@ -82,6 +82,20 @@ pub fn slice_test() {
   assert driver.query(db, sql.select_slice([])) == Ok([])
 }
 
+pub fn slice_between_named_params_test() {
+  let db = driver.connect()
+  let assert Ok(Nil) =
+    list.try_each([10, 20, 30], fn(value) {
+      driver.exec(db, sql.insert_slice(value:))
+    })
+
+  assert driver.query(
+      db,
+      sql.select_slice_between(min: 10, values: [10, 20, 30], max: 25),
+    )
+    == Ok([sql.SelectSliceBetween(10), sql.SelectSliceBetween(20)])
+}
+
 // https://github.com/daniellionel01/parrot/issues/74
 pub fn keyword_columns_test() {
   assert query(sql.keywords_round_trip(type_: "a", case_: "b"))
@@ -118,6 +132,20 @@ pub fn name_collisions_test() {
         sql: "a",
         ids_slice: 1,
         ids: [2],
+        name_collisions_decoder: True,
+      ),
+    )
+    == Ok([
+      sql.NameCollisions(bool_decoder: 2, active: True, count: 1, count_2: 1),
+    ])
+
+  // `?<number>` params after a slice with more than one item
+  assert driver.query(
+      db,
+      sql.name_collisions(
+        sql: "a",
+        ids_slice: 1,
+        ids: [2, 3],
         name_collisions_decoder: True,
       ),
     )

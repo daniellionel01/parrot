@@ -56,3 +56,13 @@ insert into slices (value) values (?);
 
 -- name: SelectSlice :many
 select value from slices where value in (sqlc.slice('values')) order by value;
+
+-- Named params around a slice, `min` is used twice. The `?1` in the string
+-- is not a param.
+-- name: SelectSliceBetween :many
+select value from slices
+where (value > sqlc.arg(min) or value = sqlc.arg(min))
+  and value in (sqlc.slice('values'))
+  and value <= sqlc.arg(max)
+  and '?1' = '?1'
+order by value;

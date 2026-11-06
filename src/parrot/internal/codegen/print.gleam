@@ -148,10 +148,10 @@ fn function(query: Query) -> String {
 
   let #(returned, return_type) = case query.returns {
     Rows(type_:, decoder:, ..) -> #(
-      ["sql", params(query.params), decoder <> "()"],
+      ["sql", params(query.values), decoder <> "()"],
       "#(String, List(Param), decode.Decoder(" <> type_ <> "))",
     )
-    NoRows -> #(["sql", params(query.params)], "#(String, List(Param))")
+    NoRows -> #(["sql", params(query.values)], "#(String, List(Param))")
   }
 
   [

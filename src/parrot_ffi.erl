@@ -13,7 +13,7 @@ get_os() ->
 get_cpu() ->
   case erlang:system_info(os_type) of
     {unix, _} ->
-      [Arch, _] = string:split(erlang:system_info(system_architecture), "-"),
+      [Arch | _] = string:split(erlang:system_info(system_architecture), "-"),
       list_to_binary(Arch);
     {win32, _} ->
       case erlang:system_info(wordsize) of

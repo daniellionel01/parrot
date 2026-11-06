@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `sqlc.slice` queries generated invalid sql with a leading comma (`in (,?,?)`). Empty lists are now replaced with `NULL`, same as sqlc does for go.
 
+- Sqlite queries with `sqlc.slice` and named params (`sqlc.arg`, `@name`) bound the wrong values, or failed with "column index out of range", once a slice had more than one item.
+
 - Unnamed parameters, unsupported query annotations (`:execrows`, `:execlastid`, ...) and a sqlc binary checksum mismatch now return an error instead of crashing parrot.
 
 - Fixed a crash on the very first run, when no sqlc binary had been downloaded yet.

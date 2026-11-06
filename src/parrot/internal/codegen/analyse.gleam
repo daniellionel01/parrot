@@ -80,10 +80,15 @@ fn query(
   }
   let params = params(query.params, unique_labels(labels), returns:, catalog:)
 
+  let params_by_number = list.zip(query.params, params)
+  let #(sql, values) =
+    bind_in_order(split_slices(query.text, params_by_number), params_by_number)
+
   Ok(model.Query(
     function: escape_keyword(function),
-    sql: split_slices(query.text, list.zip(query.params, params)),
+    sql:,
     params:,
+    values:,
     returns:,
   ))
 }
@@ -249,6 +254,187 @@ fn split_slices(
           |> list.intersperse(model.Slice(placeholders))
       }
     }
+  }
+}
+
+/// The params in the order the sql binds them.
+///
+/// For sqlite, sqlc writes named params as `?<number>`, which bind the param
+/// with that number, and keeps plain `?`s, which bind the params in the
+/// order sqlc lists them. A slice is expanded into one `?` per item, but
+/// sqlite numbers each `?` one higher than the highest number so far, so a
+/// `?<number>` after a slice binds the wrong item. That's why in queries
+/// with slices every `?<number>` is replaced with a plain `?` and the
+/// params are bound in the order they occur.
+///
+fn bind_in_order(
+  sql: List(model.SqlPart),
+  params: List(#(sqlc.Param, model.Param)),
+) -> #(List(model.SqlPart), List(model.Param)) {
+  let model_params = list.map(params, pair.second)
+  let has_slice =
+    list.any(model_params, fn(param) {
+      case param {
+        model.SliceParam(..) -> True
+        model.ValueParam(..) -> False
+      }
+    })
+  use <- bool.guard(!has_slice, #(sql, model_params))
+
+  let sql =
+    list.map(sql, fn(part) {
+      case part {
+        model.Text(text) -> #(part, plain_placeholders(text))
+        model.Slice(_) -> #(part, #("", []))
+      }
+    })
+  let numbered =
+    list.flat_map(sql, fn(part) {
+      list.filter_map(part.1.1, fn(placeholder) {
+        case placeholder {
+          Numbered(number) -> Ok(number)
+          Plain -> Error(Nil)
+        }
+      })
+    })
+  // sqlc lists params in the order of their plain `?`s.
+  let positional =
+    list.filter_map(params, fn(param) {
+      case param {
+        #(_, model.SliceParam(..)) -> Error(Nil)
+        #(sqlc_param, model.ValueParam(..) as param) ->
+          case list.contains(numbered, sqlc_param.number) {
+            True -> Error(Nil)
+            False -> Ok(param)
+          }
+      }
+    })
+
+  let bound =
+    list.try_fold(sql, #([], [], positional), fn(acc, part) {
+      let #(parts, values, positional) = acc
+      case part {
+        #(model.Text(_), #(text, placeholders)) -> {
+          use #(bound, positional) <- result.map(
+            bind_placeholders(placeholders, params, positional, []),
+          )
+          #([model.Text(text), ..parts], list.append(bound, values), positional)
+        }
+        #(model.Slice(placeholders) as slice, _) -> {
+          use param <- result.map(
+            list.find(model_params, fn(param) {
+              case param {
+                model.SliceParam(placeholders: other, ..) ->
+                  other == placeholders
+                model.ValueParam(..) -> False
+              }
+            }),
+          )
+          #([slice, ..parts], [param, ..values], positional)
+        }
+      }
+    })
+
+  case bound {
+    Ok(#(parts, values, [])) -> #(list.reverse(parts), list.reverse(values))
+    // Not what sqlc generates, so the sql is left as it is.
+    Ok(_) | Error(Nil) -> #(list.map(sql, pair.first), model_params)
+  }
+}
+
+/// Binds `placeholders` in order. Returns the bound params in reverse and
+/// the positional params that are left.
+///
+fn bind_placeholders(
+  placeholders: List(Placeholder),
+  params: List(#(sqlc.Param, model.Param)),
+  positional: List(model.Param),
+  bound: List(model.Param),
+) -> Result(#(List(model.Param), List(model.Param)), Nil) {
+  case placeholders, positional {
+    [], _ -> Ok(#(bound, positional))
+    [Plain, ..rest], [param, ..positional] ->
+      bind_placeholders(rest, params, positional, [param, ..bound])
+    [Plain, ..], [] -> Error(Nil)
+    [Numbered(number), ..rest], _ -> {
+      use #(_, param) <- result.try(
+        list.find(params, fn(param) { { param.0 }.number == number }),
+      )
+      bind_placeholders(rest, params, positional, [param, ..bound])
+    }
+  }
+}
+
+type Placeholder {
+  /// `?`
+  Plain
+  /// `?<number>`
+  Numbered(Int)
+}
+
+type Scan {
+  Code
+  /// inside of quotes, until `end`
+  Quoted(end: String)
+  LineComment
+  BlockComment
+}
+
+/// Replaces every `?<number>` in `sql` with `?` and returns the
+/// placeholders in order. Placeholders inside of quotes and comments are
+/// skipped.
+///
+fn plain_placeholders(sql: String) -> #(String, List(Placeholder)) {
+  scan(string.to_graphemes(sql), Code, [], [])
+}
+
+fn scan(
+  sql: List(String),
+  state: Scan,
+  out: List(String),
+  placeholders: List(Placeholder),
+) -> #(String, List(Placeholder)) {
+  case state, sql {
+    _, [] -> #(string.concat(list.reverse(out)), list.reverse(placeholders))
+
+    Code, ["?", ..rest] -> {
+      let #(digits, rest) = list.split_while(rest, is_digit)
+      let placeholder = case int.parse(string.concat(digits)) {
+        Ok(number) -> Numbered(number)
+        Error(_) -> Plain
+      }
+      scan(rest, Code, ["?", ..out], [placeholder, ..placeholders])
+    }
+    Code, ["-", "-", ..rest] ->
+      scan(rest, LineComment, ["--", ..out], placeholders)
+    Code, ["/", "*", ..rest] ->
+      scan(rest, BlockComment, ["/*", ..out], placeholders)
+    Code, ["'" as quote, ..rest]
+    | Code, ["\"" as quote, ..rest]
+    | Code, ["`" as quote, ..rest]
+    -> scan(rest, Quoted(quote), [quote, ..out], placeholders)
+    Code, ["[", ..rest] -> scan(rest, Quoted("]"), ["[", ..out], placeholders)
+
+    Quoted(end), [char, ..rest] if char == end ->
+      scan(rest, Code, [char, ..out], placeholders)
+    LineComment, ["\n" as char, ..rest]
+    | LineComment, ["\r\n" as char, ..rest]
+    -> scan(rest, Code, [char, ..out], placeholders)
+    BlockComment, ["*", "/", ..rest] ->
+      scan(rest, Code, ["*/", ..out], placeholders)
+
+    Code, [char, ..rest]
+    | Quoted(_), [char, ..rest]
+    | LineComment, [char, ..rest]
+    | BlockComment, [char, ..rest]
+    -> scan(rest, state, [char, ..out], placeholders)
+  }
+}
+
+fn is_digit(char: String) -> Bool {
+  case char {
+    "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" -> True
+    _ -> False
   }
 }
 
