@@ -2,9 +2,11 @@
 //// every check that can fail happens here, printing the module can not fail.
 
 import gleam/bool
+import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/option
+import gleam/pair
 import gleam/result
 import gleam/string
 import parrot/error.{type ParrotError}
@@ -14,13 +16,15 @@ import parrot/internal/codegen/model.{
   GleamInterval, GleamList, GleamMacaddr, GleamOption, GleamString,
   GleamTimeOfDay, GleamTimestamp, Scalar,
 }
+import parrot/internal/codegen/runtime
 import parrot/internal/sqlc
 import parrot/internal/string_extra
 
 pub fn module(output: sqlc.Output) -> Result(model.Module, ParrotError) {
   let catalog = output.catalog
   use queries <- result.try(list.try_map(output.queries, query(_, catalog)))
-  use enums <- result.try(enums(used_enums(output), queries))
+  use enums <- result.try(enums(used_enums(output)))
+  use _ <- result.try(check_names(enums, list.zip(output.queries, queries)))
 
   let unknown_types =
     output.queries
@@ -33,7 +37,7 @@ pub fn module(output: sqlc.Output) -> Result(model.Module, ParrotError) {
     })
     |> list.unique
 
-  Ok(model.Module(enums:, queries:, unknown_types:))
+  Ok(model.Module(enums: list.map(enums, pair.second), queries:, unknown_types:))
 }
 
 fn query(
@@ -270,75 +274,93 @@ fn used_enums(output: sqlc.Output) -> List(sqlc.Enum) {
   |> list.unique
 }
 
-/// Enums become gleam types and their values constructors, so their names
-/// have to be unique.
+/// Each enum together with its name in the database.
 ///
 fn enums(
   enums: List(sqlc.Enum),
-  queries: List(model.Query),
-) -> Result(List(model.Enum), ParrotError) {
-  use enums <- result.try(
-    list.try_map(enums, fn(enum) {
-      let names = enum_names(enum.name)
-      let variants =
-        list.map(enum.vals, fn(value) {
-          model.Variant(name: string_extra.pascal_case(value), value:)
-        })
-      case variants {
-        [first, ..rest] -> Ok(model.Enum(names:, first:, rest:))
-        [] -> Error(error.EmptyEnumError(names.type_))
-      }
-    }),
-  )
-  let enums = list.unique(enums)
-
-  let query_clash =
-    list.find_map(enums, fn(enum) {
-      use _ <- result.map(
-        list.find(queries, fn(query) {
-          case query.returns {
-            model.Rows(type_:, ..) -> type_ == enum.names.type_
-            model.NoRows -> False
-          }
-        }),
-      )
-      error.DuplicateDefinitionError(enum.names.type_)
+) -> Result(List(#(String, model.Enum)), ParrotError) {
+  use enum <- list.try_map(enums)
+  let variants =
+    list.map(enum.vals, fn(value) {
+      model.Variant(name: string_extra.pascal_case(value), value:)
     })
-
-  let duplicate_value =
-    enums
-    |> list.flat_map(fn(enum) {
-      list.map([enum.first, ..enum.rest], fn(variant) {
-        #(variant.name, enum.names.type_)
-      })
-    })
-    |> find_duplicate_value
-    |> result.map(fn(duplicate) {
-      let #(value, first, second) = duplicate
-      error.DuplicateEnumValueError(value, first, second)
-    })
-
-  case query_clash, duplicate_value {
-    Ok(e), _ | _, Ok(e) -> Error(e)
-    _, _ -> Ok(enums)
+  case variants {
+    [first, ..rest] ->
+      Ok(#(enum.name, model.Enum(names: enum_names(enum.name), first:, rest:)))
+    [] -> Error(error.EmptyEnumError(enum.name))
   }
 }
 
-/// Finds the first value that occurs twice, together with the enums of
-/// both occurrences. Those can be the same enum, f.e. when an enum has
-/// both `open` and `OPEN` as values.
+type Namespace {
+  Types
+  /// constructors and functions
+  Values
+}
+
+/// Every type, constructor and function of the generated module has to have
+/// a unique name, also the ones of parrot's own code. Otherwise the module
+/// does not compile, or one of them silently shadows an imported one.
 ///
-fn find_duplicate_value(
-  values: List(#(String, String)),
-) -> Result(#(String, String, String), Nil) {
-  case values {
-    [] -> Error(Nil)
-    [#(value, enum), ..rest] ->
-      case list.find(rest, fn(other) { other.0 == value }) {
-        Ok(#(_, other_enum)) -> Ok(#(value, enum, other_enum))
-        Error(_) -> find_duplicate_value(rest)
+fn check_names(
+  enums: List(#(String, model.Enum)),
+  queries: List(#(sqlc.Query, model.Query)),
+) -> Result(Nil, ParrotError) {
+  let runtime =
+    list.append(
+      list.map(runtime.types, fn(name) {
+        #(Types, name, error.RuntimeDefinition)
+      }),
+      list.map(runtime.values, fn(name) {
+        #(Values, name, error.RuntimeDefinition)
+      }),
+    )
+
+  let enums =
+    list.flat_map(enums, fn(enum) {
+      let #(enum_name, model.Enum(names:, first:, rest:)) = enum
+      let definition = error.EnumDefinition(enum_name)
+      let variants =
+        list.map([first, ..rest], fn(variant) {
+          #(
+            Values,
+            variant.name,
+            error.EnumValueDefinition(enum_name, variant.value),
+          )
+        })
+      [
+        #(Types, names.type_, definition),
+        #(Values, names.decoder, definition),
+        #(Values, names.to_string, definition),
+        ..variants
+      ]
+    })
+
+  let queries =
+    list.flat_map(queries, fn(query) {
+      let #(sqlc_query, query) = query
+      let definition = error.QueryDefinition(sqlc_query.name)
+      let function = #(Values, query.function, definition)
+      case query.returns {
+        model.NoRows -> [function]
+        model.Rows(type_:, decoder:, ..) -> [
+          function,
+          #(Types, type_, definition),
+          #(Values, type_, definition),
+          #(Values, decoder, definition),
+        ]
       }
-  }
+    })
+
+  [runtime, enums, queries]
+  |> list.flatten
+  |> list.try_fold(dict.new(), fn(defined, definition) {
+    let #(namespace, name, second) = definition
+    case dict.get(defined, #(namespace, name)) {
+      Ok(first) -> Error(error.DuplicateDefinitionError(name:, first:, second:))
+      Error(_) -> Ok(dict.insert(defined, #(namespace, name), second))
+    }
+  })
+  |> result.replace(Nil)
 }
 
 fn escape_keyword(name: String) -> String {

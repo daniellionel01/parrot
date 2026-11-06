@@ -14,4 +14,4 @@ select value from things;
 
 -- error -----------------------------------------------------------------------
 
-enum 'Nothing' has no variants. Empty enums cannot be represented in Gleam. Please add values to the enum or remove it from your schema.
+enum 'nothing' has no variants. Empty enums cannot be represented in Gleam. Please add values to the enum or remove it from your schema.

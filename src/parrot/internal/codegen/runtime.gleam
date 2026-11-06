@@ -16,6 +16,38 @@ pub const imports = [
   "import gleam/time/timestamp.{type Timestamp}",
 ]
 
+/// Types that `code`, its imports and the prelude define. A definition with
+/// the same name would shadow them.
+pub const types = [
+  // prelude
+  "BitArray", "Bool", "Float", "Int", "List", "Nil", "Result", "String",
+  "UtfCodepoint",
+  // imports
+  "Date", "TimeOfDay", "Timestamp",
+  // code
+  "Inet", "Interval", "Param",
+]
+
+/// Constructors and functions that `code`, its imports and the prelude
+/// define. A definition with the same name would shadow them.
+pub const values = [
+  // prelude
+  "Error", "False", "Nil", "Ok", "True",
+  // imports
+  "Date",
+  // code
+  "Inet", "Interval", "ParamBitArray", "ParamBool", "ParamDate", "ParamDynamic",
+  "ParamFloat", "ParamInet", "ParamInt", "ParamInterval", "ParamList",
+  "ParamMacaddr", "ParamNullable", "ParamString", "ParamTimeOfDay",
+  "ParamTimestamp", "bool_decoder", "calendar_date_decoder", "date_decoder",
+  "date_string_decoder", "datetime_decoder", "datetime_string_decoder",
+  "datetime_tuple_decoder", "inet_decoder", "interval_decoder",
+  "ip_address_decoder", "macaddr_decoder", "seconds_decoder",
+  "time_of_day_decoder", "time_of_day_string_decoder",
+  "time_of_day_tuple_decoder", "time_of_day_with_days_decoder",
+  "timestamp_decoder",
+]
+
 /// The gleam type of a scalar, its `Param` constructor and its decoder.
 pub type ScalarCode {
   ScalarCode(type_: String, param: String, decoder: String)

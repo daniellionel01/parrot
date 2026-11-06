@@ -19,4 +19,4 @@ select status from doors;
 
 -- error -----------------------------------------------------------------------
 
-duplicate enum value 'Open' found in both 'TicketStatus' and 'DoorStatus'. Enum values must be unique across all enums to avoid naming conflicts in generated Gleam code.
+`Open` would be defined twice in the generated module, by value 'open' of enum 'ticket_status' and by value 'open' of enum 'door_status'. Names in a gleam module must be unique, after parrot converts enum names and values to PascalCase.

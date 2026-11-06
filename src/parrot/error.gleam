@@ -29,9 +29,9 @@ pub type ParrotError {
 
   GleamFormatError(String)
 
-  DuplicateDefinitionError(String)
+  /// Two definitions of the generated module have the same name.
+  DuplicateDefinitionError(name: String, first: Definition, second: Definition)
   EmptyEnumError(String)
-  DuplicateEnumValueError(String, String, String)
   UnnamedParameterError(query: String, position: Int)
   UnsupportedQueryCommandError(
     query: String,
@@ -39,6 +39,20 @@ pub type ParrotError {
     supported: List(String),
   )
   UnsupportedEmbedError(query: String)
+}
+
+/// What a definition of the generated module is generated from.
+pub type Definition {
+  /// The code that is the same in every generated module, its imports and
+  /// gleam's prelude.
+  RuntimeDefinition
+  /// The enum's type and functions.
+  EnumDefinition(enum: String)
+  /// The constructor of one of the enum's values.
+  EnumValueDefinition(enum: String, value: String)
+  /// The query's function and, if it returns rows, the row's type,
+  /// constructor and decoder.
+  QueryDefinition(query: String)
 }
 
 pub fn to_string(error: ParrotError) -> String {
@@ -114,15 +128,24 @@ pub fn to_string(error: ParrotError) -> String {
     GleamFormatError(err) -> {
       "there was an error formatting the generated code:\n" <> err
     }
-    DuplicateDefinitionError(name) -> {
-      "duplicate definition found: '"
+    DuplicateDefinitionError(name:, first:, second:) -> {
+      "`"
       <> name
-      <> "' is defined both as an enum and as a query. "
-      <> "Consider renaming your query (e.g., to 'Get"
-      <> name
-      <> "' or 'List"
-      <> name
-      <> "') to avoid the collision."
+      <> "` would be defined twice in the generated module, by "
+      <> describe_definition(first)
+      <> " and by "
+      <> describe_definition(second)
+      <> ". "
+      <> case first, second {
+        _, QueryDefinition(query:) | QueryDefinition(query:), _ ->
+          "Consider renaming the query '" <> query <> "'."
+        RuntimeDefinition, _ | _, RuntimeDefinition ->
+          "Parrot can not generate this name yet, please open an issue: "
+          <> "https://github.com/daniellionel01/parrot/issues"
+        _, _ ->
+          "Names in a gleam module must be unique, after parrot converts "
+          <> "enum names and values to PascalCase."
+      }
     }
     EmptyEnumError(name) -> {
       "enum '"
@@ -130,24 +153,6 @@ pub fn to_string(error: ParrotError) -> String {
       <> "' has no variants. "
       <> "Empty enums cannot be represented in Gleam. "
       <> "Please add values to the enum or remove it from your schema."
-    }
-    DuplicateEnumValueError(val_name, enum1, enum2) if enum1 == enum2 -> {
-      "enum '"
-      <> enum1
-      <> "' has multiple values that all become '"
-      <> val_name
-      <> "' in Gleam. "
-      <> "Enum values must still be unique after converting them to PascalCase."
-    }
-    DuplicateEnumValueError(val_name, enum1, enum2) -> {
-      "duplicate enum value '"
-      <> val_name
-      <> "' found in both '"
-      <> enum1
-      <> "' and '"
-      <> enum2
-      <> "'. "
-      <> "Enum values must be unique across all enums to avoid naming conflicts in generated Gleam code."
     }
     UnnamedParameterError(query:, position:) -> {
       "parameter $"
@@ -173,6 +178,16 @@ pub fn to_string(error: ParrotError) -> String {
       <> enumerate(supported)
       <> "."
     }
+  }
+}
+
+fn describe_definition(definition: Definition) -> String {
+  case definition {
+    RuntimeDefinition -> "parrot's own code"
+    EnumDefinition(enum:) -> "enum '" <> enum <> "'"
+    EnumValueDefinition(enum:, value:) ->
+      "value '" <> value <> "' of enum '" <> enum <> "'"
+    QueryDefinition(query:) -> "query '" <> query <> "'"
   }
 }
 

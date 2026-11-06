@@ -14,4 +14,4 @@ select status from tickets;
 
 -- error -----------------------------------------------------------------------
 
-duplicate definition found: 'Status' is defined both as an enum and as a query. Consider renaming your query (e.g., to 'GetStatus' or 'ListStatus') to avoid the collision.
+`Status` would be defined twice in the generated module, by enum 'status' and by query 'Status'. Consider renaming the query 'Status'.

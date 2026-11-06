@@ -1,0 +1,19 @@
+---
+version: 2.0.2
+title: query function clash
+---
+-- schema.sql ------------------------------------------------------------------
+
+create table users (id serial primary key);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: GetUser :exec
+select id from users;
+
+-- name: get_user :exec
+select id from users;
+
+-- error -----------------------------------------------------------------------
+
+`get_user` would be defined twice in the generated module, by query 'GetUser' and by query 'get_user'. Consider renaming the query 'get_user'.

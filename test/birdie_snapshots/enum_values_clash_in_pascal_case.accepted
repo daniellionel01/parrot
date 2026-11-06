@@ -14,4 +14,4 @@ select status from tickets;
 
 -- error -----------------------------------------------------------------------
 
-enum 'TicketStatus' has multiple values that all become 'Open' in Gleam. Enum values must still be unique after converting them to PascalCase.
+`Open` would be defined twice in the generated module, by value 'open' of enum 'ticket_status' and by value 'OPEN' of enum 'ticket_status'. Names in a gleam module must be unique, after parrot converts enum names and values to PascalCase.

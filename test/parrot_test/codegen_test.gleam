@@ -149,6 +149,62 @@ select status from tickets;",
   |> snap_error(title: "enum values clash in pascal case")
 }
 
+pub fn enum_value_and_row_type_collision_error_test() {
+  error_fixture(
+    Postgresql,
+    schema: "
+create type ticket_status as enum ('open', 'closed');
+create table tickets (id serial primary key, status ticket_status not null);",
+    queries: "
+-- name: Open :many
+select id, status from tickets where status = 'open';",
+  )
+  |> snap_error(title: "enum value and row type clash")
+}
+
+pub fn enum_value_and_runtime_collision_error_test() {
+  error_fixture(
+    Postgresql,
+    schema: "
+create type event_kind as enum ('date', 'meeting');
+create table events (id serial primary key, kind event_kind not null);",
+    queries: "
+-- name: GetEvents :many
+select kind from events;",
+  )
+  |> snap_error(title: "enum value and runtime clash")
+}
+
+pub fn enum_and_query_function_collision_error_test() {
+  error_fixture(
+    Postgresql,
+    schema: "
+create type status as enum ('open', 'closed');
+create table tickets (id serial primary key, status status not null);",
+    queries: "
+-- name: GetTickets :many
+select status from tickets;
+
+-- name: StatusToString :exec
+delete from tickets;",
+  )
+  |> snap_error(title: "enum and query function clash")
+}
+
+pub fn query_function_collision_error_test() {
+  error_fixture(
+    Postgresql,
+    schema: "create table users (id serial primary key);",
+    queries: "
+-- name: GetUser :exec
+select id from users;
+
+-- name: get_user :exec
+select id from users;",
+  )
+  |> snap_error(title: "query function clash")
+}
+
 pub fn postgres_unnamed_parameter_error_test() {
   error_fixture(
     Postgresql,
