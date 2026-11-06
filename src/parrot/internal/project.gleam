@@ -1,12 +1,10 @@
-//// Helps to find information about the current gleam
-//// project this program is running in.
+//// The gleam project parrot runs in.
 ////
 //// Based off https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel/internal/project.gleam
 //// Thank you https://www.github.com/giacomocavalieri
 ////
 
 import filepath
-import gleam/bool
 import gleam/dict
 import gleam/list
 import gleam/result
@@ -15,26 +13,37 @@ import parrot/error
 import simplifile
 import tom
 
-pub fn root() -> String {
-  // Parrot runs through `gleam run`, which only works inside of a gleam
-  // project, so there always is a `gleam.toml`. Should there be none, we
-  // stop at the root of the file system instead of searching forever, fall
-  // back to the current directory and let reading `gleam.toml` fail.
-  let max_depth = case simplifile.current_directory() {
-    Ok(cwd) -> list.length(filepath.split(cwd))
-    Error(_) -> 0
-  }
-  find_root(".", max_depth)
-}
-
-pub fn src() -> String {
-  filepath.join(root(), "src")
-}
-
-/// The parsed `gleam.toml` of the project.
+/// The absolute path of the closest directory with a `gleam.toml`, or else
+/// the current directory.
 ///
-pub fn toml() -> Result(dict.Dict(String, tom.Toml), error.ParrotError) {
-  let toml_path = filepath.join(root(), "gleam.toml")
+pub fn root() -> String {
+  case simplifile.current_directory() {
+    Ok(cwd) -> find_root(cwd) |> result.unwrap(cwd)
+    Error(_) -> "."
+  }
+}
+
+pub fn find_root(dir: String) -> Result(String, Nil) {
+  case simplifile.is_file(filepath.join(dir, "gleam.toml")) {
+    Ok(True) -> Ok(dir)
+    _ ->
+      case filepath.directory_name(dir) {
+        parent if parent == dir || parent == "" -> Error(Nil)
+        parent -> find_root(parent)
+      }
+  }
+}
+
+/// Where parrot keeps the sqlc binary and its intermediate files.
+///
+pub fn work_dir(root: String) -> String {
+  filepath.join(root, "build/.parrot")
+}
+
+pub fn toml(
+  root: String,
+) -> Result(dict.Dict(String, tom.Toml), error.ParrotError) {
+  let toml_path = filepath.join(root, "gleam.toml")
 
   use toml <- result.try(
     simplifile.read(toml_path)
@@ -44,88 +53,47 @@ pub fn toml() -> Result(dict.Dict(String, tom.Toml), error.ParrotError) {
   |> result.replace_error(error.GleamTomlError("invalid toml"))
 }
 
-/// Name of the gleam application
-///
-pub fn name() -> Result(String, error.ParrotError) {
-  use toml <- result.try(toml())
-  name_from_toml(toml)
-}
-
-pub fn name_from_toml(
+pub fn name(
   toml: dict.Dict(String, tom.Toml),
 ) -> Result(String, error.ParrotError) {
   tom.get_string(toml, ["name"])
   |> result.replace_error(error.GleamTomlError("missing the `name` field"))
 }
 
-fn find_root(path: String, remaining: Int) -> String {
-  let toml = filepath.join(path, "gleam.toml")
-
-  case simplifile.is_file(toml), remaining {
-    Ok(True), _ -> path
-    _, 0 -> "."
-    _, _ -> find_root(filepath.join("..", path), remaining - 1)
-  }
-}
-
-/// Finds all `from/**/sql` directories and lists the full paths of the `*.sql`
-/// files inside each one.
-/// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
-///
-pub fn walk(
-  from: String,
-) -> Result(dict.Dict(String, List(String)), error.ParrotError) {
-  use files <- result.try(
-    simplifile.read_directory(from)
-    |> result.map_error(error.FileError("read directory", from, _)),
-  )
-
-  case filepath.base_name(from) {
-    "sql" -> {
-      let files = {
-        use file <- list.filter_map(files)
-        use extension <- result.try(filepath.extension(file))
-        use <- bool.guard(when: extension != "sql", return: Error(Nil))
-        let file_name = filepath.join(from, file)
-        case simplifile.is_file(file_name) {
-          Ok(True) -> Ok(file_name)
-          Ok(False) | Error(_) -> Error(Nil)
-        }
-      }
-      Ok(dict.from_list([#(from, files)]))
-    }
-
-    _ -> {
-      let directories = {
-        use file <- list.filter_map(files)
-        let file_name = filepath.join(from, file)
-        case simplifile.is_directory(file_name) {
-          Ok(True) -> Ok(file_name)
-          Ok(False) | Error(_) -> Error(Nil)
-        }
-      }
-
-      use dicts <- result.map(list.try_map(directories, walk))
-      list.fold(dicts, from: dict.new(), with: dict.merge)
-    }
-  }
-}
-
-/// The files found by `walk`, sorted so the generated module is the same on
-/// every operating system.
-///
-pub fn sql_files(walked: dict.Dict(String, List(String))) -> List(String) {
-  walked
-  |> dict.values
-  |> list.flatten
-  |> list.sort(by: string.compare)
-}
-
-/// Makes sure parrot is a dev dependency.
+/// Whether parrot is a regular dependency instead of a dev dependency.
 ///
 pub fn parrot_is_dependency(toml: dict.Dict(String, tom.Toml)) -> Bool {
-  case tom.get(toml, ["dependencies", "parrot"]) {
-    Ok(_) -> True
-    Error(_) -> False
+  result.is_ok(tom.get(toml, ["dependencies", "parrot"]))
+}
+
+/// The `*.sql` files inside of every `sql` directory below `dir`, sorted so
+/// the generated module is the same on every operating system.
+/// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
+///
+pub fn sql_files(dir: String) -> Result(List(String), error.ParrotError) {
+  use files <- result.map(walk(dir))
+  list.sort(files, by: string.compare)
+}
+
+fn walk(dir: String) -> Result(List(String), error.ParrotError) {
+  use entries <- result.try(
+    simplifile.read_directory(dir)
+    |> result.map_error(error.FileError("read directory", dir, _)),
+  )
+  let paths = list.map(entries, filepath.join(dir, _))
+
+  case filepath.base_name(dir) {
+    "sql" ->
+      paths
+      |> list.filter(fn(path) {
+        filepath.extension(path) == Ok("sql")
+        && simplifile.is_file(path) == Ok(True)
+      })
+      |> Ok
+    _ ->
+      paths
+      |> list.filter(fn(path) { simplifile.is_directory(path) == Ok(True) })
+      |> list.try_map(walk)
+      |> result.map(list.flatten)
   }
 }

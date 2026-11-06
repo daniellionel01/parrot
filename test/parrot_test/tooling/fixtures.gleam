@@ -1,34 +1,10 @@
-import parrot/internal/sqlc
+import parrot/internal/database.{MySQL, PostgreSQL, SQLite}
 import parrot_test/tooling/pipeline.{type Fixture, Fixture}
-
-pub fn sqlite() -> List(Fixture) {
-  [
-    sqlite_basic(),
-    sqlite_column_types(),
-    sqlite_named_and_slice_params(),
-    sqlite_app_fixture(),
-    sqlite_no_optional_fixture(),
-  ]
-}
-
-pub fn postgres() -> List(Fixture) {
-  [
-    postgres_enums(),
-    postgres_arrays(),
-    postgres_column_types(),
-    postgres_joins_and_commands(),
-    postgres_app_fixture(),
-  ]
-}
-
-pub fn mysql() -> List(Fixture) {
-  [mysql_column_types(), mysql_app_fixture()]
-}
 
 pub fn sqlite_basic() -> Fixture {
   Fixture(
     name: "sqlite_basic",
-    engine: sqlc.SQLite,
+    engine: SQLite,
     schema: "
 create table users (
   id integer primary key autoincrement,
@@ -49,7 +25,7 @@ select * from users;",
 pub fn sqlite_column_types() -> Fixture {
   Fixture(
     name: "sqlite_column_types",
-    engine: sqlc.SQLite,
+    engine: SQLite,
     schema: "
 create table things (
   id integer primary key autoincrement,
@@ -75,7 +51,7 @@ values (?, ?, ?, ?, ?, ?, ?, ?);",
 pub fn sqlite_named_and_slice_params() -> Fixture {
   Fixture(
     name: "sqlite_named_and_slice_params",
-    engine: sqlc.SQLite,
+    engine: SQLite,
     schema: "
 create table things (
   id integer primary key autoincrement,
@@ -96,7 +72,7 @@ select id from things where name = @name;",
 pub fn postgres_enums() -> Fixture {
   Fixture(
     name: "postgres_enums",
-    engine: sqlc.PostgreSQL,
+    engine: PostgreSQL,
     schema: "
 create type user_role as enum ('admin', 'regular_user', 'guest');
 
@@ -128,7 +104,7 @@ select id, username from users where role = $1;",
 pub fn postgres_arrays() -> Fixture {
   Fixture(
     name: "postgres_arrays",
-    engine: sqlc.PostgreSQL,
+    engine: PostgreSQL,
     schema: "
 create table posts (
   id serial primary key,
@@ -151,7 +127,7 @@ insert into posts (tags, scores) values ($1, $2);",
 pub fn postgres_column_types() -> Fixture {
   Fixture(
     name: "postgres_column_types",
-    engine: sqlc.PostgreSQL,
+    engine: PostgreSQL,
     schema: "
 create table events (
   id bigserial primary key,
@@ -159,6 +135,7 @@ create table events (
   happened_at_tz timestamptz,
   day date not null,
   starts time,
+  starts_tz timetz,
   duration interval,
   payload jsonb not null,
   external_id uuid not null,
@@ -181,7 +158,7 @@ values ($1, $2, $3, $4, $5, $6);",
 pub fn postgres_joins_and_commands() -> Fixture {
   Fixture(
     name: "postgres_joins_and_commands",
-    engine: sqlc.PostgreSQL,
+    engine: PostgreSQL,
     schema: "
 create table authors (
   id serial primary key,
@@ -217,7 +194,7 @@ delete from books where author_id = $1;",
 pub fn mysql_column_types() -> Fixture {
   Fixture(
     name: "mysql_column_types",
-    engine: sqlc.MySQL,
+    engine: MySQL,
     schema: "
 create table accounts (
   id int unsigned not null auto_increment primary key,
@@ -242,18 +219,33 @@ select id, email from accounts where id in (sqlc.slice('ids'));",
   )
 }
 
-pub fn sqlite_app_fixture() -> Fixture {
-  pipeline.from_files("sqlite_app", sqlc.SQLite)
+pub fn sqlite_app() -> Fixture {
+  pipeline.from_files("sqlite_app", SQLite)
 }
 
-pub fn sqlite_no_optional_fixture() -> Fixture {
-  pipeline.from_files("sqlite_no_optional", sqlc.SQLite)
+pub fn sqlite_no_optional() -> Fixture {
+  pipeline.from_files("sqlite_no_optional", SQLite)
 }
 
-pub fn postgres_app_fixture() -> Fixture {
-  pipeline.from_files("postgres_app", sqlc.PostgreSQL)
+pub fn postgres_app() -> Fixture {
+  pipeline.from_files("postgres_app", PostgreSQL)
 }
 
-pub fn mysql_app_fixture() -> Fixture {
-  pipeline.from_files("mysql_app", sqlc.MySQL)
+pub fn mysql_app() -> Fixture {
+  pipeline.from_files("mysql_app", MySQL)
+}
+
+pub fn sqlite_keywords() -> Fixture {
+  Fixture(
+    name: "sqlite_keywords",
+    engine: SQLite,
+    schema: "
+create table things (
+  id integer primary key autoincrement,
+  type text not null
+);",
+    queries: "
+-- name: Type :many
+select type from things where type = sqlc.arg(type);",
+  )
 }

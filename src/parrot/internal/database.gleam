@@ -1,7 +1,5 @@
-//// Parrot supports Sqlite, PostgreSQL and MySQL.
-////
-//// This module contains functionality related to working
-//// with the different schema files and connection strings.
+//// Everything that differs between SQLite, PostgreSQL and MySQL, apart from
+//// their column types: connection strings and fetching the schema.
 ////
 
 import child_process
@@ -12,135 +10,136 @@ import gleam/option
 import gleam/result
 import gleam/string
 import gleam/uri
-import parrot/error
-import parrot/internal/sqlc
+import parrot/error.{type ParrotError}
+import parrot/internal/command
 import simplifile
 
-pub opaque type ConnectionString {
-  ConnectionString(String)
+pub type Engine {
+  SQLite
+  MySQL
+  PostgreSQL
 }
 
-pub fn connection_string(value: String) {
-  let value = case value {
-    "sqlite://" <> value -> value
-    "sqlite:" <> value -> value
-    value -> value
-  }
-  ConnectionString(value)
-}
-
-pub fn fetch_schema(engine: sqlc.Engine, connection_string: ConnectionString) {
-  let ConnectionString(connection_string) = connection_string
-
+pub fn engine_name(engine: Engine) -> String {
   case engine {
-    sqlc.SQLite -> {
-      // `sqlite3` would silently create an empty database otherwise.
-      use <- bool.guard(
-        when: simplifile.is_file(connection_string) != Ok(True),
-        return: Error(error.SqliteDBNotFound(connection_string)),
-      )
+    SQLite -> "sqlite"
+    MySQL -> "mysql"
+    PostgreSQL -> "postgresql"
+  }
+}
 
-      exec("sqlite3", [connection_string, ".schema"])
-      |> result.map(string.trim)
-    }
-    sqlc.MySQL -> {
-      let invalid_connection_string =
-        error.InvalidConnectionString(
-          "mysql",
-          "mysql://user:password@host:port/database",
-        )
-      use conn <- result.try(
-        uri.parse(connection_string)
-        |> result.replace_error(invalid_connection_string),
-      )
+pub fn engine_from_name(name: String) -> Result(Engine, ParrotError) {
+  case string.lowercase(name) {
+    "postgresql" | "postgres" -> Ok(PostgreSQL)
+    "mysql" -> Ok(MySQL)
+    "sqlite" -> Ok(SQLite)
+    _ -> Error(error.UnknownEngine(name))
+  }
+}
 
-      let creds = case conn.userinfo {
-        option.None -> option.None
-        option.Some(userinfo) -> {
-          case string.split(userinfo, ":") {
-            [user] -> option.Some(#(user, ""))
-            [user, pass] -> option.Some(#(user, pass))
-            _ -> option.None
-          }
-        }
-      }
+pub fn engine_from_url(url: String) -> Result(Engine, ParrotError) {
+  case url {
+    "postgres" <> _ -> Ok(PostgreSQL)
+    "mysql" <> _ -> Ok(MySQL)
+    "sqlite" <> _ | "file:" <> _ -> Ok(SQLite)
+    _ -> Error(error.MissingEngine)
+  }
+}
 
-      use #(user, pass) <- result.try(option.to_result(
-        creds,
-        invalid_connection_string,
-      ))
+pub fn sqlite_url(path: String) -> String {
+  "sqlite:" <> path
+}
 
-      let port = case conn.port {
-        option.None -> "3306"
-        option.Some(port) -> int.to_string(port)
-      }
-      let host = case conn.host {
-        option.None -> "localhost"
-        option.Some(host) -> host
-      }
-      let db = string.replace(conn.path, "/", "")
+pub fn fetch_schema(
+  engine: Engine,
+  url: String,
+) -> Result(String, ParrotError) {
+  case engine {
+    SQLite -> fetch_sqlite(sqlite_path(url))
+    MySQL -> fetch_mysql(url)
+    PostgreSQL -> fetch_postgres(url)
+  }
+}
 
-      use output <- result.try(
-        exec("mysqldump", [
-          "--no-data",
-          "-u",
-          user,
-          "-p" <> pass,
-          "-h",
-          host,
-          "-P",
-          port,
-          db,
-        ]),
-      )
+/// sqlite connection strings may also just be a path.
+///
+fn sqlite_path(url: String) -> String {
+  case url {
+    "sqlite://" <> path | "sqlite:" <> path -> path
+    "file://" <> path | "file:" <> path -> path
+    path -> path
+  }
+}
 
-      output
-      |> string.split("\n")
-      |> list.filter(fn(line) { string.contains(line, "mysqldump:") == False })
-      |> string.join("\n")
-      |> Ok
-    }
-    sqlc.PostgreSQL -> {
-      exec("pg_dump", [
+fn fetch_sqlite(path: String) -> Result(String, ParrotError) {
+  // `sqlite3` would silently create an empty database otherwise.
+  use <- bool.guard(
+    when: simplifile.is_file(path) != Ok(True),
+    return: Error(error.SqliteDBNotFound(path)),
+  )
+  dump("sqlite3", [path, ".schema"], [])
+  |> result.map(string.trim)
+}
+
+fn fetch_mysql(url: String) -> Result(String, ParrotError) {
+  let invalid =
+    error.InvalidConnectionString(
+      "mysql",
+      "mysql://user:password@host:port/database",
+    )
+  use conn <- result.try(uri.parse(url) |> result.replace_error(invalid))
+  use userinfo <- result.try(option.to_result(conn.userinfo, invalid))
+  let #(user, password) =
+    string.split_once(userinfo, ":") |> result.unwrap(#(userinfo, ""))
+
+  dump(
+    "mysqldump",
+    [
+      "--no-data",
+      "--user=" <> user,
+      "--host=" <> option.unwrap(conn.host, "localhost"),
+      "--port=" <> int.to_string(option.unwrap(conn.port, 3306)),
+      string.replace(conn.path, "/", ""),
+    ],
+    // mysqldump warns about passwords passed as an argument.
+    [#("MYSQL_PWD", password)],
+  )
+}
+
+fn fetch_postgres(url: String) -> Result(String, ParrotError) {
+  use schema <- result.map(
+    dump(
+      "pg_dump",
+      [
         "--no-privileges",
         "--no-acl",
         "--no-owner",
         "--schema-only",
         "--no-comments",
         "--encoding=utf8",
-        connection_string,
-      ])
-      |> result.map(fn(schema) {
-        // this is an edge case with the postgres schema dump.
-        // sqlc does not like those lines from postgres 17.
-        //
-        schema
-        |> string.split("\n")
-        |> list.filter(fn(line) {
-          !string.starts_with(line, "\\restrict")
-          && !string.starts_with(line, "\\unrestrict")
-        })
-        |> string.join("\n")
-      })
-    }
-  }
+        url,
+      ],
+      [],
+    ),
+  )
+  // pg_dump 17.6+ adds `\restrict` lines, which sqlc can not parse.
+  schema
+  |> string.split("\n")
+  |> list.filter(fn(line) {
+    !string.starts_with(line, "\\restrict")
+    && !string.starts_with(line, "\\unrestrict")
+  })
+  |> string.join("\n")
 }
 
-/// Runs one of the database command line tools and returns its output,
-/// if it exited successfully.
-///
-fn exec(
-  command: String,
+fn dump(
+  executable: String,
   arguments: List(String),
-) -> Result(String, error.ParrotError) {
-  case child_process.exec(run: command, with: arguments, in: ".") {
-    Ok(child_process.Output(status_code: 0, output:)) -> Ok(output)
-    Ok(child_process.Output(status_code: _, output:)) ->
-      Error(error.SchemaDumpError(command, string.trim(output)))
-    Error(e) ->
-      Error(error.SchemaDumpError(
-        command,
-        child_process.describe_start_error(e),
-      ))
-  }
+  env: List(#(String, String)),
+) -> Result(String, ParrotError) {
+  child_process.from_name(executable)
+  |> child_process.args(arguments)
+  |> child_process.envs(env)
+  |> command.output
+  |> result.map_error(error.SchemaDumpError(executable, _))
 }

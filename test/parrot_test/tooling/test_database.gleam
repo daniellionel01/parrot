@@ -1,5 +1,4 @@
 import child_process
-import child_process/stdio
 import envoy
 import filepath
 import gleam/int
@@ -7,9 +6,9 @@ import gleam/option
 import gleam/result
 import gleam/string
 import gleam/uri
-import parrot/internal/sqlc
+import parrot/internal/command
+import parrot/internal/database
 import parrot_test/tooling/pipeline.{type Fixture}
-import simplifile
 
 pub const postgres_env = "PARROT_TEST_POSTGRES_URL"
 
@@ -18,22 +17,17 @@ pub const mysql_env = "PARROT_TEST_MYSQL_URL"
 /// Returns the connection string of the new database.
 ///
 pub fn create(fixture: Fixture) -> Result(String, String) {
-  let database = "parrot_test_" <> fixture.name
+  let name = "parrot_test_" <> fixture.name
 
   case fixture.engine {
-    sqlc.SQLite -> create_sqlite(database, fixture.schema)
-    sqlc.PostgreSQL -> create_postgres(database, fixture.schema)
-    sqlc.MySQL -> create_mysql(database, fixture.schema)
+    database.SQLite -> create_sqlite(name, fixture.schema)
+    database.PostgreSQL -> create_postgres(name, fixture.schema)
+    database.MySQL -> create_mysql(name, fixture.schema)
   }
 }
 
 fn create_sqlite(database: String, schema: String) -> Result(String, String) {
-  let dir =
-    filepath.directory_name(sqlc.sqlc_binary_path())
-    |> filepath.join("test/_databases")
-  let assert Ok(_) = simplifile.create_directory_all(dir)
-  let path = filepath.join(dir, database <> ".db")
-  let _ = simplifile.delete(path)
+  let path = filepath.join(pipeline.scratch_dir(database), "schema.db")
 
   use _ <- result.map(exec("sqlite3", [path, schema], []))
   path
@@ -126,24 +120,14 @@ fn parse(url: String) -> Result(uri.Uri, String) {
 }
 
 fn exec(
-  command: String,
+  executable: String,
   arguments: List(String),
   env: List(#(String, String)),
 ) -> Result(Nil, String) {
-  let result = case child_process.find_executable(command) {
-    Error(_) -> Error("`" <> command <> "` is not installed")
-    Ok(path) ->
-      child_process.from_file(path)
-      |> child_process.args(arguments)
-      |> child_process.envs(env)
-      |> child_process.run(stdio.capture(True))
-      |> result.map_error(child_process.describe_start_error)
-  }
-
-  case result {
-    Ok(child_process.Output(status_code: 0, output: _)) -> Ok(Nil)
-    Ok(child_process.Output(status_code: _, output:)) ->
-      Error("`" <> command <> "` failed:\n" <> output)
-    Error(e) -> Error(e)
-  }
+  child_process.from_name(executable)
+  |> child_process.args(arguments)
+  |> child_process.envs(env)
+  |> command.run
+  |> result.replace(Nil)
+  |> result.map_error(fn(e) { "`" <> executable <> "` failed:\n" <> e })
 }

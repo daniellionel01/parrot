@@ -1,5 +1,6 @@
 //// What parrot generates, independent of sqlc's output format. Built by
 //// `codegen/analyse` and turned into source code by `codegen/print`.
+//// Every name is a valid gleam identifier.
 
 pub type Module {
   Module(
@@ -10,14 +11,25 @@ pub type Module {
   )
 }
 
-/// `name` and values as they are in the database.
-pub type Enum {
-  Enum(name: String, first: String, rest: List(String))
+/// The generated type and its functions.
+pub type Names {
+  Names(type_: String, function: String, decoder: String)
 }
 
+/// `function` turns a variant into its value.
+pub type Enum {
+  Enum(names: Names, first: Variant, rest: List(Variant))
+}
+
+/// `value` as it is in the database.
+pub type Variant {
+  Variant(name: String, value: String)
+}
+
+/// `type_` and `decoder` are the row's, if it returns rows.
 pub type Query {
   Query(
-    name: String,
+    names: Names,
     sql: List(SqlPart),
     returns_rows: Bool,
     params: List(Param),
@@ -32,17 +44,23 @@ pub type SqlPart {
   Slice(param: String)
 }
 
-/// `name` is a valid gleam identifier.
+/// A `slice` is a list of `type_`.
 pub type Param {
   Param(name: String, type_: GleamType, slice: Bool)
 }
 
-/// `name` is a valid gleam identifier.
 pub type Field {
   Field(name: String, type_: GleamType)
 }
 
 pub type GleamType {
+  Scalar(Scalar)
+  GleamEnum(Names)
+  GleamList(GleamType)
+  GleamOption(GleamType)
+}
+
+pub type Scalar {
   GleamString
   GleamInt
   GleamFloat
@@ -54,9 +72,5 @@ pub type GleamType {
   GleamInterval
   GleamInet
   GleamMacaddr
-  GleamList(GleamType)
-  /// name as in the database
-  GleamEnum(String)
-  GleamOption(GleamType)
   GleamDynamic
 }

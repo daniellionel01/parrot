@@ -15,4 +15,4 @@ select * from posts where id = $1;
 
 could not call `sqlc generate`:
 # package 
-queries.sql:1:1: relation "posts" does not exist
+../../src/app/sql/queries.sql:1:1: relation "posts" does not exist

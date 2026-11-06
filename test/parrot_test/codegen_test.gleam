@@ -1,85 +1,78 @@
 //// Review snapshots with `gleam run -m birdie`.
+////
+//// With `gleam test integration`, every fixture's schema is also loaded into
+//// a real database and fetching it from there has to generate the same
+//// module.
 
+import argv
 import birdie
+import gleam/list
 import gleam/string
 import parrot/error
-import parrot/internal/codegen/seed
-import parrot/internal/sqlc
+import parrot/internal/codegen/runtime
+import parrot/internal/database.{MySQL, PostgreSQL, SQLite}
 import parrot_test/tooling/fixtures
 import parrot_test/tooling/pipeline.{type Fixture, Fixture}
 import parrot_test/tooling/summary
-
-// === SQLITE ===============================================================
+import parrot_test/tooling/test_database
 
 pub fn sqlite_basic_test() {
-  fixtures.sqlite_basic()
-  |> snap_codegen(title: "sqlite basic queries")
+  check(fixtures.sqlite_basic())
 }
 
 pub fn sqlite_column_types_test() {
-  fixtures.sqlite_column_types()
-  |> snap_codegen(title: "sqlite column types")
+  check(fixtures.sqlite_column_types())
 }
 
 pub fn sqlite_named_and_slice_params_test() {
-  fixtures.sqlite_named_and_slice_params()
-  |> snap_codegen(title: "sqlite named and slice params")
+  check(fixtures.sqlite_named_and_slice_params())
 }
 
-pub fn sqlite_app_fixture_test() {
-  fixtures.sqlite_app_fixture()
-  |> snap_codegen(title: "sqlite app fixture")
+pub fn sqlite_keywords_test() {
+  check(fixtures.sqlite_keywords())
 }
 
-pub fn sqlite_no_optional_fixture_test() {
-  fixtures.sqlite_no_optional_fixture()
-  |> snap_codegen(title: "sqlite no optional fixture")
+pub fn sqlite_app_test() {
+  check(fixtures.sqlite_app())
 }
 
-// === POSTGRESQL ===========================================================
+pub fn sqlite_no_optional_test() {
+  check(fixtures.sqlite_no_optional())
+}
 
 pub fn postgres_enums_test() {
-  fixtures.postgres_enums()
-  |> snap_codegen(title: "postgres enums")
+  check(fixtures.postgres_enums())
 }
 
 pub fn postgres_arrays_test() {
-  fixtures.postgres_arrays()
-  |> snap_codegen(title: "postgres arrays")
+  check(fixtures.postgres_arrays())
 }
 
 pub fn postgres_column_types_test() {
-  fixtures.postgres_column_types()
-  |> snap_codegen(title: "postgres column types")
+  check(fixtures.postgres_column_types())
 }
 
 pub fn postgres_joins_and_commands_test() {
-  fixtures.postgres_joins_and_commands()
-  |> snap_codegen(title: "postgres joins")
+  check(fixtures.postgres_joins_and_commands())
 }
 
-pub fn postgres_app_fixture_test() {
-  fixtures.postgres_app_fixture()
-  |> snap_codegen(title: "postgres app fixture")
+pub fn postgres_app_test() {
+  check(fixtures.postgres_app())
 }
-
-// === MYSQL ================================================================
 
 pub fn mysql_column_types_test() {
-  fixtures.mysql_column_types()
-  |> snap_codegen(title: "mysql column types")
+  check(fixtures.mysql_column_types())
 }
 
-pub fn mysql_app_fixture_test() {
-  fixtures.mysql_app_fixture()
-  |> snap_codegen(title: "mysql app fixture")
+pub fn mysql_app_test() {
+  check(fixtures.mysql_app())
 }
 
 // === ERRORS ===============================================================
 
 pub fn sqlite_postgres_style_parameter_error_test() {
   fixture(
-    sqlc.SQLite,
+    SQLite,
     schema: "create table users (id integer primary key);",
     queries: "
 -- name: GetUser :one
@@ -90,7 +83,7 @@ select * from users where id = $1;",
 
 pub fn postgres_unknown_table_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "create table users (id serial primary key);",
     queries: "
 -- name: GetPost :one
@@ -101,7 +94,7 @@ select * from posts where id = $1;",
 
 pub fn enum_and_query_name_collision_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "
 create type status as enum ('open', 'closed');
 create table tickets (id serial primary key, status status not null);",
@@ -114,7 +107,7 @@ select status from tickets;",
 
 pub fn empty_enum_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "
 create type nothing as enum ();
 create table things (id serial primary key, value nothing not null);",
@@ -127,7 +120,7 @@ select value from things;",
 
 pub fn duplicate_enum_value_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "
 create type ticket_status as enum ('open', 'closed');
 create type door_status as enum ('open', 'locked');
@@ -145,7 +138,7 @@ select status from doors;",
 
 pub fn enum_values_colliding_in_pascal_case_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "
 create type ticket_status as enum ('open', 'OPEN', 'closed');
 create table tickets (id serial primary key, status ticket_status not null);",
@@ -158,7 +151,7 @@ select status from tickets;",
 
 pub fn postgres_unnamed_parameter_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "create table posts (id serial primary key, tags text[] not null);",
     queries: "
 -- name: PostsWithTag :many
@@ -169,7 +162,7 @@ select id from posts where $1::text = any(tags);",
 
 pub fn embed_unsupported_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "
 create table authors (id serial primary key, name text not null);
 create table books (id serial primary key, author_id int not null, title text not null);",
@@ -183,7 +176,7 @@ from books join authors on authors.id = books.author_id;",
 
 pub fn execrows_unsupported_error_test() {
   fixture(
-    sqlc.PostgreSQL,
+    PostgreSQL,
     schema: "create table books (id serial primary key);",
     queries: "
 -- name: DeleteBook :execrows
@@ -194,7 +187,7 @@ delete from books where id = $1;",
 
 pub fn execlastid_unsupported_error_test() {
   fixture(
-    sqlc.MySQL,
+    MySQL,
     schema: "create table books (id int not null auto_increment primary key, title text not null);",
     queries: "
 -- name: CreateBook :execlastid
@@ -203,35 +196,43 @@ insert into books (title) values (?);",
   |> snap_error(title: "execlastid")
 }
 
-// === SEED CODE ============================================================
-
-pub fn seed_code_test() {
-  seed.code
-  |> string.trim
-  |> birdie.snap(title: "seed code")
-}
-
 // === HELPERS ==============================================================
 
 fn fixture(
-  engine: sqlc.Engine,
+  engine: database.Engine,
   schema schema: String,
   queries queries: String,
 ) -> Fixture {
   Fixture(name: "", engine:, schema:, queries:)
 }
 
-fn snap_codegen(fixture: Fixture, title title: String) -> Nil {
+/// Snapshots the module generated from `fixture`.
+fn check(fixture: Fixture) -> Nil {
   let assert Ok(output) = pipeline.run(fixture)
 
   [
     section("schema.sql", fixture.schema),
     section("queries.sql", fixture.queries),
-    section("sqlc", summary.render(output.context)),
-    section("sql.gleam", without_seed(output.module)),
+    section("sqlc", summary.render(output.sqlc)),
+    section("unknown types", string.join(output.unknown_types, "\n")),
+    section("sql.gleam", without_runtime(output.module)),
   ]
   |> string.join("\n\n")
-  |> birdie.snap(title:)
+  |> birdie.snap(title: string.replace(fixture.name, "_", " "))
+
+  case list.contains(argv.load().arguments, "integration") {
+    False -> Nil
+    True -> {
+      let assert Ok(url) = test_database.create(fixture)
+      let assert Ok(schema) = database.fetch_schema(fixture.engine, url)
+      let assert Ok(fetched) =
+        pipeline.run(
+          Fixture(..fixture, name: fixture.name <> "_fetched", schema:),
+        )
+        as { "could not generate code from the fetched schema:\n" <> schema }
+      assert fetched.module == output.module
+    }
+  }
 }
 
 fn snap_error(fixture: Fixture, title title: String) -> Nil {
@@ -247,12 +248,12 @@ fn snap_error(fixture: Fixture, title title: String) -> Nil {
   |> birdie.snap(title:)
 }
 
-/// The seed code is the same in every module and has its own snapshot.
-fn without_seed(module: String) -> String {
+/// The runtime code is the same in every module.
+fn without_runtime(module: String) -> String {
   string.replace(
     in: module,
-    each: string.trim(seed.code),
-    with: "// <seed code, see the `seed code` snapshot>",
+    each: string.trim(runtime.code),
+    with: "// <runtime code>",
   )
 }
 

@@ -29,24 +29,14 @@ select id, email from accounts where id in (sqlc.slice('ids'));
 
 -- sqlc ------------------------------------------------------------------------
 
-table accounts
-  accounts.id: int (not null, unsigned)
-  accounts.email: varchar (not null)
-  accounts.status: accounts_status (not null)
-  accounts.is_verified: tinyint (not null)
-  accounts.balance: decimal (null)
-  accounts.created_at: datetime (not null)
-  accounts.last_login: timestamp (null)
-  accounts.birthday: date (null)
-
 enum accounts_status
   active | suspended
 
 query GetAccount :one
   params:
-    $1 accounts.id: int (not null, unsigned)
+    $1 accounts.id: int (not null)
   columns:
-    accounts.id: int (not null, unsigned)
+    accounts.id: int (not null)
     accounts.email: varchar (not null)
     accounts.status: accounts_status (not null)
     accounts.is_verified: tinyint (not null)
@@ -65,10 +55,14 @@ query CreateAccount :exec
 
 query AccountsByIds :many
   params:
-    $1 accounts.ids: int (not null, unsigned, slice)
+    $1 accounts.ids: int (not null, slice)
   columns:
-    accounts.id: int (not null, unsigned)
+    accounts.id: int (not null)
     accounts.email: varchar (not null)
+
+-- unknown types ---------------------------------------------------------------
+
+
 
 -- sql.gleam -------------------------------------------------------------------
 
@@ -83,7 +77,7 @@ import gleam/string
 import gleam/time/calendar.{type Date, type TimeOfDay, Date}
 import gleam/time/timestamp.{type Timestamp}
 
-// <seed code, see the `seed code` snapshot>
+// <runtime code>
 
 pub type AccountsStatus {
   Active

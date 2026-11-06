@@ -1,5 +1,46 @@
-//// Code that is the same in every generated module: the `Param` type and
-//// shared decoders.
+//// Code that is the same in every generated module: the `Param` type,
+//// shared decoders and how the generated code refers to them.
+
+import parrot/internal/codegen/model.{
+  type Scalar, GleamBitArray, GleamBool, GleamDate, GleamDynamic, GleamFloat,
+  GleamInet, GleamInt, GleamInterval, GleamMacaddr, GleamString, GleamTimeOfDay,
+  GleamTimestamp,
+}
+
+/// What `code` needs.
+pub const imports = [
+  "import gleam/dynamic/decode",
+  "import gleam/float",
+  "import gleam/option",
+  "import gleam/time/calendar.{type Date, type TimeOfDay, Date}",
+  "import gleam/time/timestamp.{type Timestamp}",
+]
+
+/// The gleam type of a scalar, its `Param` constructor and its decoder.
+pub type ScalarCode {
+  ScalarCode(type_: String, param: String, decoder: String)
+}
+
+pub fn scalar(scalar: Scalar) -> ScalarCode {
+  case scalar {
+    GleamString -> ScalarCode("String", "ParamString", "decode.string")
+    GleamInt -> ScalarCode("Int", "ParamInt", "decode.int")
+    GleamFloat -> ScalarCode("Float", "ParamFloat", "decode.float")
+    GleamBool -> ScalarCode("Bool", "ParamBool", "bool_decoder()")
+    GleamTimestamp ->
+      ScalarCode("Timestamp", "ParamTimestamp", "datetime_decoder()")
+    GleamTimeOfDay ->
+      ScalarCode("TimeOfDay", "ParamTimeOfDay", "time_of_day_decoder()")
+    GleamDate -> ScalarCode("Date", "ParamDate", "calendar_date_decoder()")
+    GleamBitArray -> ScalarCode("BitArray", "ParamBitArray", "decode.bit_array")
+    GleamInterval ->
+      ScalarCode("Interval", "ParamInterval", "interval_decoder()")
+    GleamInet -> ScalarCode("Inet", "ParamInet", "inet_decoder()")
+    GleamMacaddr -> ScalarCode("BitArray", "ParamMacaddr", "macaddr_decoder()")
+    GleamDynamic ->
+      ScalarCode("decode.Dynamic", "ParamDynamic", "decode.dynamic")
+  }
+}
 
 pub const code =
   "

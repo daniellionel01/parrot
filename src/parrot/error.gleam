@@ -1,4 +1,5 @@
 import gleam/int
+import gleam/list
 import gleam/string
 import simplifile
 
@@ -22,18 +23,21 @@ pub type ParrotError {
 
   SqlcDownloadError(String)
   SqlcNotFound(String)
-  SqlcVersionError(expected: String, received: String)
   SqlcIntegrityError(expected: String, received: String)
   SqlcGenerateError(String)
   SqlcOutputError(String)
 
   GleamFormatError(String)
 
-  DuplicateDefinitionError(String, String)
+  DuplicateDefinitionError(String)
   EmptyEnumError(String)
   DuplicateEnumValueError(String, String, String)
   UnnamedParameterError(query: String, position: Int)
-  UnsupportedQueryCommandError(query: String, command: String)
+  UnsupportedQueryCommandError(
+    query: String,
+    command: String,
+    supported: List(String),
+  )
   UnsupportedEmbedError(query: String)
 }
 
@@ -90,9 +94,6 @@ pub fn to_string(error: ParrotError) {
     SqlcDownloadError(e) -> {
       "there was an error downloading sqlc: " <> e
     }
-    SqlcVersionError(expected:, received:) -> {
-      "expected sqlc " <> expected <> ", found " <> received
-    }
     SqlcIntegrityError(expected:, received:) -> {
       "the sqlc binary does not match the expected checksum. "
       <> "This could mean the download was corrupted or tampered with.\n"
@@ -111,9 +112,9 @@ pub fn to_string(error: ParrotError) {
       <> "https://github.com/daniellionel01/parrot/issues"
     }
     GleamFormatError(err) -> {
-      "there was an error formatting the generated code:" <> err
+      "there was an error formatting the generated code:\n" <> err
     }
-    DuplicateDefinitionError(name, _) -> {
+    DuplicateDefinitionError(name) -> {
       "duplicate definition found: '"
       <> name
       <> "' is defined both as an enum and as a query. "
@@ -162,13 +163,24 @@ pub fn to_string(error: ParrotError) {
       <> "' uses `sqlc.embed`, which parrot does not support yet. "
       <> "Select the columns instead."
     }
-    UnsupportedQueryCommandError(query:, command:) -> {
+    UnsupportedQueryCommandError(query:, command:, supported:) -> {
       "query '"
       <> query
-      <> "' uses the annotation :"
-      <> string.replace(command, "_", "")
+      <> "' uses the annotation "
+      <> command
       <> ", which parrot does not support. "
-      <> "Supported annotations are :one, :many, :exec and :execresult."
+      <> "Supported annotations are "
+      <> enumerate(supported)
+      <> "."
     }
+  }
+}
+
+/// `a, b and c`
+fn enumerate(items: List(String)) -> String {
+  case list.reverse(items) {
+    [] -> ""
+    [last] -> last
+    [last, ..rest] -> string.join(list.reverse(rest), ", ") <> " and " <> last
   }
 }

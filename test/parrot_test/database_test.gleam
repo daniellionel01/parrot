@@ -1,9 +1,15 @@
 import parrot/error
 import parrot/internal/database
-import parrot/internal/sqlc
 
 pub fn sqlite_database_does_not_exist_test() {
-  let connection_string = database.connection_string("does_not_exist.db")
-  assert database.fetch_schema(sqlc.SQLite, connection_string)
+  assert database.fetch_schema(database.SQLite, "does_not_exist.db")
+    == Error(error.SqliteDBNotFound("does_not_exist.db"))
+}
+
+pub fn sqlite_url_test() {
+  let assert Ok(database.SQLite) = database.engine_from_url("file:app.db")
+  assert database.fetch_schema(database.SQLite, "file:does_not_exist.db")
+    == Error(error.SqliteDBNotFound("does_not_exist.db"))
+  assert database.fetch_schema(database.SQLite, "sqlite://does_not_exist.db")
     == Error(error.SqliteDBNotFound("does_not_exist.db"))
 }

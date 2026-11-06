@@ -1,30 +1,12 @@
-import gleam/bit_array
-import gleam/crypto
+//// Prints the checksum of every platform's sqlc release, for
+//// `sqlc.platforms` after bumping `sqlc.sqlc_version`.
+
 import gleam/io
 import gleam/list
-import gleam/string
 import parrot/internal/sqlc
 
-pub const binaries = [
-  "_darwin_arm64.tar.gz",
-  "_darwin_amd64.tar.gz",
-  "_linux_arm64.tar.gz",
-  "_linux_amd64.tar.gz",
-  "_windows_arm64.tar.gz",
-  "_windows_amd64.tar.gz",
-]
-
 pub fn main() {
-  list.each(binaries, fn(path) {
-    let download_path = sqlc.download_base <> path
-
-    let assert Ok(bin) = sqlc.download_and_extract(download_path)
-
-    let hash = crypto.hash(crypto.Sha256, bin)
-    let hash_string =
-      bit_array.base16_encode(hash)
-      |> string.lowercase
-
-    io.println(path <> ": " <> hash_string)
-  })
+  use #(platform, _) <- list.each(sqlc.platforms)
+  let assert Ok(binary) = sqlc.download_and_extract(platform)
+  io.println(platform <> ": " <> sqlc.sha256(binary))
 }

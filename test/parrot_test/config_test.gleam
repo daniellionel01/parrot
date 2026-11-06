@@ -3,7 +3,7 @@ import gleam/option.{Some}
 import parrot/error
 import parrot/internal/cli.{Flags, no_flags}
 import parrot/internal/config.{Config}
-import parrot/internal/sqlc
+import parrot/internal/database
 import tom
 
 const url = "postgresql://user:pass@localhost/app"
@@ -14,10 +14,22 @@ fn resolve(flags: cli.Flags, toml: String, env: List(#(String, String))) {
 }
 
 pub fn parse_test() {
-  assert cli.parse(["--output", "src/db.gleam", "-e", "URL"])
-    == Ok(cli.Generate(
-      Flags(..no_flags, output: Some("src/db.gleam"), env: Some("URL")),
-    ))
+  assert cli.parse([
+      "--sqlite", "app.db", "-e", "URL", "--output", "src/db.gleam", "--schema",
+      "priv/schema.sql", "--engine", "mysql", "--sqlc", "system",
+    ])
+    == Ok(
+      cli.Generate(Flags(
+        sqlite: Some("app.db"),
+        env: Some("URL"),
+        output: Some("src/db.gleam"),
+        schema: Some("priv/schema.sql"),
+        engine: Some("mysql"),
+        sqlc: Some("system"),
+      )),
+    )
+  assert cli.parse(["--env-var", "URL"])
+    == Ok(cli.Generate(Flags(..no_flags, env: Some("URL"))))
 }
 
 pub fn parse_help_test() {
@@ -34,7 +46,7 @@ pub fn defaults_test() {
   assert resolve(no_flags, "", [#("DATABASE_URL", url)])
     == Ok(Config(
       output: "src/app/sql.gleam",
-      engine: sqlc.PostgreSQL,
+      engine: database.PostgreSQL,
       schema: config.FromDatabase(url),
       sqlc: config.Managed,
     ))
@@ -53,7 +65,7 @@ bin = \"system\"
   assert resolve(no_flags, toml, [#("APP_DB", url)])
     == Ok(Config(
       output: "src/app/db.gleam",
-      engine: sqlc.PostgreSQL,
+      engine: database.PostgreSQL,
       schema: config.FromDatabase(url),
       sqlc: config.System,
     ))
@@ -69,8 +81,8 @@ pub fn flags_override_toml_test() {
 pub fn sqlite_test() {
   let flags = Flags(..no_flags, sqlite: Some("app.db"))
   let assert Ok(Config(
-    engine: sqlc.SQLite,
-    schema: config.FromDatabase("app.db"),
+    engine: database.SQLite,
+    schema: config.FromDatabase("sqlite:app.db"),
     ..,
   )) = resolve(flags, "", [])
 }
@@ -79,11 +91,34 @@ pub fn schema_without_database_test() {
   let flags =
     Flags(..no_flags, schema: Some("priv/schema.sql"), engine: Some("mysql"))
   let assert Ok(Config(
-    engine: sqlc.MySQL,
+    engine: database.MySQL,
     schema: config.FromFiles("priv/schema.sql"),
     ..,
   )) = resolve(flags, "", [])
 
   let flags = Flags(..no_flags, schema: Some("priv/schema.sql"))
   assert resolve(flags, "", []) == Error(error.MissingEngine)
+}
+
+pub fn sqlite_overrides_env_test() {
+  let flags = Flags(..no_flags, sqlite: Some("app.db"))
+  let assert Ok(Config(engine: database.SQLite, ..)) =
+    resolve(flags, "", [#("DATABASE_URL", url)])
+}
+
+pub fn errors_test() {
+  assert resolve(no_flags, "", [])
+    == Error(error.EnvironmentVariableEmpty("DATABASE_URL"))
+  assert resolve(no_flags, "[tools.parrot]\nenv = \"APP_DB\"\n", [
+      #("APP_DB", ""),
+    ])
+    == Error(error.EnvironmentVariableEmpty("APP_DB"))
+  assert resolve(no_flags, "", [#("DATABASE_URL", "wibble://db")])
+    == Error(error.MissingEngine)
+  assert resolve(Flags(..no_flags, engine: Some("oracle")), "", [
+      #("DATABASE_URL", url),
+    ])
+    == Error(error.UnknownEngine("oracle"))
+  let assert Error(error.GleamTomlError(_)) =
+    resolve(no_flags, "[tools.parrot]\noutput = 1\n", [#("DATABASE_URL", url)])
 }

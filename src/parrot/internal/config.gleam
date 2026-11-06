@@ -11,15 +11,15 @@ import gleam/result
 import gleam/string
 import parrot/error.{type ParrotError}
 import parrot/internal/cli
+import parrot/internal/database.{type Engine}
 import parrot/internal/project
-import parrot/internal/sqlc
 import tom
 
 pub type Config {
   Config(
     /// relative to the project's root
     output: String,
-    engine: sqlc.Engine,
+    engine: Engine,
     schema: Schema,
     sqlc: Sqlc,
   )
@@ -42,7 +42,7 @@ pub fn resolve(
   toml: Dict(String, tom.Toml),
   get_env: fn(String) -> Result(String, Nil),
 ) -> Result(Config, ParrotError) {
-  use project_name <- result.try(project.name_from_toml(toml))
+  use project_name <- result.try(project.name(toml))
   use output <- result.try(setting(flags.output, toml, ["output"]))
   use env <- result.try(setting(flags.env, toml, ["env"]))
   use engine <- result.try(setting(flags.engine, toml, ["engine"]))
@@ -57,23 +57,22 @@ pub fn resolve(
     Some(path) -> Binary(path)
   }
   use engine <- result.try(case engine {
-    Some(engine) -> engine_from_name(engine) |> result.map(Some)
+    Some(engine) -> database.engine_from_name(engine) |> result.map(Some)
     None -> Ok(None)
   })
 
   let connection_string = case flags.sqlite {
-    Some(path) -> Some(path)
+    Some(path) -> Some(database.sqlite_url(path))
     None ->
       case get_env(env) {
         Ok("") | Error(_) -> None
         Ok(connection_string) -> Some(connection_string)
       }
   }
-  let engine = case engine, flags.sqlite, connection_string {
-    Some(engine), _, _ -> Ok(engine)
-    None, Some(_), _ -> Ok(sqlc.SQLite)
-    None, None, Some(connection_string) -> engine_from_url(connection_string)
-    None, None, None -> Error(error.MissingEngine)
+  let engine = case engine, connection_string {
+    Some(engine), _ -> Ok(engine)
+    None, Some(connection_string) -> database.engine_from_url(connection_string)
+    None, None -> Error(error.MissingEngine)
   }
 
   case schema, connection_string {
@@ -107,23 +106,5 @@ fn setting(
             "`tools.parrot." <> string.join(key, ".") <> "` must be a string",
           ))
       }
-  }
-}
-
-fn engine_from_name(name: String) -> Result(sqlc.Engine, ParrotError) {
-  case string.lowercase(name) {
-    "postgresql" | "postgres" -> Ok(sqlc.PostgreSQL)
-    "mysql" -> Ok(sqlc.MySQL)
-    "sqlite" -> Ok(sqlc.SQLite)
-    _ -> Error(error.UnknownEngine(name))
-  }
-}
-
-fn engine_from_url(url: String) -> Result(sqlc.Engine, ParrotError) {
-  case url {
-    "postgres" <> _ -> Ok(sqlc.PostgreSQL)
-    "mysql" <> _ -> Ok(sqlc.MySQL)
-    "sqlite" <> _ | "file:" <> _ -> Ok(sqlc.SQLite)
-    _ -> Error(error.MissingEngine)
   }
 }

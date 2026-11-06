@@ -4,7 +4,7 @@
 
 get_os() ->
   case os:type() of
-    {win32, _} -> <<"win32">>;
+    {win32, _} -> <<"windows">>;
     {unix, darwin} -> <<"darwin">>;
     {unix, linux} -> <<"linux">>;
     {_, Unknown} -> atom_to_binary(Unknown, utf8)

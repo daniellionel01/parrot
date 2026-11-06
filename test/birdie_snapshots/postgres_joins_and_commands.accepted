@@ -1,6 +1,6 @@
 ---
 version: 2.0.2
-title: postgres joins
+title: postgres joins and commands
 ---
 -- schema.sql ------------------------------------------------------------------
 
@@ -37,15 +37,6 @@ delete from books where author_id = $1;
 
 -- sqlc ------------------------------------------------------------------------
 
-table authors
-  authors.id: serial (not null)
-  authors.name: text (not null)
-
-table books
-  books.id: serial (not null)
-  books.author_id: int4 (null)
-  books.title: text (not null)
-
 query BooksWithAuthors :many
   params: none
   columns:
@@ -69,10 +60,14 @@ query DeleteBook :exec
     $1 books.id: serial (not null)
   columns: none
 
-query DeleteBooksByAuthor :exec_result
+query DeleteBooksByAuthor :execresult
   params:
     $1 books.author_id: pg_catalog.int4 (null)
   columns: none
+
+-- unknown types ---------------------------------------------------------------
+
+
 
 -- sql.gleam -------------------------------------------------------------------
 
@@ -85,7 +80,7 @@ import gleam/option
 import gleam/time/calendar.{type Date, type TimeOfDay, Date}
 import gleam/time/timestamp.{type Timestamp}
 
-// <seed code, see the `seed code` snapshot>
+// <runtime code>
 
 pub type BooksWithAuthors {
   BooksWithAuthors(title: String, name: option.Option(String))

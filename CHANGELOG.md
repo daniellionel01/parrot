@@ -50,6 +50,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Parrot no longer loops forever when it is run outside of a gleam project.
 
+- Running parrot from a subdirectory of the project no longer fails to find the queries.
+
+- `file:` sqlite connection strings work. Previously they were detected as sqlite but the database was "not found".
+
+- MySQL passwords are passed via `MYSQL_PWD`: passwords may contain `:`, connection strings without a password no longer prompt for one, and schema lines containing `mysqldump:` are no longer dropped.
+
+- Queries named like a gleam keyword (f.e. `Use`) generated a function that did not compile.
+
+- The managed sqlc binary is downloaded again if it does not match its checksum, instead of returning an error.
+
 ## [2.3.0] - 2026-05-04
 
 - Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)

@@ -1,7 +1,3 @@
-//// Contains functionality related to the command line
-//// and rendering text in the terminal.
-////
-
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import parrot/error
@@ -27,7 +23,7 @@ Examples:
 
 Options can also be set in gleam.toml: https://parrot.hexdocs.pm/toml-reference.html"
 
-pub const colorless = "\u{001b}[0m"
+const colorless = "\u{001b}[0m"
 
 pub fn red(text: String) {
   "\u{001b}[31m" <> text <> colorless
