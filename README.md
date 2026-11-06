@@ -263,9 +263,9 @@ pub fn main() {
 
 Schema, queries and generated code:
 
-- PostgreSQL: [postgres_app_fixture](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/postgres_app_fixture.accepted)
-- MySQL: [mysql_app_fixture](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/mysql_app_fixture.accepted)
-- SQlite: [sqlite_app_fixture](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/sqlite_app_fixture.accepted)
+- PostgreSQL: [postgres_app](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/postgres_app.accepted)
+- MySQL: [mysql_app](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/mysql_app.accepted)
+- SQlite: [sqlite_app](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/sqlite_app.accepted)
 
 Database driver wrappers: [wrappers.md](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md)
 

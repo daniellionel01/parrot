@@ -3,6 +3,7 @@ import app/sql
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/time/calendar
+import gleam/time/duration
 import gleam/time/timestamp
 import gleeunit
 
@@ -56,6 +57,11 @@ pub fn time_test() {
   let ts = timestamp.from_unix_seconds(1_700_000_000)
   assert query(sql.datetime_round_trip(ts, Some(ts)))
     == Ok([sql.DatetimeRoundTrip(ts, Some(ts))])
+  // sqlite's own date and time functions write utc without an offset
+  let assert Ok(written) = timestamp.parse_rfc3339("2024-03-01T12:30:00Z")
+  let fraction = timestamp.add(written, duration.milliseconds(250))
+  assert query(sql.sqlite_written_datetime())
+    == Ok([sql.SqliteWrittenDatetime(written, Some(fraction))])
   assert query(sql.timestamp_round_trip(ts, Some(ts)))
     == Ok([sql.TimestampRoundTrip(ts, Some(ts))])
 

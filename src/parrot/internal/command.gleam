@@ -7,7 +7,11 @@ import gleam/string
 /// on stderr go to the terminal instead of into the output.
 ///
 pub fn output(command: Builder) -> Result(String, String) {
-  run_capturing(command, stderr: False)
+  case run_capturing(command, stderr: False) {
+    Error("exited with status " <> _ as e) ->
+      Error(e <> ", see its errors above")
+    result -> result
+  }
 }
 
 /// Runs a command for its effect. Errors with everything it printed if it

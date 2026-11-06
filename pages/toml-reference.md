@@ -29,3 +29,5 @@ schema = "priv/migrations"
 | `schema` | `--schema` | fetched from the database | schema or migration files, no database needed ([sqlc docs](https://docs.sqlc.dev/en/stable/howto/ddl.html#handling-sql-migrations)) |
 
 `--sqlite <path>` sets a sqlite database file directly.
+
+Relative paths, including sqlite paths in connection strings, are relative to the project's root.

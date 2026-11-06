@@ -3,6 +3,7 @@
 ////
 
 import child_process
+import filepath
 import gleam/bool
 import gleam/int
 import gleam/list
@@ -50,12 +51,16 @@ pub fn sqlite_url(path: String) -> String {
   "sqlite:" <> path
 }
 
+/// Relative sqlite paths are resolved from `dir`, the project's root, the
+/// same as by the application.
+///
 pub fn fetch_schema(
   engine: Engine,
   url: String,
+  in dir: String,
 ) -> Result(String, ParrotError) {
   case engine {
-    SQLite -> fetch_sqlite(sqlite_path(url))
+    SQLite -> fetch_sqlite(sqlite_path(url, dir))
     MySQL -> fetch_mysql(url)
     PostgreSQL -> fetch_postgres(url)
   }
@@ -63,11 +68,15 @@ pub fn fetch_schema(
 
 /// sqlite connection strings may also just be a path.
 ///
-fn sqlite_path(url: String) -> String {
-  case url {
+fn sqlite_path(url: String, dir: String) -> String {
+  let path = case url {
     "sqlite://" <> path | "sqlite:" <> path -> path
     "file://" <> path | "file:" <> path -> path
     path -> path
+  }
+  case filepath.is_absolute(path) {
+    True -> path
+    False -> filepath.join(dir, path)
   }
 }
 
@@ -91,6 +100,12 @@ fn fetch_mysql(url: String) -> Result(String, ParrotError) {
   use userinfo <- result.try(option.to_result(conn.userinfo, invalid))
   let #(user, password) =
     string.split_once(userinfo, ":") |> result.unwrap(#(userinfo, ""))
+  use user <- result.try(
+    uri.percent_decode(user) |> result.replace_error(invalid),
+  )
+  use password <- result.try(
+    uri.percent_decode(password) |> result.replace_error(invalid),
+  )
 
   dump(
     "mysqldump",

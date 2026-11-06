@@ -66,7 +66,7 @@ fn generate(
     config.FromFiles(path) -> Ok(sqlc.SchemaFiles(from_root(path, root)))
     config.FromDatabase(url) -> {
       io.println("\u{1F5C4} fetching schema...")
-      database.fetch_schema(config.engine, url)
+      database.fetch_schema(config.engine, url, in: root)
       |> result.map(sqlc.SchemaSql)
     }
   })

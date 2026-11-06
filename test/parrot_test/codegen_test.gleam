@@ -224,7 +224,8 @@ fn check(fixture: Fixture) -> Nil {
     False -> Nil
     True -> {
       let assert Ok(url) = test_database.create(fixture)
-      let assert Ok(schema) = database.fetch_schema(fixture.engine, url)
+      let assert Ok(schema) =
+        database.fetch_schema(fixture.engine, url, in: ".")
       let assert Ok(fetched) =
         pipeline.run(
           Fixture(..fixture, name: fixture.name <> "_fetched", schema:),

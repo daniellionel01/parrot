@@ -82,18 +82,22 @@ fn date_string_decoder() -> decode.Decoder(Date) {
   }
 }
 
+/// rfc3339, or without an offset in utc, which is how sqlite's date and
+/// time functions write them
 fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
-  decode.string
-  |> decode.then(fn(datetime_str) {
-    case timestamp.parse_rfc3339(datetime_str) {
-      Ok(ts) -> decode.success(ts)
-      Error(_) ->
-        decode.failure(
-          timestamp.from_unix_seconds(0),
-          "Invalid datetime format",
-        )
-    }
-  })
+  use datetime <- decode.then(decode.string)
+  case timestamp.parse_rfc3339(datetime) {
+    Ok(ts) -> decode.success(ts)
+    Error(_) ->
+      case timestamp.parse_rfc3339(datetime <> "Z") {
+        Ok(ts) -> decode.success(ts)
+        Error(_) ->
+          decode.failure(
+            timestamp.from_unix_seconds(0),
+            "Invalid datetime format",
+          )
+      }
+  }
 }
 
 fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {

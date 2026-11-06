@@ -60,6 +60,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The managed sqlc binary is downloaded again if it does not match its checksum, instead of returning an error.
 
+- Datetimes without an offset, as sqlite's own date and time functions write them (f.e. `CURRENT_TIMESTAMP`), are decoded as UTC instead of failing.
+
+- MySQL user names and passwords in the connection string are percent-decoded, so f.e. `p%40ss` is the password `p@ss`.
+
+- Relative sqlite paths (`--sqlite` and connection strings) are relative to the project's root, like every other path, instead of the current directory.
+
+- Warnings of `pg_dump`, `mysqldump` and `sqlite3` are printed instead of ending up in the fetched schema.
+
 ## [2.3.0] - 2026-05-04
 
 - Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)

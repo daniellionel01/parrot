@@ -34,6 +34,11 @@ returning value, nullable_value;
 insert into datetimes (value, nullable_value) values (?, ?)
 returning value, nullable_value;
 
+-- name: SqliteWrittenDatetime :one
+insert into datetimes (value, nullable_value)
+values ('2024-03-01 12:30:00', '2024-03-01T12:30:00.250')
+returning value, nullable_value;
+
 -- name: TimestampRoundTrip :one
 insert into timestamps (value, nullable_value) values (?, ?)
 returning value, nullable_value;

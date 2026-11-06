@@ -82,18 +82,22 @@ fn date_string_decoder() -> decode.Decoder(Date) {
   }
 }
 
+/// rfc3339, or without an offset in utc, which is how sqlite's date and
+/// time functions write them
 fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
-  decode.string
-  |> decode.then(fn(datetime_str) {
-    case timestamp.parse_rfc3339(datetime_str) {
-      Ok(ts) -> decode.success(ts)
-      Error(_) ->
-        decode.failure(
-          timestamp.from_unix_seconds(0),
-          "Invalid datetime format",
-        )
-    }
-  })
+  use datetime <- decode.then(decode.string)
+  case timestamp.parse_rfc3339(datetime) {
+    Ok(ts) -> decode.success(ts)
+    Error(_) ->
+      case timestamp.parse_rfc3339(datetime <> "Z") {
+        Ok(ts) -> decode.success(ts)
+        Error(_) ->
+          decode.failure(
+            timestamp.from_unix_seconds(0),
+            "Invalid datetime format",
+          )
+      }
+  }
 }
 
 fn datetime_tuple_decoder() -> decode.Decoder(Timestamp) {
@@ -482,6 +486,29 @@ pub fn datetime_round_trip_decoder() -> decode.Decoder(DatetimeRoundTrip) {
   use value <- decode.field(0, datetime_decoder())
   use nullable_value <- decode.field(1, decode.optional(datetime_decoder()))
   decode.success(DatetimeRoundTrip(value:, nullable_value:))
+}
+
+pub type SqliteWrittenDatetime {
+  SqliteWrittenDatetime(
+    value: Timestamp,
+    nullable_value: option.Option(Timestamp),
+  )
+}
+
+pub fn sqlite_written_datetime() {
+  let sql =
+    "insert into datetimes (value, nullable_value)
+values ('2024-03-01 12:30:00', '2024-03-01T12:30:00.250')
+returning value, nullable_value"
+  #(sql, [], sqlite_written_datetime_decoder())
+}
+
+pub fn sqlite_written_datetime_decoder() -> decode.Decoder(
+  SqliteWrittenDatetime,
+) {
+  use value <- decode.field(0, datetime_decoder())
+  use nullable_value <- decode.field(1, decode.optional(datetime_decoder()))
+  decode.success(SqliteWrittenDatetime(value:, nullable_value:))
 }
 
 pub type TimestampRoundTrip {
