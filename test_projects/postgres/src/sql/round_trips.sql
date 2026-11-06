@@ -85,3 +85,7 @@ returning value, nullable_value;
 -- name: KeywordsRoundTrip :one
 insert into keywords ("type", "case") values ($1, $2)
 returning "type", "case";
+
+-- name: MoodArrayRoundTrip :one
+insert into mood_arrays (value, nullable_value) values ($1, $2)
+returning value, nullable_value;

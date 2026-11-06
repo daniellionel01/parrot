@@ -88,6 +88,11 @@ pub fn enum_test() {
     == Ok([sql.MoodRoundTrip(sql.Happy, Some(sql.Sad))])
 }
 
+pub fn enum_array_test() {
+  assert query(sql.mood_array_round_trip([sql.Happy, sql.Sad], Some([])))
+    == Ok([sql.MoodArrayRoundTrip([sql.Happy, sql.Sad], Some([]))])
+}
+
 pub fn array_test() {
   assert query(sql.text_array_round_trip(["a", "b"], Some([])))
     == Ok([sql.TextArrayRoundTrip(["a", "b"], Some([]))])

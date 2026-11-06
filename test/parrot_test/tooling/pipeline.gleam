@@ -64,7 +64,7 @@ pub fn run(fixture: Fixture) -> Result(Output, error.ParrotError) {
     simplifile.read(filepath.join(dir, "queries.json"))
   let assert Ok(dyn_json) = json.parse(from: json_string, using: decode.dynamic)
   let assert Ok(context) = sqlc.decode_sqlc(dyn_json)
-  use module <- result.try(codegen.gen_gleam_module(context))
+  use module <- result.try(codegen.gleam_module(context))
   Ok(Output(context:, module: format(module, in: dir)))
 }
 

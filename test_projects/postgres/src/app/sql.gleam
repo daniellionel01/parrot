@@ -791,3 +791,40 @@ pub fn keywords_round_trip_decoder() -> decode.Decoder(KeywordsRoundTrip) {
   use case_ <- decode.field(1, decode.string)
   decode.success(KeywordsRoundTrip(type_:, case_:))
 }
+
+pub type MoodArrayRoundTrip {
+  MoodArrayRoundTrip(
+    value: List(Mood),
+    nullable_value: option.Option(List(Mood)),
+  )
+}
+
+pub fn mood_array_round_trip(
+  value value: List(Mood),
+  nullable_value nullable_value: option.Option(List(Mood)),
+) {
+  let sql =
+    "insert into mood_arrays (value, nullable_value) values ($1, $2)
+returning value, nullable_value"
+  #(
+    sql,
+    [
+      ParamList(list.map(value, fn(v) { ParamString(mood_to_string(v)) })),
+      ParamNullable(
+        option.map(nullable_value, fn(v) {
+          ParamList(list.map(v, fn(v) { ParamString(mood_to_string(v)) }))
+        }),
+      ),
+    ],
+    mood_array_round_trip_decoder(),
+  )
+}
+
+pub fn mood_array_round_trip_decoder() -> decode.Decoder(MoodArrayRoundTrip) {
+  use value <- decode.field(0, decode.list(of: mood_decoder()))
+  use nullable_value <- decode.field(
+    1,
+    decode.optional(decode.list(of: mood_decoder())),
+  )
+  decode.success(MoodArrayRoundTrip(value:, nullable_value:))
+}

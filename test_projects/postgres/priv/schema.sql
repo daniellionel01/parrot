@@ -19,6 +19,7 @@ create table timestamps (value timestamp not null, nullable_value timestamp);
 create table timestamptzs (value timestamptz not null, nullable_value timestamptz);
 create table times (value time not null, nullable_value time);
 create table moods (value mood not null, nullable_value mood);
+create table mood_arrays (value mood[] not null, nullable_value mood[]);
 create table text_arrays (value text[] not null, nullable_value text[]);
 create table integer_arrays (value integer[] not null, nullable_value integer[]);
 

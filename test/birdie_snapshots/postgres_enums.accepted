@@ -10,10 +10,17 @@ create table users (
   id serial primary key,
   username text not null,
   role user_role not null,
-  previous_role user_role
+  previous_role user_role,
+  past_roles user_role[] not null
 );
 
 -- queries.sql -----------------------------------------------------------------
+
+-- name: GetPastRoles :one
+select past_roles from users where id = $1;
+
+-- name: SetPastRoles :exec
+update users set past_roles = $1 where id = $2;
 
 -- name: GetUserRoles :many
 select role, previous_role from users;
@@ -31,9 +38,22 @@ table users
   users.username: text (not null)
   users.role: user_role (not null)
   users.previous_role: user_role (null)
+  users.past_roles: user_role[] (not null)
 
 enum user_role
   admin | regular_user | guest
+
+query GetPastRoles :one
+  params:
+    $1 users.id: serial (not null)
+  columns:
+    users.past_roles: user_role[] (not null)
+
+query SetPastRoles :exec
+  params:
+    $1 users.past_roles: user_role[] (not null)
+    $2 users.id: serial (not null)
+  columns: none
 
 query GetUserRoles :many
   params: none
@@ -61,6 +81,7 @@ query UsersWithRole :many
 
 import gleam/dynamic/decode
 import gleam/float
+import gleam/list
 import gleam/option
 import gleam/time/calendar.{type Date, type TimeOfDay, Date}
 import gleam/time/timestamp.{type Timestamp}
@@ -89,6 +110,30 @@ pub fn user_role_to_string(val: UserRole) {
     RegularUser -> "regular_user"
     Guest -> "guest"
   }
+}
+
+pub type GetPastRoles {
+  GetPastRoles(past_roles: List(UserRole))
+}
+
+pub fn get_past_roles(id id: Int) {
+  let sql = "select past_roles from users where id = $1"
+  #(sql, [ParamInt(id)], get_past_roles_decoder())
+}
+
+pub fn get_past_roles_decoder() -> decode.Decoder(GetPastRoles) {
+  use past_roles <- decode.field(0, decode.list(of: user_role_decoder()))
+  decode.success(GetPastRoles(past_roles:))
+}
+
+pub fn set_past_roles(past_roles past_roles: List(UserRole), id id: Int) {
+  let sql = "update users set past_roles = $1 where id = $2"
+  #(sql, [
+    ParamList(
+      list.map(past_roles, fn(v) { ParamString(user_role_to_string(v)) }),
+    ),
+    ParamInt(id),
+  ])
 }
 
 pub type GetUserRoles {

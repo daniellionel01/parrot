@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixes
 
+- Postgres enum arrays (f.e. `mood[]`) generated code that did not compile.
+
+- "unknown column type" warnings now also include nullable and array columns.
+
 - Queries using `sqlc.embed` return an error. Previously parrot generated decoders that silently read the wrong columns.
 
 - `calendar_date_decoder` and `time_of_day_decoder` also decode `YYYY-MM-DD` and `HH:MM:SS` strings (sqlite) and `{0, {h, m, s}}` (mysql).

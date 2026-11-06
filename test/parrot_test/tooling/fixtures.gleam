@@ -104,9 +104,16 @@ create table users (
   id serial primary key,
   username text not null,
   role user_role not null,
-  previous_role user_role
+  previous_role user_role,
+  past_roles user_role[] not null
 );",
     queries: "
+-- name: GetPastRoles :one
+select past_roles from users where id = $1;
+
+-- name: SetPastRoles :exec
+update users set past_roles = $1 where id = $2;
+
 -- name: GetUserRoles :many
 select role, previous_role from users;
 

@@ -3,7 +3,7 @@
 import birdie
 import gleam/string
 import parrot/error
-import parrot/internal/codegen
+import parrot/internal/codegen/seed
 import parrot/internal/sqlc
 import parrot_test/tooling/fixtures
 import parrot_test/tooling/pipeline.{type Fixture, Fixture}
@@ -206,7 +206,7 @@ insert into books (title) values (?);",
 // === SEED CODE ============================================================
 
 pub fn seed_code_test() {
-  codegen.output_gleam_module_seed_code
+  seed.code
   |> string.trim
   |> birdie.snap(title: "seed code")
 }
@@ -251,7 +251,7 @@ fn snap_error(fixture: Fixture, title title: String) -> Nil {
 fn without_seed(module: String) -> String {
   string.replace(
     in: module,
-    each: string.trim(codegen.output_gleam_module_seed_code),
+    each: string.trim(seed.code),
     with: "// <seed code, see the `seed code` snapshot>",
   )
 }
