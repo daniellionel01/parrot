@@ -1,0 +1,16 @@
+---
+version: 2.0.2
+title: execrows
+---
+-- schema.sql ------------------------------------------------------------------
+
+create table books (id serial primary key);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: DeleteBook :execrows
+delete from books where id = $1;
+
+-- error -----------------------------------------------------------------------
+
+query 'DeleteBook' uses the annotation :execrows, which parrot does not support. Supported annotations are :one, :many, :exec and :execresult.

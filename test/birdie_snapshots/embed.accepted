@@ -1,0 +1,18 @@
+---
+version: 2.0.2
+title: embed
+---
+-- schema.sql ------------------------------------------------------------------
+
+create table authors (id serial primary key, name text not null);
+create table books (id serial primary key, author_id int not null, title text not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: BooksWithAuthors :many
+select sqlc.embed(books), sqlc.embed(authors)
+from books join authors on authors.id = books.author_id;
+
+-- error -----------------------------------------------------------------------
+
+query 'BooksWithAuthors' uses `sqlc.embed`, which parrot does not support yet. Select the columns instead.

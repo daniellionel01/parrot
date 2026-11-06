@@ -1,0 +1,17 @@
+---
+version: 2.0.2
+title: enum and query name clash
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type status as enum ('open', 'closed');
+create table tickets (id serial primary key, status status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: Status :many
+select status from tickets;
+
+-- error -----------------------------------------------------------------------
+
+`Status` would be defined twice in the generated module, by enum 'status' and by query 'Status'. Consider renaming the query 'Status'.

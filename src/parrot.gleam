@@ -1,213 +1,166 @@
 import argv
+import child_process
+import envoy
 import filepath
-import gleam/dict
+import gleam/bool
 import gleam/io
 import gleam/list
 import gleam/result
-import gleam/string
-import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
-import parrot/internal/db
-import parrot/internal/errors
-import parrot/internal/lib
+import parrot/internal/database
+import parrot/internal/error
 import parrot/internal/project
-import parrot/internal/shellout
-import parrot/internal/spinner
 import parrot/internal/sqlc
-import simplifile
 
-pub fn main() {
-  let cmd: Result(cli.Command, String) = case argv.load().arguments {
-    [] -> {
-      cli.parse_env("DATABASE_URL")
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
+pub fn main() -> Nil {
+  let result = {
+    use command <- result.try(config.parse(argv.load().arguments))
+    case command {
+      config.Help -> Ok(usage)
+      config.Generate(flags) -> {
+        let root = project.root()
+        use toml <- result.try(project.toml(root))
+        case project.parrot_is_dependency(toml) {
+          True ->
+            io.println_error(yellow(
+              "warning: parrot is only needed during development, move it to "
+              <> "[dev-dependencies]: gleam remove parrot && gleam add --dev parrot",
+            ))
+          False -> Nil
+        }
+        use config <- result.try(config.resolve(flags, toml, envoy.get))
+        use _ <- result.map(generate(config, root))
+        "\u{1F99C} SQL successfully generated!"
+      }
     }
-    ["--env-var", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
-    }
-    ["-e", env] -> {
-      cli.parse_env(env)
-      |> result.map(fn(a) { cli.Generate(a.0, a.1) })
-    }
-    ["--sqlite", file_path] -> {
-      Ok(cli.Generate(sqlc.SQLite, file_path))
-    }
-    ["help"] -> Ok(cli.Usage)
-    _ -> Ok(cli.Usage)
   }
 
-  case cmd {
-    Error(e) -> io.println(lib.red("Error: " <> e))
-    Ok(cmd) ->
-      case cmd {
-        cli.Usage -> io.println(cli.usage)
-        cli.Generate(engine:, db:) -> {
-          let result = cmd_gen(engine, db)
-          case result {
-            Error(e) ->
-              io.println(lib.red("\nError: " <> errors.err_to_string(e)))
-            Ok(_) -> io.println(lib.green("SQL successfully generated!"))
-          }
-        }
-      }
+  case result {
+    Ok(text) -> {
+      io.println(text)
+      exit(0)
+    }
+    Error(reason) -> {
+      io.println_error(red("\nError: " <> error.to_string(reason)))
+      exit(1)
+    }
   }
 }
 
-fn cmd_gen(engine: sqlc.Engine, db: String) -> Result(Nil, errors.ParrotError) {
-  let db = case db {
-    "sqlite://" <> db -> db
-    "sqlite:" <> db -> db
-    db -> db
-  }
+@external(erlang, "erlang", "halt")
+fn exit(status: Int) -> Nil
 
-  let files = lib.walk(project.src())
-  let queries =
-    files
-    |> dict.to_list
-    |> list.map(fn(file) {
-      let #(_, files) = file
-      list.map(files, fn(file) {
-        let file = case file {
-          "./" <> rest -> rest
-          x -> x
-        }
-        filepath.join("../..", file)
-      })
-    })
-    |> list.flatten()
-    // We want the generated `sql.gleam` module to be deterministic
-    // on all operating systems, so we order all queries in a
-    // predictable manner, since operating system calls to the file
-    // system might return them in a different order.
-    //
-    // See https://github.com/daniellionel01/parrot/issues/101
-    //
-    |> list.sort(by: string.compare)
+fn generate(
+  config: config.Config,
+  root: String,
+) -> Result(Nil, error.ParrotError) {
+  let work_directory = project.work_directory(root)
+  let src = filepath.join(root, "src")
+  use queries <- result.try(project.sql_files(src))
+  use <- bool.guard(
+    when: queries == [],
+    return: Error(error.NoQueriesFound(src)),
+  )
 
-  let sqlc_binary = sqlc.sqlc_binary_path()
-  let sqlc_dir = filepath.directory_name(sqlc_binary)
-  let schema_file = filepath.join(sqlc_dir, "schema.sql")
-  let sqlc_file = filepath.join(sqlc_dir, "sqlc.json")
-  let queries_file = filepath.join(sqlc_dir, "queries.json")
-  let _ = simplifile.create_directory_all(sqlc_dir)
+  use binary <- result.try(sqlc_binary(config.sqlc, root, work_directory))
 
-  let spinner =
-    spinner.new("downloading sqlc binary")
-    |> spinner.start()
-
-  let _ = case sqlc.download_binary() {
-    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
-    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
-  }
-
-  let spinner =
-    spinner.new("verifying sqlc binary")
-    |> spinner.start()
-
-  let _ = case sqlc.verify_binary() {
-    Error(_) -> spinner.complete_current(spinner, spinner.orange_warning())
-    Ok(_) -> spinner.complete_current(spinner, spinner.green_checkmark())
-  }
-
-  let sqlc_json = sqlc.gen_sqlc_json(engine, queries)
-  let _ = simplifile.write(sqlc_file, sqlc_json)
-
-  let spinner =
-    spinner.new("fetching schema")
-    |> spinner.start()
-
-  use schema_sql <- result.try(case engine {
-    sqlc.MySQL -> {
-      use schema <- result.try(db.fetch_schema_mysql(db))
-      Ok(schema)
-    }
-    sqlc.PostgreSQL -> {
-      use schema <- result.try(db.fetch_schema_postgresql(db))
-
-      // this is an edge case with the postgres schema dump.
-      // sqlc does not like those lines from postgres 17.
-      let schema =
-        schema
-        |> string.split("\n")
-        |> list.filter(fn(line) {
-          !string.starts_with(line, "\\restrict")
-          && !string.starts_with(line, "\\unrestrict")
-        })
-        |> string.join("\n")
-
-      Ok(schema)
-    }
-    sqlc.SQLite -> {
-      use schema <- result.try(db.fetch_schema_sqlite(db))
-      let sql = string.trim(schema)
-      Ok(sql)
-    }
-  })
-  let _ = simplifile.write(schema_file, schema_sql)
-
-  spinner.complete_current(spinner, spinner.green_checkmark())
-
-  let spinner =
-    spinner.new("generating gleam code")
-    |> spinner.start()
-
-  let gen_result =
-    shellout.command(
-      run: "./sqlc",
-      with: ["generate", "--file", "sqlc.json"],
-      in: sqlc_dir,
-      opt: [],
-    )
-
-  use _ <- result.try(case gen_result {
-    Ok(_) -> Ok(Nil)
-    Error(error) -> {
-      let #(_, error) = error
-      Error(errors.SqlcGenerateError(error))
+  use schema <- result.try(case config.schema {
+    config.FromFiles(path) -> Ok(sqlc.SchemaFiles(from_root(path, root)))
+    config.FromDatabase(url) -> {
+      io.println("\u{1F5C4} fetching schema...")
+      database.fetch_schema(config.engine, url, in: root)
+      |> result.map(sqlc.SchemaSql)
     }
   })
 
-  let project_name = project.project_name()
-  let config =
-    config.Config(
-      gleam_module_out_path: project_name <> "/sql.gleam",
-      json_file_path: queries_file,
-    )
-  use gen_result <- result.try(codegen.codegen_from_config(config))
+  io.println("\u{2728} generating gleam code...")
+  use output <- result.try(sqlc.generate(
+    binary,
+    in: work_directory,
+    engine: config.engine,
+    schema:,
+    queries:,
+  ))
+  use unknown_types <- result.try(codegen.generate(
+    output,
+    to: from_root(config.output, root),
+  ))
 
-  spinner.complete_current(spinner, spinner.green_checkmark())
-
-  let spinner =
-    spinner.new("formatting generated code")
-    |> spinner.start()
-
-  let output_path = filepath.join(project.src(), project_name <> "/sql.gleam")
-
-  let stdout_format =
-    shellout.command(
-      run: "gleam",
-      with: ["format", output_path],
-      in: project.root(),
-      opt: [],
-    )
-  use _ <- result.try(case stdout_format {
-    Ok(_) -> Ok(Nil)
-    Error(error) -> {
-      let #(_, error) = error
-      Error(errors.GleamFormatError(error))
-    }
-  })
-
-  spinner.complete_current(spinner, spinner.green_checkmark())
-
-  gen_result.unknown_types
-  |> list.unique()
-  |> list.each(fn(unknown) {
-    io.println(lib.yellow("unknown column type: " <> unknown))
+  list.each(unknown_types, fn(unknown) {
+    io.println_error(yellow("unknown column type: " <> unknown))
   })
   io.println("")
-
   Ok(Nil)
+}
+
+fn sqlc_binary(
+  sqlc: config.Sqlc,
+  root: String,
+  work_directory: String,
+) -> Result(String, error.ParrotError) {
+  case sqlc {
+    config.Managed -> sqlc.managed_binary(in: work_directory)
+    config.System ->
+      child_process.find_executable("sqlc")
+      |> result.replace_error(error.SqlcNotInPath)
+      |> result.try(check_version)
+    config.Binary(path) -> check_version(from_root(path, root))
+  }
+}
+
+/// A binary parrot does not manage can be any version, which may or may not
+/// work.
+///
+fn check_version(binary: String) -> Result(String, error.ParrotError) {
+  use found <- result.map(sqlc.version(binary))
+  let expected = "v" <> sqlc.sqlc_version
+  case found == expected {
+    True -> Nil
+    False ->
+      io.println_error(yellow(
+        "warning: expected sqlc " <> expected <> ", found " <> found,
+      ))
+  }
+  binary
+}
+
+/// Paths in the config are relative to the project's root.
+///
+fn from_root(path: String, root: String) -> String {
+  case filepath.is_absolute(path) {
+    True -> path
+    False -> filepath.join(root, path)
+  }
+}
+
+const usage =
+  "Generate type-safe Gleam code from SQL queries
+
+Usage: gleam run -m parrot -- [OPTIONS]
+
+Options:
+      --sqlite <PATH>    SQLite database file
+  -e, --env-var <NAME>   Environment variable with the connection string [default: DATABASE_URL]
+      --output <PATH>    Generated module [default: src/<project>/sql.gleam]
+      --schema <PATH>    Schema or migration files instead of a database
+      --engine <ENGINE>  postgresql, mysql or sqlite [default: from the connection string]
+      --sqlc <PATH>      sqlc binary, or \"system\" for sqlc in PATH [default: downloaded by parrot]
+  -h, --help             Print help
+
+Examples:
+  gleam run -m parrot
+  gleam run -m parrot -- --sqlite priv/app.db
+  gleam run -m parrot -- --schema priv/migrations --engine postgresql
+
+Options can also be set in gleam.toml: https://parrot.hexdocs.pm/toml-reference.html"
+
+const colorless = "\u{001b}[0m"
+
+fn red(text: String) -> String {
+  "\u{001b}[31m" <> text <> colorless
+}
+
+fn yellow(text: String) -> String {
+  "\u{001b}[33m" <> text <> colorless
 }

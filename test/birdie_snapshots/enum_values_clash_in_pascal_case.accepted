@@ -1,0 +1,17 @@
+---
+version: 2.0.2
+title: enum values clash in pascal case
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type ticket_status as enum ('open', 'OPEN', 'closed');
+create table tickets (id serial primary key, status ticket_status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: TicketStatuses :many
+select status from tickets;
+
+-- error -----------------------------------------------------------------------
+
+`Open` would be defined twice in the generated module, by value 'open' of enum 'ticket_status' and by value 'OPEN' of enum 'ticket_status'. Names in a gleam module must be unique, after parrot converts enum names and values to PascalCase.

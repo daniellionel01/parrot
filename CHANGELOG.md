@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+**Version 3**
+
+### Breaking Changes
+
+- Configuration in `gleam.toml` under `[tools.parrot]`: `output`, `env`, `engine`, `sqlc.bin`, `sqlc.schema`. See `pages/toml-reference.md`.
+  - `--output`, `--engine`, `--schema` and `--sqlc` flags, which take precedence over `gleam.toml`.
+  - `schema` generates code from schema or migration files without a database connection. (https://github.com/daniellionel01/parrot/issues/66)
+  - `sqlc.bin` uses your own sqlc binary instead of downloading one. (https://github.com/daniellionel01/parrot/issues/96)
+
+- Unknown command line arguments are an error instead of printing the help text.
+
+- `parrot/error` moved to `parrot/internal/error` and is no longer part of the public API.
+
+- Parrot can now be a dev dependency! All code, that was previously required from `parrot/dev` is now bundled into the output module.
+
+- Postgres `time` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant.
+
+- Postgres `interval`, `inet`, `cidr` and `macaddr` columns are now `Interval`, `Inet` and `BitArray`, with new `ParamInterval`, `ParamInet` and `ParamMacaddr` variants. `interval` was wrongly decoded as `Int`.
+
+- Postgres `timetz` columns are now `decode.Dynamic`. Previously they were wrongly decoded as `Timestamp`.
+
+### Fixes
+
+- Postgres enum arrays (f.e. `mood[]`) generated code that did not compile.
+
+- "unknown column type" warnings now also include nullable and array columns.
+
+- Queries using `sqlc.embed` return an error. Previously parrot generated decoders that silently read the wrong columns.
+
+- `calendar_date_decoder` and `time_of_day_decoder` also decode `YYYY-MM-DD` and `HH:MM:SS` strings (sqlite) and `{0, {h, m, s}}` (mysql).
+
+- Postgres `char` columns (`bpchar`) are now decoded as `String` instead of `decode.Dynamic`.
+
+- `sqlc.slice` queries generated invalid sql with a leading comma (`in (,?,?)`). Empty lists are now replaced with `NULL`, same as sqlc does for go.
+
+- Sqlite queries with `sqlc.slice` and named params (`sqlc.arg`, `@name`) bound the wrong values, or failed with "column index out of range", once a slice had more than one item.
+
+- Unnamed parameters, unsupported query annotations (`:execrows`, `:execlastid`, ...) and a sqlc binary checksum mismatch now return an error instead of crashing parrot.
+
+- Fixed a crash on the very first run, when no sqlc binary had been downloaded yet.
+
+- Parrot now always uses the sqlc binary it manages itself, instead of whichever `sqlc` is first in the `PATH`.
+
+- Parrot no longer crashes on any error, it always exits with a descriptive error message.
+
+- Clearer error messages, f.e. for invalid `gleam.toml` values and failed sqlc downloads.
+
+- Parrot no longer loops forever when it is run outside of a gleam project.
+
+- Running parrot from a subdirectory of the project no longer fails to find the queries.
+
+- `file:` sqlite connection strings work. Previously they were detected as sqlite but the database was "not found".
+
+- MySQL passwords are passed via `MYSQL_PWD`: passwords may contain `:`, connection strings without a password no longer prompt for one, and schema lines containing `mysqldump:` are no longer dropped.
+
+- Queries named like a gleam keyword (f.e. `Use`) generated a function that did not compile.
+
+- The managed sqlc binary is downloaded again if it does not match its checksum, instead of returning an error.
+
+- Datetimes without an offset, as sqlite's own date and time functions write them (f.e. `CURRENT_TIMESTAMP`), are decoded as UTC instead of failing.
+
+- MySQL user names and passwords in the connection string are percent-decoded, so f.e. `p%40ss` is the password `p@ss`.
+
+- Relative sqlite paths (`--sqlite` and connection strings) are relative to the project's root, like every other path, instead of the current directory.
+
+- Warnings of `pg_dump`, `mysqldump` and `sqlite3` are printed instead of ending up in the fetched schema.
+
+- A parameter named `sql` was silently sent as the query's sql text instead of its value.
+
+- Duplicate parameter and column names (f.e. `where id = ? or id = ?` or `select count(*), count(*)`) get a suffix like sqlc does for go (`id`, `id_2`). Parameters and columns named like a generated function (f.e. `bool_decoder`) or variable (f.e. `<slice>_slice`) no longer shadow it.
+
+- Names that would be defined twice in the generated module return an error instead of generating code that does not compile, f.e. an enum value `open` and a query `Open`, an enum value `date` and the imported `Date`, or the queries `GetUser` and `get_user`.
+
+- `:exec` and `:execresult` queries with a `returning` clause no longer generate an unused row type and decoder.
+
+- Generated functions have return type annotations.
+
 ## [2.3.0] - 2026-05-04
 
 - Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)

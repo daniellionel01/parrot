@@ -1,0 +1,17 @@
+---
+version: 2.0.2
+title: enum value and row type clash
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type ticket_status as enum ('open', 'closed');
+create table tickets (id serial primary key, status ticket_status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: Open :many
+select id, status from tickets where status = 'open';
+
+-- error -----------------------------------------------------------------------
+
+`Open` would be defined twice in the generated module, by value 'open' of enum 'ticket_status' and by query 'Open'. Consider renaming the query 'Open'.

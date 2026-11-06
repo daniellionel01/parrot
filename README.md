@@ -1,7 +1,7 @@
 # 🦜 Parrot / type-safe SQL in [Gleam](https://gleam.run/)
 
 [![Package Version](https://img.shields.io/hexpm/v/parrot)](https://hex.pm/packages/parrot)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/parrot/)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://parrot.hexdocs.pm/)
 ![erlang](https://img.shields.io/badge/target-erlang-a2003e)
 
 > 🚨 **Exciting News**<br />
@@ -9,15 +9,16 @@
 > Check it out here: https://docs.sqlc.dev/en/latest/reference/language-support.html
 
 ## Table of Contents
+
 - [🦜 Parrot / type-safe SQL in gleam](#)
-  * [Features](#features)
-  * [Code Showcase](#code-showcase)
-  * [Usage / Getting Started](#usage--getting-started)
-  * [Development](#development)
-  * [Quirks](#quirks)
-  * [FAQ](#faq)
-  * [Future Work](#future-work)
-  * [Acknowledgements](#acknowledgements)
+  - [Features](#features)
+  - [Code Showcase](#code-showcase)
+  - [Usage / Getting Started](#usage--getting-started)
+  - [Development](#development)
+  - [Quirks](#quirks)
+  - [FAQ](#faq)
+  - [Future Work](#future-work)
+  - [Acknowledgements](#acknowledgements)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
@@ -28,7 +29,7 @@
 ☑️ Supports SQlite, PostgreSQL and MySQL.<br />
 ☑️ Multiple queries per file.<br />
 ☑️ Database client agnostic.<br />
-☑️ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog)).<br />
+☑️ Utility wrappers for popular gleam database libraries ([lpil/sqlight](https://github.com/lpil/sqlight), [lpil/pog](https://github.com/lpil/pog), [ninanomenon/shork](https://github.com/ninanomenon/shork)).<br />
 ☑️ Automatically pulls the schema of your database.<br />
 ☑️ Automatically downloads [sqlc](https://sqlc.dev/) binary.<br />
 ☑️ Named parameters.<sup>*1</sup> <br />
@@ -90,9 +91,9 @@ values
   ($1, $2)
 returning id"
   #(sql, [
-    dev.ParamString(username),
-    dev.ParamNullable(
-      option.map(role, fn(v) { dev.ParamString(user_role_to_string(v)) }),
+    ParamString(username),
+    ParamNullable(
+      option.map(role, fn(v) { ParamString(user_role_to_string(v)) }),
     ),
   ])
 }
@@ -134,16 +135,16 @@ where
   username = $1
 limit
   1"
-  #(sql, [dev.ParamString(username)], get_user_by_username_decoder())
+  #(sql, [ParamString(username)], get_user_by_username_decoder())
 }
 
 pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
   use id <- decode.field(0, decode.int)
   use username <- decode.field(1, decode.string)
-  use created_at <- decode.field(2, decode.optional(dev.datetime_decoder()))
+  use created_at <- decode.field(2, decode.optional(datetime_decoder()))
   use date_of_birth <- decode.field(
     3,
-    decode.optional(dev.calendar_date_decoder()),
+    decode.optional(calendar_date_decoder()),
   )
   use profile <- decode.field(4, decode.optional(decode.string))
   use extra_info <- decode.field(5, decode.optional(decode.string))
@@ -167,31 +168,32 @@ pub fn get_user_by_username_decoder() -> decode.Decoder(GetUserByUsername) {
 }
 ```
 
-If you want to see more code how this lirbary works in action, take a look at the integration tests:
-- PostgreSQL: [./integration/psql](./integration/psql)
-- MySQL: [./integration/mysql](./integration/mysql)
-- SQlite: [./integration/sqlite](./integration/sqlite)
+More examples: [snapshot tests](./test/birdie_snapshots)
 
 </details>
 
 ## Usage / Getting Started
 
 ### Installation
+
 ```sh
-$ gleam add parrot
+$ gleam add --dev parrot
 ```
 
 ### Define your Queries
+
 - Parrot will look for all *.sql files in any sql directory under your project's src directory.
 - Each *.sql file can contain as many SQL queries as you want.
 - All of the queries will compile into a single `src/[project name]/sql.gleam` module.
 
 Here are some links to help you start out, if you are unfamiliar with the [sqlc](https://sqlc.dev/) annotation syntax:
+
 - [Getting started with MySQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-mysql.html#schema-and-queries)
 - [Getting started with PostgreSQL](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html#schema-and-queries)
 - [Getting started with SQlite](https://docs.sqlc.dev/en/stable/tutorials/getting-started-sqlite.html#schema-and-queries)
 
 Here is an example of the file structure:
+
 ```sh
 ├── gleam.toml
 ├── README.md
@@ -205,6 +207,7 @@ Here is an example of the file structure:
 ```
 
 ### Code Generation
+
 ```sh
 # automatically detects database & engine from env (DATABASE_URL by default)
 $ gleam run -m parrot
@@ -215,9 +218,14 @@ $ gleam run -m parrot -- -e PG_DATABASE_URL
 # specify sqlite file
 $ gleam run -m parrot -- --sqlite <file_path>
 
+# schema or migration files instead of a database
+$ gleam run -m parrot -- --schema priv/migrations --engine postgresql
+
 # see all options
 $ gleam run -m parrot help
 ```
+
+All options can also be set in `gleam.toml`: [TOML reference](./pages/toml-reference.md)
 
 If you use SQLite, you also need to have installed [sqlite3](https://sqlite.org/index.html).
 
@@ -229,15 +237,14 @@ If you use PostgreSQL, you also need to have installed [pg_dump](https://www.pos
 
 You now have type safe access to your sql queries.
 
-You might want to write wrapper functions for the database client library of your choice. If you are using [lpil/pog](https://github.com/lpil/pog) or [lpil/sqlight](https://github.com/lpil/sqlight), you are in luck!
-You can find functions to copy & paste into your codebase here: [wrappers](https://github.com/daniellionel01/parrot/blob/main/docs/wrappers.md)
+Wrappers for [pog](https://github.com/lpil/pog), [sqlight](https://github.com/lpil/sqlight) and [shork](https://github.com/ninanomenon/shork): [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md)
 
 An example with [lpil/sqlight](https://github.com/lpil/sqlight):
+
 ```gleam
 import app/sql
-import parrot/dev
 
-fn parrot_to_sqlight(param: dev.Param) -> sqlight.Value {
+fn to_sqlight(param: sql.Param) -> sqlight.Value {
   // ...
 }
 
@@ -245,7 +252,7 @@ pub fn main() {
   // ...
 
   let #(sql, with, expecting) = sql.get_user_by_username("alice")
-  let with = parrot_to_sqlight(with)
+  let with = list.map(with, to_sqlight)
   let row = sqlight.query(sql, on:, with:, expecting:)
 
   // ...
@@ -254,16 +261,19 @@ pub fn main() {
 
 ## Examples
 
-If you want to see how this library works in action, take a look at the integration tests:
-- PostgreSQL: [integration/psql](https://github.com/daniellionel01/parrot/blob/main/integration/psql)
-- MySQL: [integration/mysql](https://github.com/daniellionel01/parrot/blob/main/integration/mysql)
-- SQlite: [integration/sqlite](https://github.com/daniellionel01/parrot/blob/main/integration/sqlite)
+Schema, queries and generated code:
+
+- PostgreSQL: [postgres_app](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/postgres_app.accepted)
+- MySQL: [mysql_app](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/mysql_app.accepted)
+- SQlite: [sqlite_app](https://github.com/daniellionel01/parrot/blob/main/test/birdie_snapshots/sqlite_app.accepted)
+
+Database driver wrappers: [wrappers.md](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md)
 
 ## Quirks
 
 As with everything in software, there are some quirks with this library, due to
 the nature of your database of choice and sqlc.
-  
+
 ### Functions
 
 Wether it be custom or built-in functions in postgres, sqlc struggles to infer types
@@ -272,11 +282,13 @@ Parrot will soon provide support for direct database connections. Until then,
 you will have to annotate the type of those columns.
 
 Overview over all types can be found here:
+
 - Postgres: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/postgresql_type.go
 - MySQL: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/mysql_type.go
 - SQlite: https://github.com/sqlc-dev/sqlc/blob/main/internal/codegen/golang/sqlite_type.go
 
 You can annotate column types like so:
+
 ```sql
 -- name: GetTournamentChampionBets :many
 SELECT id::uuid,
@@ -302,6 +314,10 @@ since they are too complex to handle with the current implementation.
 There is a plan for a better and more flexible implementation. Until then,
 it will be wrapped in a dynamic type.
 
+Postgres: `timetz`, `macaddr8`, ranges, geometric types, `hstore`, `tsvector`, `tsquery`, …
+
+Workaround: cast them in the query, f.e. `select value::text`.
+
 ### Targetting JavaScript
 
 So here is the catch: you can only execute parrot in an erlang gleam application.
@@ -312,6 +328,7 @@ copy over the generated module and that will work.
 ## FAQ
 
 ### What flavour of SQL does parrot support?
+
 This library supports everything that [sqlc](https://sqlc.dev/) supports. As the time of this writing that
 would be MySQL, PostgreSQL and SQlite.
 
@@ -319,6 +336,7 @@ You can read more on language & SQL support here:
 https://docs.sqlc.dev/en/stable/reference/language-support.html
 
 ### What sqlc features are not supported?
+
 - embeddeding structs (https://docs.sqlc.dev/en/stable/howto/embedding.html)
 
 - Certain query annotations are not supported and will panic the process: `:execrows`, `:execlastid`, `:batchexec`, `:batchone`, `:batchmany`, `:copyfrom`.
@@ -333,28 +351,24 @@ Contributions are welcomed!
 
 ## Development
 
-[just](https://github.com/casey/just) is used to run project commands.
+[mise](https://mise.jdx.dev) is used to run project commands.
 
-### Database
+### Tests
 
-There are scripts to spawn a MySQL or PostgreSQL Podman container:
--  [MySQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/mysql.sh)
--  [PostgreSQL Script](https://github.com/daniellionel01/parrot/blob/main/bin/psql.sh)
-
-For example:
 ```sh
-$ ./bin/mysql.sh
-# or
-$ ./bin/psql.sh
+$ gleam test
+$ gleam run -m birdie # review snapshots
 ```
 
-### Integration Test Suite
+Integration tests (requires `sqlite3`, `psql`, `pg_dump`, `mysql`, `mysqldump`):
+
 ```sh
-$ just test-sqlite
-$ just test-mysql
-$ just test-psql
+$ mise run db-up
+$ mise run test-integration
+$ mise run db-down
 ```
 
 ## Acknowledgements
+
 - This project was heavily inspired by `squirrel` ([Hex](https://hex.pm/packages/squirrel), [GitHub](https://github.com/giacomocavalieri/squirrel)). Thank you [@giacomocavalieri](https://github.com/giacomocavalieri)!
 - Thank you to `sqlc` ([GitHub](https://github.com/sqlc-dev/sqlc), [Website](https://sqlc.dev/))

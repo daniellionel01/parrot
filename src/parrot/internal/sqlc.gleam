@@ -1,595 +1,416 @@
-//// This module generates the JSON config, which is used when running sqlc, and
-//// decodes the JSON that sqlc generates.
+//// Running sqlc: the binary parrot downloads, the config parrot generates
+//// and the JSON sqlc generates.
 
+import child_process
 import filepath
 import gleam/bit_array
 import gleam/bool
 import gleam/crypto
-import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/http
+import gleam/http/request
+import gleam/http/response
+import gleam/httpc
+import gleam/io
 import gleam/json
-import gleam/option.{type Option, Some}
+import gleam/list
+import gleam/option.{type Option}
 import gleam/result
 import gleam/set
 import gleam/string
-import parrot/internal/errors
-import parrot/internal/project
-import parrot/internal/shellout
+import parrot/internal/command
+import parrot/internal/database.{type Engine}
+import parrot/internal/error.{type ParrotError}
 import simplifile.{Execute, FilePermissions, Read, Write}
 
 pub const sqlc_version = "1.31.1"
 
-pub const download_base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
+/// sha256 of the sqlc release for each `<os>_<cpu>`, printed by
+/// `gleam run -m parrot_dev/sqlc_hash`.
+///
+pub const platforms = [
+  #(
+    "darwin_arm64",
+    "7e63a8b2166f1103a2ad1d2e5d05d8fe3f13ca65ecf2774a2570b830d32055fd",
+  ),
+  #(
+    "darwin_amd64",
+    "359730e2fbfdb5480dd90389bd2987a5dad00fc7510a330df749c6bc6987c1af",
+  ),
+  #(
+    "linux_arm64",
+    "3b42bdbc5be1d534b95fc6b9f0e1572e6aa555fda3c96f208cb26abb1bb77d7e",
+  ),
+  #(
+    "linux_amd64",
+    "0496fbc18f603e2fbd10c752942d1389a1fa9bc3d18de7243ec00cccd611575f",
+  ),
+  #(
+    "windows_arm64",
+    "bbf2bdca2e0eb0b23f94b6dba5c3f1de5f6a12251cda947d83accdb34164fe1e",
+  ),
+  #(
+    "windows_amd64",
+    "22ce316349ac153a4aacaa3912981f73980a6f84861f4c602ae6e3075ca326e4",
+  ),
+]
 
-pub type Engine {
-  SQLite
-  MySQL
-  PostgreSQL
-}
+// === OUTPUT ===============================================================
 
-type Queries {
-  QueriesSingle(String)
-  QueriesMultiple(List(String))
-}
-
-type GenJson {
-  GenJson(out: Option(String), indent: Option(String), filename: Option(String))
-}
-
-type Gen {
-  Gen(json: Option(GenJson))
-}
-
-type Sql {
-  Sql(
-    schema: Option(String),
-    queries: Option(Queries),
-    engine: Engine,
-    gen: Option(Gen),
-  )
-}
-
-type Version2 {
-  Version2
-}
-
-type Config {
-  Config(version: Version2, sql: List(Sql))
-}
-
-fn queries_to_json(queries: Queries) -> json.Json {
-  case queries {
-    QueriesSingle(query) -> json.string(query)
-    QueriesMultiple(queries) -> json.array(queries, json.string)
-  }
-}
-
-fn engine_to_json(engine: Engine) -> json.Json {
-  let engine = case engine {
-    SQLite -> "sqlite"
-    MySQL -> "mysql"
-    PostgreSQL -> "postgresql"
-  }
-  json.string(engine)
-}
-
-fn gen_json_to_json(gen_json: GenJson) -> json.Json {
-  let GenJson(out:, indent:, filename:) = gen_json
-  let json_object = case out {
-    option.None -> []
-    option.Some(out) -> [#("out", json.string(out))]
-  }
-  let json_object = case indent {
-    option.None -> json_object
-    option.Some(indent) -> [#("indent", json.string(indent)), ..json_object]
-  }
-  let json_object = case filename {
-    option.None -> json_object
-    option.Some(filename) -> [
-      #("filename", json.string(filename)),
-      ..json_object
-    ]
-  }
-  json.object(json_object)
-}
-
-fn sql_to_json(sql: Sql) -> json.Json {
-  let Sql(schema:, queries:, engine:, gen:) = sql
-  let json_object = [#("engine", engine_to_json(engine))]
-  let json_object = case schema {
-    option.None -> json_object
-    option.Some(schema) -> [#("schema", json.string(schema)), ..json_object]
-  }
-  let json_object = case queries {
-    option.None -> json_object
-    option.Some(queries) -> [
-      #("queries", queries_to_json(queries)),
-      ..json_object
-    ]
-  }
-  let json_object = case gen {
-    option.None -> json_object
-    option.Some(gen) -> [#("gen", gen_to_json(gen)), ..json_object]
-  }
-  json.object(json_object)
-}
-
-fn gen_to_json(gen: Gen) -> json.Json {
-  let Gen(json:) = gen
-  let json_object = case json {
-    option.None -> []
-    option.Some(json) -> [#("json", gen_json_to_json(json))]
-  }
-  json.object(json_object)
-}
-
-fn version2_to_json(_: Version2) -> json.Json {
-  json.string("2")
-}
-
-fn config_to_json(config: Config) -> json.Json {
-  case config {
-    Config(version:, sql:) ->
-      json.object([
-        #("version", version2_to_json(version)),
-        #("sql", json.array(sql, sql_to_json)),
-      ])
-  }
-}
-
-fn config_to_json_string(config: Config) -> String {
-  config_to_json(config) |> json.to_string
-}
-
-pub type TypeRef {
-  TypeRef(catalog: String, schema: String, name: String)
-}
-
-pub type TableColumn {
-  TableColumn(
-    name: String,
-    not_null: Bool,
-    is_array: Bool,
-    comment: String,
-    length: Int,
-    is_named_param: Bool,
-    is_func_call: Bool,
-    scope: String,
-    table_alias: String,
-    is_sqlc_slice: Bool,
-    original_name: String,
-    unsigned: Bool,
-    array_dims: Int,
-    table: Option(TableRef),
-    type_ref: TypeRef,
-  )
-}
-
-pub type TableRef {
-  TableRef(catalog: String, schema: String, name: String)
-}
-
-pub type Table {
-  Table(rel: TableRef, comment: String, columns: List(TableColumn))
-}
-
-pub type Schema {
-  Schema(comment: String, name: String, tables: List(Table), enums: List(Enum))
-}
-
-pub type Enum {
-  Enum(name: String, vals: List(String), comment: String)
+/// The parts of sqlc's JSON parrot uses.
+///
+pub type Output {
+  Output(catalog: Catalog, queries: List(Query))
 }
 
 pub type Catalog {
-  Catalog(
-    comment: String,
-    default_schema: String,
-    name: String,
-    schemas: List(Schema),
-  )
+  Catalog(default_schema: String, schemas: List(Schema))
 }
 
-pub type QueryCmd {
-  One
-  Many
-  Exec
-  ExecResult
-  ExecRows
-  ExecLastId
-  BatchExec
-  BatchMany
-  BatchOne
-  CopyFrom
+pub type Schema {
+  Schema(name: String, enums: List(Enum))
 }
 
-pub fn query_cmd_to_string(query_cmd: QueryCmd) -> String {
-  case query_cmd {
-    One -> "one"
-    Many -> "many"
-    Exec -> "exec"
-    ExecResult -> "exec_result"
-    ExecRows -> "exec_rows"
-    ExecLastId -> "exec_last_id"
-    BatchExec -> "batch_exec"
-    BatchMany -> "batch_many"
-    BatchOne -> "batch_one"
-    CopyFrom -> "copy_from"
-  }
-}
-
-pub type QueryParam {
-  QueryParam(number: Int, column: TableColumn)
+pub type Enum {
+  Enum(name: String, values: List(String))
 }
 
 pub type Query {
   Query(
     text: String,
     name: String,
-    cmd: QueryCmd,
-    filename: String,
-    columns: List(TableColumn),
-    insert_into_table: Option(TableRef),
-    comments: List(String),
-    params: List(QueryParam),
+    /// f.e. `:one`
+    annotation: String,
+    columns: List(Column),
+    params: List(Param),
   )
 }
 
-pub type SQLC {
-  SQLC(
-    sqlc_version: String,
-    plugin_options: String,
-    global_options: String,
-    catalog: Catalog,
-    queries: List(Query),
+pub type Param {
+  Param(number: Int, column: Column)
+}
+
+pub type Column {
+  Column(
+    name: String,
+    not_null: Bool,
+    is_array: Bool,
+    length: Int,
+    is_sqlc_slice: Bool,
+    table: Option(String),
+    type_ref: TypeRef,
+    /// from `sqlc.embed(table)`
+    is_embed: Bool,
   )
 }
 
-pub fn decode_sqlc(data: dynamic.Dynamic) {
-  let table_ref_decoder = {
-    use name <- decode.field("name", decode.string)
-    use schema <- decode.field("schema", decode.string)
-    use catalog <- decode.field("catalog", decode.string)
-    decode.success(TableRef(catalog, schema, name))
-  }
+pub type TypeRef {
+  TypeRef(schema: String, name: String)
+}
 
-  let type_ref_decoder = {
-    use schema <- decode.field("schema", decode.string)
-    use catalog <- decode.field("catalog", decode.string)
-    use name <- decode.field("name", decode.string)
-    decode.success(TypeRef(catalog, schema, name))
-  }
+// === GENERATE =============================================================
 
-  let table_col_decoder = {
+pub type SchemaSource {
+  /// schema or migration files
+  SchemaFiles(path: String)
+  /// a schema fetched from a database
+  SchemaSql(String)
+}
+
+/// Runs `sqlc generate` inside of `directory`. `binary`, `directory` and all paths are
+/// absolute.
+///
+pub fn generate(
+  binary: String,
+  in directory: String,
+  engine engine: Engine,
+  schema schema: SchemaSource,
+  queries queries: List(String),
+) -> Result(Output, ParrotError) {
+  use _ <- result.try(create_work_directory(directory))
+  use schema <- result.try(case schema {
+    SchemaFiles(path) -> Ok(path)
+    SchemaSql(sql) -> write(filepath.join(directory, "schema.sql"), sql)
+  })
+  use _ <- result.try(write(
+    filepath.join(directory, "sqlc.json"),
+    config(engine, schema, queries, directory),
+  ))
+
+  let output_path = filepath.join(directory, "queries.json")
+  let _ = simplifile.delete(output_path)
+  use _ <- result.try(
+    child_process.from_file(binary)
+    |> child_process.args(["generate", "--file", "sqlc.json"])
+    |> child_process.cwd(directory)
+    |> command.run
+    |> result.map_error(error.SqlcFailed),
+  )
+
+  use output <- result.try(
+    simplifile.read(output_path)
+    |> result.map_error(error.CouldNotUseWorkDirectory(output_path, _)),
+  )
+  json.parse(output, output_decoder())
+  |> result.map_error(error.UnexpectedSqlcOutput)
+}
+
+/// sqlc resolves every path, even absolute ones, from the directory of its
+/// config.
+///
+fn config(
+  engine: Engine,
+  schema: String,
+  queries: List(String),
+  directory: String,
+) -> String {
+  let relative = relative(_, from: directory)
+  json.object([
+    #("version", json.string("2")),
+    #(
+      "sql",
+      json.preprocessed_array([
+        json.object([
+          #("engine", json.string(database.engine_name(engine))),
+          #("schema", json.string(relative(schema))),
+          #(
+            "queries",
+            json.array(queries, fn(query) { json.string(relative(query)) }),
+          ),
+          #(
+            "gen",
+            json.object([
+              #(
+                "json",
+                json.object([
+                  #("out", json.string(".")),
+                  #("indent", json.string("  ")),
+                  #("filename", json.string("queries.json")),
+                ]),
+              ),
+            ]),
+          ),
+        ]),
+      ]),
+    ),
+  ])
+  |> json.to_string
+}
+
+fn create_work_directory(directory: String) -> Result(Nil, ParrotError) {
+  simplifile.create_directory_all(directory)
+  |> result.map_error(error.CouldNotUseWorkDirectory(directory, _))
+}
+
+fn write(path: String, contents: String) -> Result(String, ParrotError) {
+  simplifile.write(path, contents)
+  |> result.map_error(error.CouldNotUseWorkDirectory(path, _))
+  |> result.replace(path)
+}
+
+fn relative(path: String, from directory: String) -> String {
+  let normalise = fn(path) {
+    filepath.split(filepath.expand(path) |> result.unwrap(path))
+  }
+  let #(path, directory) =
+    drop_common_prefix(normalise(path), normalise(directory))
+  list.append(list.repeat("..", list.length(directory)), path)
+  |> string.join("/")
+}
+
+fn drop_common_prefix(
+  left: List(String),
+  right: List(String),
+) -> #(List(String), List(String)) {
+  case left, right {
+    [first, ..left_rest], [other, ..right_rest] if first == other ->
+      drop_common_prefix(left_rest, right_rest)
+    _, _ -> #(left, right)
+  }
+}
+
+fn output_decoder() -> decode.Decoder(Output) {
+  let column_decoder = {
     use name <- decode.field("name", decode.string)
     use not_null <- decode.field("not_null", decode.bool)
     use is_array <- decode.field("is_array", decode.bool)
-    use comment <- decode.field("comment", decode.string)
     use length <- decode.field("length", decode.int)
-    use is_named_param <- decode.field("is_named_param", decode.bool)
-    use is_func_call <- decode.field("is_func_call", decode.bool)
-    use scope <- decode.field("scope", decode.string)
-    use table_alias <- decode.field("table_alias", decode.string)
     use is_sqlc_slice <- decode.field("is_sqlc_slice", decode.bool)
-    use original_name <- decode.field("original_name", decode.string)
-    use unsigned <- decode.field("unsigned", decode.bool)
-    use array_dims <- decode.field("array_dims", decode.int)
-    use table <- decode.field("table", decode.optional(table_ref_decoder))
-    use type_ref <- decode.field("type", type_ref_decoder)
-
-    TableColumn(
-      name,
-      not_null,
-      is_array,
-      comment,
-      length,
-      is_named_param,
-      is_func_call,
-      scope,
-      table_alias,
-      is_sqlc_slice,
-      original_name,
-      unsigned,
-      array_dims,
-      table,
-      type_ref,
+    use table <- decode.field(
+      "table",
+      decode.optional(decode.at(["name"], decode.string)),
     )
-    |> decode.success()
-  }
-
-  let table_decoder = {
-    use rel <- decode.field("rel", table_ref_decoder)
-    use comment <- decode.field("comment", decode.string)
-    use columns <- decode.field("columns", decode.list(table_col_decoder))
-    decode.success(Table(rel, comment, columns))
+    use type_ref <- decode.field("type", {
+      use schema <- decode.field("schema", decode.string)
+      use name <- decode.field("name", decode.string)
+      decode.success(TypeRef(schema:, name:))
+    })
+    use embed_table <- decode.optional_field(
+      "embed_table",
+      option.None,
+      decode.optional(decode.dynamic),
+    )
+    decode.success(Column(
+      name:,
+      not_null:,
+      is_array:,
+      length:,
+      is_sqlc_slice:,
+      table:,
+      type_ref:,
+      is_embed: option.is_some(embed_table),
+    ))
   }
 
   let enum_decoder = {
     use name <- decode.field("name", decode.string)
-    use vals <- decode.field("vals", decode.list(decode.string))
-    use comment <- decode.field("comment", decode.string)
-    decode.success(Enum(name, vals, comment))
-  }
-
-  let schema_decoder = {
-    use comment <- decode.field("comment", decode.string)
-    use name <- decode.field("name", decode.string)
-    use tables <- decode.field("tables", decode.list(table_decoder))
-    use enums <- decode.field("enums", decode.list(enum_decoder))
-    decode.success(Schema(comment, name, tables, enums))
+    use values <- decode.field("vals", decode.list(decode.string))
+    decode.success(Enum(name:, values:))
   }
 
   let catalog_decoder = {
-    use comment <- decode.field("comment", decode.string)
     use default_schema <- decode.field("default_schema", decode.string)
-    use name <- decode.field("name", decode.string)
-    use schemas <- decode.field("schemas", decode.list(schema_decoder))
-    decode.success(Catalog(comment, default_schema, name, schemas))
+    use schemas <- decode.field(
+      "schemas",
+      decode.list({
+        use name <- decode.field("name", decode.string)
+        use enums <- decode.field("enums", decode.list(enum_decoder))
+        decode.success(Schema(name:, enums:))
+      }),
+    )
+    decode.success(Catalog(default_schema:, schemas:))
   }
 
-  let params_decoder = {
+  let param_decoder = {
     use number <- decode.field("number", decode.int)
-    use column <- decode.field("column", table_col_decoder)
-    decode.success(QueryParam(number, column))
-  }
-
-  let cmd_decoder = {
-    use cmd <- decode.then(decode.string)
-    case cmd {
-      ":one" -> decode.success(One)
-      ":many" -> decode.success(Many)
-      ":exec" -> decode.success(ExecResult)
-      ":execresult" -> decode.success(ExecResult)
-      ":execrows" -> decode.success(ExecRows)
-      ":execlastid" -> decode.success(ExecLastId)
-      ":batchexec" -> decode.success(BatchExec)
-      ":batchmany" -> decode.success(BatchMany)
-      ":batchone" -> decode.success(BatchOne)
-      ":copyfrom" -> decode.success(CopyFrom)
-      _ -> decode.failure(One, "QueryCmd")
-    }
+    use column <- decode.field("column", column_decoder)
+    decode.success(Param(number:, column:))
   }
 
   let query_decoder = {
     use text <- decode.field("text", decode.string)
     use name <- decode.field("name", decode.string)
-    use cmd <- decode.field("cmd", cmd_decoder)
-    use filename <- decode.field("filename", decode.string)
-    use columns <- decode.field("columns", decode.list(table_col_decoder))
-    use insert_into_table <- decode.field(
-      "insert_into_table",
-      decode.optional(table_ref_decoder),
-    )
-    use comments <- decode.field("comments", decode.list(decode.string))
-    use params <- decode.field("params", decode.list(params_decoder))
-
-    Query(
-      text,
-      name,
-      cmd,
-      filename,
-      columns,
-      insert_into_table,
-      comments,
-      params,
-    )
-    |> decode.success()
+    use annotation <- decode.field("cmd", decode.string)
+    use columns <- decode.field("columns", decode.list(column_decoder))
+    use params <- decode.field("params", decode.list(param_decoder))
+    decode.success(Query(text:, name:, annotation:, columns:, params:))
   }
 
-  let decoder = {
-    use sqlc_version <- decode.field("sqlc_version", decode.string)
-    use plugin_options <- decode.field("plugin_options", decode.string)
-    use global_options <- decode.field("global_options", decode.string)
-    use catalog <- decode.field("catalog", catalog_decoder)
-    use queries <- decode.field("queries", decode.list(query_decoder))
-
-    SQLC(sqlc_version, plugin_options, global_options, catalog, queries)
-    |> decode.success()
-  }
-
-  decode.run(data, decoder)
+  use catalog <- decode.field("catalog", catalog_decoder)
+  use queries <- decode.field("queries", decode.list(query_decoder))
+  decode.success(Output(catalog:, queries:))
 }
 
-pub fn gen_sqlc_json(engine: Engine, queries: List(String)) -> String {
-  let config =
-    Config(version: Version2, sql: [
-      Sql(
-        schema: Some("schema.sql"),
-        queries: Some(QueriesMultiple(queries)),
-        engine:,
-        gen: Some(
-          Gen(
-            json: Some(GenJson(
-              out: Some("."),
-              indent: Some("  "),
-              filename: Some("queries.json"),
-            )),
-          ),
-        ),
-      ),
-    ])
-  config_to_json_string(config)
-}
+// === BINARY ===============================================================
 
-pub fn sqlc_binary_path() {
-  filepath.join(project.root(), "build/.parrot/sqlc")
-}
+/// The sqlc binary parrot downloads into `directory`. It is downloaded again if it
+/// does not match the release's checksum.
+///
+pub fn managed_binary(in directory: String) -> Result(String, ParrotError) {
+  let path = filepath.join(directory, "sqlc")
+  use #(platform, expected) <- result.try(current_platform())
 
-fn binary_exists(path) {
-  case simplifile.is_file(path) {
-    Ok(True) -> True
-    Ok(False) | Error(_) -> False
-  }
-}
-
-fn get_download_path_and_hash() -> Result(#(String, String), errors.ParrotError) {
-  let os = get_os()
-  let cpu = get_cpu()
-
-  let platform = case os, cpu {
-    "darwin", "arm64" | "darwin", "aarch64" ->
-      Ok(#(
-        "_darwin_arm64.tar.gz",
-        "7e63a8b2166f1103a2ad1d2e5d05d8fe3f13ca65ecf2774a2570b830d32055fd",
-      ))
-
-    "darwin", "amd64" | "darwin", "x86_64" | "darwin", "x64" ->
-      Ok(#(
-        "_darwin_amd64.tar.gz",
-        "359730e2fbfdb5480dd90389bd2987a5dad00fc7510a330df749c6bc6987c1af",
-      ))
-
-    "linux", "arm64" | "linux", "aarch64" ->
-      Ok(#(
-        "_linux_arm64.tar.gz",
-        "3b42bdbc5be1d534b95fc6b9f0e1572e6aa555fda3c96f208cb26abb1bb77d7e",
-      ))
-
-    "linux", "amd64" | "linux", "x86_64" | "linux", "x64" ->
-      Ok(#(
-        "_linux_amd64.tar.gz",
-        "0496fbc18f603e2fbd10c752942d1389a1fa9bc3d18de7243ec00cccd611575f",
-      ))
-
-    "win32", "arm64" | "win32", "aarch64" ->
-      Ok(#(
-        "_windows_arm64.tar.gz",
-        "bbf2bdca2e0eb0b23f94b6dba5c3f1de5f6a12251cda947d83accdb34164fe1e",
-      ))
-
-    "win32", "amd64" | "win32", "x86_64" | "win32", "x64" ->
-      Ok(#(
-        "_windows_amd64.tar.gz",
-        "22ce316349ac153a4aacaa3912981f73980a6f84861f4c602ae6e3075ca326e4",
-      ))
-
-    _, _ -> Error(Nil)
-  }
-
-  use #(platform, hash) <- result.try(result.replace_error(
-    platform,
-    errors.SqlcDownloadError("unsupported platform: " <> os <> ", " <> cpu),
-  ))
-
-  Ok(#(download_base <> platform, hash))
-}
-
-fn check_sqlc_integrity(bin: BitArray, expected_hash: String) {
-  let hash = crypto.hash(crypto.Sha256, bin)
-  let hash_string = bit_array.base16_encode(hash)
-  case string.lowercase(hash_string) == string.lowercase(expected_hash) {
-    True -> Nil
-    False -> panic as "sqlc binary hash did not match expected hash!"
-  }
-}
-
-pub fn verify_binary() -> Result(Nil, errors.ParrotError) {
-  use #(download, _) <- result.try(get_download_path_and_hash())
-
-  let path = sqlc_binary_path()
-  let dir = filepath.directory_name(path)
-  let gen_res =
-    shellout.command(run: "./sqlc", with: ["version"], in: dir, opt: [])
-
-  case gen_res {
-    Error(_) -> {
-      let information =
-        [
-          "download path: " <> download,
-          "os: " <> get_os(),
-          "cpu: " <> get_cpu(),
-          "sqlc binary path: " <> path,
-        ]
-        |> string.join("\n")
-      Error(errors.SqlcDownloadError(
-        "could not verify sqlc binary. information:\n" <> information,
-      ))
-    }
-    Ok(v) -> {
-      let sqlc_version = "v" <> sqlc_version
-      let v = string.trim(v)
-      case v == sqlc_version {
-        True -> Ok(Nil)
-        False ->
-          Error(errors.SqlcVersionError(
-            "Could not match sqlc version. Wanted "
-            <> sqlc_version
-            <> ". Received "
-            <> v,
-          ))
-      }
-    }
-  }
-}
-
-pub fn download_binary() -> Result(Nil, errors.ParrotError) {
-  let path = sqlc_binary_path()
-  let dir = filepath.directory_name(path)
-  let assert Ok(_) = simplifile.create_directory_all(dir)
-
-  use #(download, hash) <- result.try(get_download_path_and_hash())
-
-  // delete current version if version does not match
-  let _ = case binary_exists(path) {
-    True -> Ok(Nil)
+  case result.map(simplifile.read_bits(path), sha256) == Ok(expected) {
+    True -> Ok(path)
     False -> {
-      case verify_binary() {
-        Error(errors.SqlcVersionError(_)) -> {
-          let assert Ok(_) = simplifile.delete(path)
-        }
-        _ -> Ok(Nil)
+      io.println("\u{1F4E5} downloading sqlc " <> sqlc_version <> "...")
+      use binary <- result.try(download_and_extract(platform))
+      let received = sha256(binary)
+      use <- bool.guard(
+        when: received != expected,
+        return: Error(error.SqlcChecksumMismatch(
+          url: release_url(platform),
+          expected:,
+          received:,
+        )),
+      )
+      let permissions =
+        FilePermissions(
+          user: set.from_list([Read, Write, Execute]),
+          group: set.from_list([Read, Execute]),
+          other: set.from_list([Read, Execute]),
+        )
+      {
+        use _ <- result.try(simplifile.create_directory_all(directory))
+        use _ <- result.try(simplifile.write_bits(path, binary))
+        simplifile.set_permissions(path, permissions)
       }
+      |> result.map_error(error.CouldNotInstallSqlc(path, _))
+      |> result.replace(path)
     }
   }
+}
 
-  let exists = binary_exists(path)
-  use <- bool.lazy_guard(when: exists, return: fn() {
-    use bin <- result.try(
-      simplifile.read_bits(path)
-      |> result.map_error(fn(_) { errors.SqlcDownloadError("could not verify") }),
-    )
-    check_sqlc_integrity(bin, hash)
-    Ok(Nil)
-  })
+/// The version a sqlc binary reports, f.e. `v1.31.1`.
+///
+pub fn version(binary: String) -> Result(String, ParrotError) {
+  child_process.from_file(binary)
+  |> child_process.args(["version"])
+  |> command.output
+  |> result.map(string.trim)
+  |> result.map_error(error.CouldNotRunSqlc(binary, _))
+}
 
-  use tarball <- result.try(
-    download_zip(download)
-    |> result.map_error(fn(_) {
-      errors.SqlcDownloadError("could not curl the sqlc binary")
-    }),
-  )
+pub fn sha256(binary: BitArray) -> String {
+  crypto.hash(crypto.Sha256, binary)
+  |> bit_array.base16_encode
+  |> string.lowercase
+}
 
-  use bin <- result.try(
-    extract_sqlc_binary(tarball)
-    |> result.map_error(fn(_) {
-      errors.SqlcDownloadError("could not unzip the sqlc binary")
-    }),
-  )
-  check_sqlc_integrity(bin, hash)
+/// The platform as it is called in `platforms` and its checksum.
+///
+fn current_platform() -> Result(#(String, String), ParrotError) {
+  let os = get_os()
+  let cpu = case get_cpu() {
+    "aarch64" -> "arm64"
+    "x86_64" | "x64" -> "amd64"
+    cpu -> cpu
+  }
+  let platform = os <> "_" <> cpu
+  list.key_find(platforms, platform)
+  |> result.map(fn(hash) { #(platform, hash) })
+  |> result.replace_error(error.UnsupportedPlatform(os:, cpu:))
+}
 
-  let assert Ok(_) = simplifile.write_bits(path, bin)
+const release_host = "downloads.sqlc.dev"
 
-  let permissions =
-    FilePermissions(
-      user: set.from_list([Read, Write, Execute]),
-      group: set.from_list([Read, Execute]),
-      other: set.from_list([Read, Execute]),
-    )
-  let _ = simplifile.set_permissions(path, permissions)
+fn release_path(platform: String) -> String {
+  "/sqlc_" <> sqlc_version <> "_" <> platform <> ".tar.gz"
+}
 
-  Ok(Nil)
+fn release_url(platform: String) -> String {
+  "https://" <> release_host <> release_path(platform)
+}
+
+/// Downloads the sqlc release for `platform` and returns the sqlc binary
+/// inside of it.
+///
+pub fn download_and_extract(platform: String) -> Result(BitArray, ParrotError) {
+  let failed = error.SqlcDownloadFailed(release_url(platform), _)
+  let request =
+    request.new()
+    |> request.set_scheme(http.Https)
+    |> request.set_host(release_host)
+    |> request.set_path(release_path(platform))
+    |> request.set_body(<<>>)
+
+  let response =
+    httpc.configure() |> httpc.timeout(60_000) |> httpc.dispatch_bits(request)
+  case response {
+    Ok(response.Response(status: 200, body:, ..)) ->
+      extract_sqlc_binary(body)
+      |> result.replace_error(failed(error.BinaryNotInArchive))
+    Ok(response.Response(status:, ..)) ->
+      Error(failed(error.UnexpectedStatus(status)))
+    Error(reason) -> Error(failed(error.RequestFailed(reason)))
+  }
 }
 
 @external(erlang, "parrot_ffi", "get_os")
-pub fn get_os() -> String
+fn get_os() -> String
 
 @external(erlang, "parrot_ffi", "get_cpu")
-pub fn get_cpu() -> String
-
-@external(erlang, "parrot_ffi", "download_zip")
-pub fn download_zip(url: String) -> Result(BitArray, dynamic.Dynamic)
+fn get_cpu() -> String
 
 @external(erlang, "parrot_ffi", "extract_sqlc_binary")
-pub fn extract_sqlc_binary(
-  tarball: BitArray,
-) -> Result(BitArray, dynamic.Dynamic)
+fn extract_sqlc_binary(tarball: BitArray) -> Result(BitArray, Nil)
