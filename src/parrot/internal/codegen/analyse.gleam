@@ -8,6 +8,7 @@ import gleam/list
 import gleam/option
 import gleam/pair
 import gleam/result
+import gleam/set.{type Set}
 import gleam/string
 import parrot/error.{type ParrotError}
 import parrot/internal/codegen/model.{
@@ -49,8 +50,13 @@ fn query(
     return: Error(error.UnsupportedEmbedError(query.name)),
   )
 
-  use params <- result.try(
-    list.try_map(query.params, param(_, query.name, catalog)),
+  use labels <- result.try(
+    list.try_map(query.params, fn(param) {
+      case escape_keyword(param.column.name) {
+        "" -> Error(error.UnnamedParameterError(query.name, param.number))
+        label -> Ok(label)
+      }
+    }),
   )
 
   use command <- result.try(
@@ -69,14 +75,10 @@ fn query(
       model.Rows(
         type_: string_extra.pascal_case(query.name),
         decoder: function <> "_decoder",
-        fields: list.index_map(query.columns, fn(col, index) {
-          Field(
-            name: field_name(index, query, col),
-            type_: column_type(col, catalog),
-          )
-        }),
+        fields: fields(query, catalog),
       )
   }
+  let params = params(query.params, unique_labels(labels), returns:, catalog:)
 
   Ok(model.Query(
     function: escape_keyword(function),
@@ -86,19 +88,123 @@ fn query(
   ))
 }
 
-fn param(
-  param: sqlc.Param,
-  query: String,
-  catalog: sqlc.Catalog,
-) -> Result(model.Param, ParrotError) {
-  case escape_keyword(param.column.name), param.column.is_sqlc_slice {
-    "", _ -> Error(error.UnnamedParameterError(query, param.number))
-    name, True -> {
-      let item = sqlc.Column(..param.column, not_null: True)
-      Ok(model.SliceParam(name:, item: column_type(item, catalog)))
+/// The variables of the query function do not shadow the `sql` it builds,
+/// nor the functions it calls.
+///
+fn params(
+  params: List(sqlc.Param),
+  labels: List(String),
+  returns returns: model.Returns,
+  catalog catalog: sqlc.Catalog,
+) -> List(model.Param) {
+  let params =
+    list.map2(params, labels, fn(param, label) {
+      case param.column.is_sqlc_slice {
+        True -> {
+          let item = sqlc.Column(..param.column, not_null: True)
+          #(label, column_type(item, catalog), True)
+        }
+        False -> #(label, column_type(param.column, catalog), False)
+      }
+    })
+
+  let decoder = case returns {
+    model.Rows(decoder:, ..) -> [decoder]
+    model.NoRows -> []
+  }
+  let to_strings =
+    list.flat_map(params, fn(param) {
+      list.map(enums_in(param.1), fn(names) { names.to_string })
+    })
+  let reserved = set.from_list(["sql", ..list.append(decoder, to_strings)])
+
+  params
+  |> list.map_fold(set.union(reserved, set.from_list(labels)), fn(taken, param) {
+    let #(label, type_, is_slice) = param
+    let variable = case set.contains(reserved, label) {
+      True -> suffixed(label, 2, taken)
+      False -> label
     }
-    name, False ->
-      Ok(model.ValueParam(name:, type_: column_type(param.column, catalog)))
+    let taken = set.insert(taken, variable)
+    case is_slice {
+      False -> #(taken, model.ValueParam(label:, variable:, type_:))
+      True -> {
+        let placeholders = unused(variable <> "_slice", taken)
+        #(
+          set.insert(taken, placeholders),
+          model.SliceParam(label:, variable:, placeholders:, item: type_),
+        )
+      }
+    }
+  })
+  |> pair.second
+}
+
+/// The variables of the row decoder do not shadow the decoders it calls.
+///
+fn fields(query: sqlc.Query, catalog: sqlc.Catalog) -> List(model.Field) {
+  let labels =
+    list.index_map(query.columns, fn(col, index) {
+      field_name(index, query, col)
+    })
+    |> unique_labels
+  let types = list.map(query.columns, column_type(_, catalog))
+
+  let enum_decoders =
+    list.flat_map(types, fn(type_) {
+      list.map(enums_in(type_), fn(names) { names.decoder })
+    })
+  let reserved = set.from_list(list.append(runtime.values, enum_decoders))
+
+  list.zip(labels, types)
+  |> list.map_fold(set.union(reserved, set.from_list(labels)), fn(taken, field) {
+    let #(label, type_) = field
+    let variable = case set.contains(reserved, label) {
+      True -> suffixed(label, 2, taken)
+      False -> label
+    }
+    #(set.insert(taken, variable), Field(label:, variable:, type_:))
+  })
+  |> pair.second
+}
+
+/// The enums used by a type.
+fn enums_in(type_: GleamType) -> List(EnumNames) {
+  case type_ {
+    Scalar(_) -> []
+    GleamEnum(names) -> [names]
+    GleamList(inner) | GleamOption(inner) -> enums_in(inner)
+  }
+}
+
+/// Labels that occur more than once get a suffix, like sqlc does for go:
+/// `id`, `id_2`.
+///
+fn unique_labels(labels: List(String)) -> List(String) {
+  let all = set.from_list(labels)
+  list.map_fold(labels, set.new(), fn(used, label) {
+    let label = case set.contains(used, label) {
+      True -> suffixed(label, 2, set.union(used, all))
+      False -> label
+    }
+    #(set.insert(used, label), label)
+  })
+  |> pair.second
+}
+
+/// `name`, or else `name` with the first suffix that is not taken.
+fn unused(name: String, taken: Set(String)) -> String {
+  case set.contains(taken, name) {
+    True -> suffixed(name, 2, taken)
+    False -> name
+  }
+}
+
+fn suffixed(name: String, suffix: Int, taken: Set(String)) -> String {
+  let candidate = name <> "_" <> int.to_string(suffix)
+  case set.contains(taken, candidate) {
+    True -> suffixed(name, suffix + 1, taken)
+    False -> candidate
   }
 }
 
@@ -132,7 +238,7 @@ fn split_slices(
   use parts, param <- list.fold(params, [model.Text(text)])
   case param {
     #(_, model.ValueParam(..)) -> parts
-    #(sqlc_param, model.SliceParam(name:, ..)) -> {
+    #(sqlc_param, model.SliceParam(placeholders:, ..)) -> {
       let placeholder = "/*SLICE:" <> sqlc_param.column.name <> "*/?"
       use part <- list.flat_map(parts)
       case part {
@@ -140,7 +246,7 @@ fn split_slices(
         model.Text(text) ->
           string.split(text, placeholder)
           |> list.map(model.Text)
-          |> list.intersperse(model.Slice(name))
+          |> list.intersperse(model.Slice(placeholders))
       }
     }
   }

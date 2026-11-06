@@ -105,3 +105,10 @@ returning value, nullable_value;
 -- name: MacaddrRoundTrip :one
 insert into macaddrs (value, nullable_value) values ($1, $2)
 returning value, nullable_value;
+
+-- `mood_to_string` and `mood_decoder` are functions parrot generates for the
+-- `mood` enum.
+-- name: EnumNameCollisions :many
+select value as mood_decoder, nullable_value
+from moods
+where value = sqlc.arg(mood_to_string);

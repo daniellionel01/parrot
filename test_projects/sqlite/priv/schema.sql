@@ -14,3 +14,11 @@ create table slices (value integer not null);
 
 -- https://github.com/daniellionel01/parrot/issues/74
 create table keywords ("type" text not null, "case" text not null);
+
+-- column and parameter names that collide with what parrot generates
+create table name_collisions (
+  sql text not null,
+  ids_slice integer not null,
+  bool_decoder integer not null,
+  active boolean not null
+);

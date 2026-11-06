@@ -47,17 +47,28 @@ pub type Returns {
 /// filled in at runtime with one `?` per list element.
 pub type SqlPart {
   Text(String)
-  Slice(param: String)
+  /// the variable of the slice's `SliceParam`, holding its `?`s
+  Slice(placeholders: String)
 }
 
+/// `label` is the argument's label, `variable` the name it is bound to in
+/// the function. They only differ if the label would shadow something the
+/// function uses.
 pub type Param {
-  ValueParam(name: String, type_: GleamType)
-  /// `sqlc.slice(name)`, a list of `item`s.
-  SliceParam(name: String, item: GleamType)
+  ValueParam(label: String, variable: String, type_: GleamType)
+  /// `sqlc.slice(label)`, a list of `item`s.
+  SliceParam(
+    label: String,
+    variable: String,
+    placeholders: String,
+    item: GleamType,
+  )
 }
 
+/// `label` is the record field, `variable` the name it is bound to in the
+/// decoder. They only differ if the label would shadow a decoder.
 pub type Field {
-  Field(name: String, type_: GleamType)
+  Field(label: String, variable: String, type_: GleamType)
 }
 
 pub type GleamType {

@@ -1023,3 +1023,30 @@ pub fn macaddr_round_trip_decoder() -> decode.Decoder(MacaddrRoundTrip) {
   use nullable_value <- decode.field(1, decode.optional(macaddr_decoder()))
   decode.success(MacaddrRoundTrip(value:, nullable_value:))
 }
+
+pub type EnumNameCollisions {
+  EnumNameCollisions(mood_decoder: Mood, nullable_value: option.Option(Mood))
+}
+
+pub fn enum_name_collisions(
+  mood_to_string mood_to_string_2: Mood,
+) -> #(String, List(Param), decode.Decoder(EnumNameCollisions)) {
+  let sql =
+    "select value as mood_decoder, nullable_value
+from moods
+where value = $1"
+  #(
+    sql,
+    [ParamString(mood_to_string(mood_to_string_2))],
+    enum_name_collisions_decoder(),
+  )
+}
+
+pub fn enum_name_collisions_decoder() -> decode.Decoder(EnumNameCollisions) {
+  use mood_decoder_2 <- decode.field(0, mood_decoder())
+  use nullable_value <- decode.field(1, decode.optional(mood_decoder()))
+  decode.success(EnumNameCollisions(
+    mood_decoder: mood_decoder_2,
+    nullable_value:,
+  ))
+}

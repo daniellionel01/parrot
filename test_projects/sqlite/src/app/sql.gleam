@@ -242,6 +242,90 @@ fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
   decode.one_of(int, [float])
 }
 
+pub fn insert_name_collision(
+  sql sql_2: String,
+  ids_slice ids_slice: Int,
+  bool_decoder bool_decoder: Int,
+  active active: Bool,
+) -> #(String, List(Param)) {
+  let sql =
+    "insert into name_collisions (sql, ids_slice, bool_decoder, active)
+values (?, ?, ?, ?)"
+  #(sql, [
+    ParamString(sql_2),
+    ParamInt(ids_slice),
+    ParamInt(bool_decoder),
+    ParamBool(active),
+  ])
+}
+
+pub type NameCollisions {
+  NameCollisions(bool_decoder: Int, active: Bool, count: Int, count_2: Int)
+}
+
+pub fn name_collisions(
+  sql sql_2: String,
+  ids_slice ids_slice: Int,
+  ids ids: List(Int),
+  name_collisions_decoder name_collisions_decoder_2: Bool,
+) -> #(String, List(Param), decode.Decoder(NameCollisions)) {
+  let ids_slice_2 = case ids {
+    [] -> "NULL"
+    _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
+  }
+  let sql = "select bool_decoder, active, count(*), count(*)
+from name_collisions
+where sql = ?1
+  and ids_slice = ?2
+  and bool_decoder in (" <> ids_slice_2 <> ")
+  and active = ?4
+group by bool_decoder, active"
+  #(
+    sql,
+    list.flatten([
+      [ParamString(sql_2)],
+      [ParamInt(ids_slice)],
+      list.map(ids, ParamInt),
+      [ParamBool(name_collisions_decoder_2)],
+    ]),
+    name_collisions_decoder(),
+  )
+}
+
+pub fn name_collisions_decoder() -> decode.Decoder(NameCollisions) {
+  use bool_decoder_2 <- decode.field(0, decode.int)
+  use active <- decode.field(1, bool_decoder())
+  use count <- decode.field(2, decode.int)
+  use count_2 <- decode.field(3, decode.int)
+  decode.success(NameCollisions(
+    bool_decoder: bool_decoder_2,
+    active:,
+    count:,
+    count_2:,
+  ))
+}
+
+pub type DuplicateParameters {
+  DuplicateParameters(bool_decoder: Int)
+}
+
+pub fn duplicate_parameters(
+  sql sql_3: String,
+  sql_2 sql_2: String,
+) -> #(String, List(Param), decode.Decoder(DuplicateParameters)) {
+  let sql = "select bool_decoder from name_collisions where sql = ? or sql = ?"
+  #(
+    sql,
+    [ParamString(sql_3), ParamString(sql_2)],
+    duplicate_parameters_decoder(),
+  )
+}
+
+pub fn duplicate_parameters_decoder() -> decode.Decoder(DuplicateParameters) {
+  use bool_decoder_2 <- decode.field(0, decode.int)
+  decode.success(DuplicateParameters(bool_decoder: bool_decoder_2))
+}
+
 pub type IntegerRoundTrip {
   IntegerRoundTrip(value: Int, nullable_value: option.Option(Int))
 }

@@ -87,3 +87,44 @@ pub fn keyword_columns_test() {
   assert query(sql.keywords_round_trip(type_: "a", case_: "b"))
     == Ok([sql.KeywordsRoundTrip(type_: "a", case_: "b")])
 }
+
+/// Parameters and columns named like what parrot generates.
+pub fn name_collisions_test() {
+  let db = driver.connect()
+  let assert Ok(Nil) =
+    driver.exec(
+      db,
+      sql.insert_name_collision(
+        sql: "a",
+        ids_slice: 1,
+        bool_decoder: 2,
+        active: True,
+      ),
+    )
+  let assert Ok(Nil) =
+    driver.exec(
+      db,
+      sql.insert_name_collision(
+        sql: "b",
+        ids_slice: 1,
+        bool_decoder: 2,
+        active: True,
+      ),
+    )
+
+  assert driver.query(
+      db,
+      sql.name_collisions(
+        sql: "a",
+        ids_slice: 1,
+        ids: [2],
+        name_collisions_decoder: True,
+      ),
+    )
+    == Ok([
+      sql.NameCollisions(bool_decoder: 2, active: True, count: 1, count_2: 1),
+    ])
+
+  assert driver.query(db, sql.duplicate_parameters(sql: "a", sql_2: "b"))
+    == Ok([sql.DuplicateParameters(2), sql.DuplicateParameters(2)])
+}

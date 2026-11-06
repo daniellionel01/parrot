@@ -107,7 +107,7 @@ fn query(query: Query) -> String {
 fn row_type(name: String, fields: List(Field)) -> String {
   let fields =
     list.map(fields, fn(field) {
-      "    " <> field.name <> ": " <> type_string(field.type_) <> ","
+      "    " <> field.label <> ": " <> type_string(field.type_) <> ","
     })
 
   ["pub type " <> name <> " {", "  " <> name <> "(", ..fields]
@@ -123,23 +123,27 @@ fn function(query: Query) -> String {
         ValueParam(type_:, ..) -> type_string(type_)
         SliceParam(item:, ..) -> "List(" <> type_string(item) <> ")"
       }
-      param.name <> " " <> param.name <> ": " <> type_
+      param.label <> " " <> param.variable <> ": " <> type_
     })
     |> string.join(", ")
 
   let slices =
-    query.params
-    |> list.filter(is_slice)
-    |> list.map(fn(param) {
-      // An empty list is replaced with `NULL`, same as sqlc does for go,
-      // since `in ()` is not valid sql in every database.
-      "  let "
-      <> slice_variable(param.name)
-      <> " = case "
-      <> param.name
-      <> " {\n    [] -> \"NULL\"\n    _ -> list.map("
-      <> param.name
-      <> ", fn(_) { \"?\" }) |> string.join(\",\")\n  }"
+    list.filter_map(query.params, fn(param) {
+      case param {
+        ValueParam(..) -> Error(Nil)
+        // An empty list is replaced with `NULL`, same as sqlc does for go,
+        // since `in ()` is not valid sql in every database.
+        SliceParam(variable:, placeholders:, ..) ->
+          Ok(
+            "  let "
+            <> placeholders
+            <> " = case "
+            <> variable
+            <> " {\n    [] -> \"NULL\"\n    _ -> list.map("
+            <> variable
+            <> ", fn(_) { \"?\" }) |> string.join(\",\")\n  }",
+          )
+      }
     })
 
   let #(returned, return_type) = case query.returns {
@@ -175,17 +179,13 @@ fn is_slice(param: Param) -> Bool {
   }
 }
 
-fn slice_variable(param: String) -> String {
-  param <> "_slice"
-}
-
 fn sql(parts: List(model.SqlPart)) -> String {
   parts
   |> list.map(fn(part) {
     case part {
       model.Text(text) ->
         "\"" <> string.replace(text, each: "\"", with: "\\\"") <> "\""
-      model.Slice(param) -> slice_variable(param)
+      model.Slice(placeholders) -> placeholders
     }
   })
   |> string.join(" <> ")
@@ -198,7 +198,7 @@ fn params(params: List(Param)) -> String {
   let values =
     list.try_map(params, fn(param) {
       case param {
-        ValueParam(name:, type_:) -> Ok(value_to_param(name, type_))
+        ValueParam(variable:, type_:, ..) -> Ok(value_to_param(variable, type_))
         SliceParam(..) -> Error(Nil)
       }
     })
@@ -210,9 +210,10 @@ fn params(params: List(Param)) -> String {
       <> params
       |> list.map(fn(param) {
         case param {
-          ValueParam(name:, type_:) -> "[" <> value_to_param(name, type_) <> "]"
-          SliceParam(name:, item:) ->
-            "list.map(" <> name <> ", " <> item_to_param(item) <> ")"
+          ValueParam(variable:, type_:, ..) ->
+            "[" <> value_to_param(variable, type_) <> "]"
+          SliceParam(variable:, item:, ..) ->
+            "list.map(" <> variable <> ", " <> item_to_param(item) <> ")"
         }
       })
       |> string.join(", ")
@@ -251,7 +252,7 @@ fn decoder(type_name: String, name: String, fields: List(Field)) -> String {
   let uses =
     list.index_map(fields, fn(field, index) {
       "  use "
-      <> field.name
+      <> field.variable
       <> " <- decode.field("
       <> int.to_string(index)
       <> ", "
@@ -260,7 +261,12 @@ fn decoder(type_name: String, name: String, fields: List(Field)) -> String {
     })
   let arguments =
     fields
-    |> list.map(fn(field) { field.name <> ":" })
+    |> list.map(fn(field) {
+      case field.label == field.variable {
+        True -> field.label <> ":"
+        False -> field.label <> ": " <> field.variable
+      }
+    })
     |> string.join(", ")
 
   ["pub fn " <> name <> "() -> decode.Decoder(" <> type_name <> ") {", ..uses]

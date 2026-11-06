@@ -126,3 +126,15 @@ pub fn keyword_columns_test() {
   assert query(sql.keywords_round_trip(type_: "a", case_: "b"))
     == Ok([sql.KeywordsRoundTrip(type_: "a", case_: "b")])
 }
+
+/// Parameters and columns named like the functions of an enum.
+pub fn enum_name_collisions_test() {
+  let assert Ok(_) = query(sql.mood_round_trip(sql.Sad, Some(sql.Happy)))
+  assert query(sql.enum_name_collisions(mood_to_string: sql.Sad))
+    == Ok([
+      sql.EnumNameCollisions(
+        mood_decoder: sql.Sad,
+        nullable_value: Some(sql.Happy),
+      ),
+    ])
+}
