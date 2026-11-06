@@ -83,6 +83,27 @@ pub fn time_test() {
     == Ok([sql.TimeRoundTrip(time, Some(time))])
 }
 
+pub fn network_test() {
+  let ipv4 = sql.Inet(<<192, 168, 0, 1>>, 32)
+  let ipv6 = sql.Inet(<<0x2001:16, 0xdb8:16, 0:96>>, 64)
+  assert query(sql.inet_round_trip(ipv4, Some(ipv6)))
+    == Ok([sql.InetRoundTrip(ipv4, Some(ipv6))])
+
+  let network = sql.Inet(<<10, 0, 0, 0>>, 8)
+  assert query(sql.cidr_round_trip(network, Some(network)))
+    == Ok([sql.CidrRoundTrip(network, Some(network))])
+
+  let mac = <<8, 0, 43, 1, 2, 3>>
+  assert query(sql.macaddr_round_trip(mac, Some(mac)))
+    == Ok([sql.MacaddrRoundTrip(mac, Some(mac))])
+}
+
+pub fn interval_test() {
+  let interval = sql.Interval(months: 14, days: 3, microseconds: 3_723_500_000)
+  assert query(sql.interval_round_trip(interval, Some(interval)))
+    == Ok([sql.IntervalRoundTrip(interval, Some(interval))])
+}
+
 pub fn enum_test() {
   assert query(sql.mood_round_trip(sql.Happy, Some(sql.Sad)))
     == Ok([sql.MoodRoundTrip(sql.Happy, Some(sql.Sad))])

@@ -10,8 +10,9 @@ import gleam/string
 import parrot/error.{type ParrotError}
 import parrot/internal/codegen/model.{
   type GleamType, type Query, Field, GleamBitArray, GleamBool, GleamDate,
-  GleamDynamic, GleamEnum, GleamFloat, GleamInt, GleamList, GleamOption,
-  GleamString, GleamTimeOfDay, GleamTimestamp, Query,
+  GleamDynamic, GleamEnum, GleamFloat, GleamInet, GleamInt, GleamInterval,
+  GleamList, GleamMacaddr, GleamOption, GleamString, GleamTimeOfDay,
+  GleamTimestamp, Query,
 }
 import parrot/internal/sqlc
 import parrot/internal/string_extra
@@ -149,7 +150,10 @@ fn column_type(col: sqlc.TableColumn, context: sqlc.SQLC) -> GleamType {
   case sql_type {
     // `interval` has to come before `int` and `timetz` before `time`.
     // `timetz` includes an offset, which `TimeOfDay` can not represent.
-    "interval" | "timetz" | "time with time zone" -> GleamDynamic
+    "interval" -> GleamInterval
+    "timetz" | "time with time zone" -> GleamDynamic
+    "inet" | "cidr" -> GleamInet
+    "macaddr" -> GleamMacaddr
     "int" <> _
     | "tinyint"
     | "smallint"

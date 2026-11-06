@@ -89,3 +89,19 @@ returning "type", "case";
 -- name: MoodArrayRoundTrip :one
 insert into mood_arrays (value, nullable_value) values ($1, $2)
 returning value, nullable_value;
+
+-- name: IntervalRoundTrip :one
+insert into intervals (value, nullable_value) values ($1, $2)
+returning value, nullable_value;
+
+-- name: InetRoundTrip :one
+insert into inets (value, nullable_value) values ($1, $2)
+returning value, nullable_value;
+
+-- name: CidrRoundTrip :one
+insert into cidrs (value, nullable_value) values ($1, $2)
+returning value, nullable_value;
+
+-- name: MacaddrRoundTrip :one
+insert into macaddrs (value, nullable_value) values ($1, $2)
+returning value, nullable_value;

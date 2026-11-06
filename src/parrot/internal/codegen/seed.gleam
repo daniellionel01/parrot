@@ -12,9 +12,24 @@ pub type Param {
   ParamTimestamp(Timestamp)
   ParamTimeOfDay(TimeOfDay)
   ParamDate(Date)
+  ParamInterval(Interval)
+  ParamInet(Inet)
+  ParamMacaddr(BitArray)
   ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
   ParamNullable(option.Option(Param))
+}
+
+/// postgres `interval`. Months and days are kept separate, like postgres
+/// does, since they have no fixed length.
+pub type Interval {
+  Interval(months: Int, days: Int, microseconds: Int)
+}
+
+/// postgres `inet` and `cidr`. `address` is 4 bytes for ipv4 and 16 bytes
+/// for ipv6.
+pub type Inet {
+  Inet(address: BitArray, mask: Int)
 }
 
 pub fn bool_decoder() {
@@ -133,6 +148,71 @@ fn time_of_day_tuple_decoder() -> decode.Decoder(TimeOfDay) {
 
   calendar.TimeOfDay(hours:, minutes:, seconds:, nanoseconds:)
   |> decode.success()
+}
+
+/// `{interval, {{hours, minutes, seconds}, days, months}}`, how pog returns
+/// intervals
+pub fn interval_decoder() -> decode.Decoder(Interval) {
+  use #(time, days, months) <- decode.field(1, {
+    use time <- decode.field(0, time_of_day_tuple_decoder())
+    use days <- decode.field(1, decode.int)
+    use months <- decode.field(2, decode.int)
+    decode.success(#(time, days, months))
+  })
+  let seconds = { time.hours * 60 + time.minutes } * 60 + time.seconds
+  let microseconds = seconds * 1_000_000 + time.nanoseconds / 1000
+  decode.success(Interval(months:, days:, microseconds:))
+}
+
+/// `{address, mask}`, or only `address` for a single host
+pub fn inet_decoder() -> decode.Decoder(Inet) {
+  let with_mask = {
+    use address <- decode.field(0, ip_address_decoder())
+    use mask <- decode.field(1, decode.int)
+    decode.success(Inet(address:, mask:))
+  }
+  let host = {
+    use address <- decode.map(ip_address_decoder())
+    case address {
+      <<_:32>> -> Inet(address:, mask: 32)
+      _ -> Inet(address:, mask: 128)
+    }
+  }
+  decode.one_of(with_mask, [host])
+}
+
+/// ipv4 as a tuple of 4 bytes, ipv6 as a tuple of 8 16-bit groups
+fn ip_address_decoder() -> decode.Decoder(BitArray) {
+  let ipv6 = {
+    use a <- decode.field(0, decode.int)
+    use b <- decode.field(1, decode.int)
+    use c <- decode.field(2, decode.int)
+    use d <- decode.field(3, decode.int)
+    use e <- decode.field(4, decode.int)
+    use f <- decode.field(5, decode.int)
+    use g <- decode.field(6, decode.int)
+    use h <- decode.field(7, decode.int)
+    decode.success(<<a:16, b:16, c:16, d:16, e:16, f:16, g:16, h:16>>)
+  }
+  let ipv4 = {
+    use a <- decode.field(0, decode.int)
+    use b <- decode.field(1, decode.int)
+    use c <- decode.field(2, decode.int)
+    use d <- decode.field(3, decode.int)
+    decode.success(<<a, b, c, d>>)
+  }
+  decode.one_of(ipv6, [ipv4])
+}
+
+/// a tuple of 6 bytes
+pub fn macaddr_decoder() -> decode.Decoder(BitArray) {
+  use a <- decode.field(0, decode.int)
+  use b <- decode.field(1, decode.int)
+  use c <- decode.field(2, decode.int)
+  use d <- decode.field(3, decode.int)
+  use e <- decode.field(4, decode.int)
+  use f <- decode.field(5, decode.int)
+  decode.success(<<a, b, c, d, e, f>>)
 }
 
 fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {

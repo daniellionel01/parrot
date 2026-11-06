@@ -22,7 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Postgres `time` columns are now decoded as `calendar.TimeOfDay` instead of `timestamp.Timestamp`. There is a new `ParamTimeOfDay` parameter variant.
 
-- Postgres `interval` and `timetz` columns are now `decode.Dynamic`. Previously they were wrongly decoded as `Int` and `Timestamp`.
+- Postgres `interval`, `inet`, `cidr` and `macaddr` columns are now `Interval`, `Inet` and `BitArray`, with new `ParamInterval`, `ParamInet` and `ParamMacaddr` variants. `interval` was wrongly decoded as `Int`.
+
+- Postgres `timetz` columns are now `decode.Dynamic`. Previously they were wrongly decoded as `Timestamp`.
 
 ### Fixes
 

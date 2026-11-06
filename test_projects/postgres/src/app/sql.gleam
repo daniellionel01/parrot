@@ -17,9 +17,24 @@ pub type Param {
   ParamTimestamp(Timestamp)
   ParamTimeOfDay(TimeOfDay)
   ParamDate(Date)
+  ParamInterval(Interval)
+  ParamInet(Inet)
+  ParamMacaddr(BitArray)
   ParamList(List(Param))
   ParamDynamic(decode.Dynamic)
   ParamNullable(option.Option(Param))
+}
+
+/// postgres `interval`. Months and days are kept separate, like postgres
+/// does, since they have no fixed length.
+pub type Interval {
+  Interval(months: Int, days: Int, microseconds: Int)
+}
+
+/// postgres `inet` and `cidr`. `address` is 4 bytes for ipv4 and 16 bytes
+/// for ipv6.
+pub type Inet {
+  Inet(address: BitArray, mask: Int)
 }
 
 pub fn bool_decoder() {
@@ -138,6 +153,71 @@ fn time_of_day_tuple_decoder() -> decode.Decoder(TimeOfDay) {
 
   calendar.TimeOfDay(hours:, minutes:, seconds:, nanoseconds:)
   |> decode.success()
+}
+
+/// `{interval, {{hours, minutes, seconds}, days, months}}`, how pog returns
+/// intervals
+pub fn interval_decoder() -> decode.Decoder(Interval) {
+  use #(time, days, months) <- decode.field(1, {
+    use time <- decode.field(0, time_of_day_tuple_decoder())
+    use days <- decode.field(1, decode.int)
+    use months <- decode.field(2, decode.int)
+    decode.success(#(time, days, months))
+  })
+  let seconds = { time.hours * 60 + time.minutes } * 60 + time.seconds
+  let microseconds = seconds * 1_000_000 + time.nanoseconds / 1000
+  decode.success(Interval(months:, days:, microseconds:))
+}
+
+/// `{address, mask}`, or only `address` for a single host
+pub fn inet_decoder() -> decode.Decoder(Inet) {
+  let with_mask = {
+    use address <- decode.field(0, ip_address_decoder())
+    use mask <- decode.field(1, decode.int)
+    decode.success(Inet(address:, mask:))
+  }
+  let host = {
+    use address <- decode.map(ip_address_decoder())
+    case address {
+      <<_:32>> -> Inet(address:, mask: 32)
+      _ -> Inet(address:, mask: 128)
+    }
+  }
+  decode.one_of(with_mask, [host])
+}
+
+/// ipv4 as a tuple of 4 bytes, ipv6 as a tuple of 8 16-bit groups
+fn ip_address_decoder() -> decode.Decoder(BitArray) {
+  let ipv6 = {
+    use a <- decode.field(0, decode.int)
+    use b <- decode.field(1, decode.int)
+    use c <- decode.field(2, decode.int)
+    use d <- decode.field(3, decode.int)
+    use e <- decode.field(4, decode.int)
+    use f <- decode.field(5, decode.int)
+    use g <- decode.field(6, decode.int)
+    use h <- decode.field(7, decode.int)
+    decode.success(<<a:16, b:16, c:16, d:16, e:16, f:16, g:16, h:16>>)
+  }
+  let ipv4 = {
+    use a <- decode.field(0, decode.int)
+    use b <- decode.field(1, decode.int)
+    use c <- decode.field(2, decode.int)
+    use d <- decode.field(3, decode.int)
+    decode.success(<<a, b, c, d>>)
+  }
+  decode.one_of(ipv6, [ipv4])
+}
+
+/// a tuple of 6 bytes
+pub fn macaddr_decoder() -> decode.Decoder(BitArray) {
+  use a <- decode.field(0, decode.int)
+  use b <- decode.field(1, decode.int)
+  use c <- decode.field(2, decode.int)
+  use d <- decode.field(3, decode.int)
+  use e <- decode.field(4, decode.int)
+  use f <- decode.field(5, decode.int)
+  decode.success(<<a, b, c, d, e, f>>)
 }
 
 fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
@@ -827,4 +907,112 @@ pub fn mood_array_round_trip_decoder() -> decode.Decoder(MoodArrayRoundTrip) {
     decode.optional(decode.list(of: mood_decoder())),
   )
   decode.success(MoodArrayRoundTrip(value:, nullable_value:))
+}
+
+pub type IntervalRoundTrip {
+  IntervalRoundTrip(value: Interval, nullable_value: option.Option(Interval))
+}
+
+pub fn interval_round_trip(
+  value value: Interval,
+  nullable_value nullable_value: option.Option(Interval),
+) {
+  let sql =
+    "insert into intervals (value, nullable_value) values ($1, $2)
+returning value, nullable_value"
+  #(
+    sql,
+    [
+      ParamInterval(value),
+      ParamNullable(option.map(nullable_value, fn(v) { ParamInterval(v) })),
+    ],
+    interval_round_trip_decoder(),
+  )
+}
+
+pub fn interval_round_trip_decoder() -> decode.Decoder(IntervalRoundTrip) {
+  use value <- decode.field(0, interval_decoder())
+  use nullable_value <- decode.field(1, decode.optional(interval_decoder()))
+  decode.success(IntervalRoundTrip(value:, nullable_value:))
+}
+
+pub type InetRoundTrip {
+  InetRoundTrip(value: Inet, nullable_value: option.Option(Inet))
+}
+
+pub fn inet_round_trip(
+  value value: Inet,
+  nullable_value nullable_value: option.Option(Inet),
+) {
+  let sql =
+    "insert into inets (value, nullable_value) values ($1, $2)
+returning value, nullable_value"
+  #(
+    sql,
+    [
+      ParamInet(value),
+      ParamNullable(option.map(nullable_value, fn(v) { ParamInet(v) })),
+    ],
+    inet_round_trip_decoder(),
+  )
+}
+
+pub fn inet_round_trip_decoder() -> decode.Decoder(InetRoundTrip) {
+  use value <- decode.field(0, inet_decoder())
+  use nullable_value <- decode.field(1, decode.optional(inet_decoder()))
+  decode.success(InetRoundTrip(value:, nullable_value:))
+}
+
+pub type CidrRoundTrip {
+  CidrRoundTrip(value: Inet, nullable_value: option.Option(Inet))
+}
+
+pub fn cidr_round_trip(
+  value value: Inet,
+  nullable_value nullable_value: option.Option(Inet),
+) {
+  let sql =
+    "insert into cidrs (value, nullable_value) values ($1, $2)
+returning value, nullable_value"
+  #(
+    sql,
+    [
+      ParamInet(value),
+      ParamNullable(option.map(nullable_value, fn(v) { ParamInet(v) })),
+    ],
+    cidr_round_trip_decoder(),
+  )
+}
+
+pub fn cidr_round_trip_decoder() -> decode.Decoder(CidrRoundTrip) {
+  use value <- decode.field(0, inet_decoder())
+  use nullable_value <- decode.field(1, decode.optional(inet_decoder()))
+  decode.success(CidrRoundTrip(value:, nullable_value:))
+}
+
+pub type MacaddrRoundTrip {
+  MacaddrRoundTrip(value: BitArray, nullable_value: option.Option(BitArray))
+}
+
+pub fn macaddr_round_trip(
+  value value: BitArray,
+  nullable_value nullable_value: option.Option(BitArray),
+) {
+  let sql =
+    "insert into macaddrs (value, nullable_value) values ($1, $2)
+returning value, nullable_value"
+  #(
+    sql,
+    [
+      ParamMacaddr(value),
+      ParamNullable(option.map(nullable_value, fn(v) { ParamMacaddr(v) })),
+    ],
+    macaddr_round_trip_decoder(),
+  )
+}
+
+pub fn macaddr_round_trip_decoder() -> decode.Decoder(MacaddrRoundTrip) {
+  use value <- decode.field(0, macaddr_decoder())
+  use nullable_value <- decode.field(1, decode.optional(macaddr_decoder()))
+  decode.success(MacaddrRoundTrip(value:, nullable_value:))
 }

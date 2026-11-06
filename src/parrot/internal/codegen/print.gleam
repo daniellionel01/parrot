@@ -7,7 +7,8 @@ import gleam/string
 import parrot/internal/codegen/model.{
   type Enum, type Field, type GleamType, type Module, type Param, type Query,
   GleamBitArray, GleamBool, GleamDate, GleamDynamic, GleamEnum, GleamFloat,
-  GleamInt, GleamList, GleamOption, GleamString, GleamTimeOfDay, GleamTimestamp,
+  GleamInet, GleamInt, GleamInterval, GleamList, GleamMacaddr, GleamOption,
+  GleamString, GleamTimeOfDay, GleamTimestamp,
 }
 import parrot/internal/codegen/seed
 import parrot/internal/string_extra
@@ -297,7 +298,9 @@ fn type_string(type_: GleamType) -> String {
     GleamTimestamp -> "Timestamp"
     GleamTimeOfDay -> "TimeOfDay"
     GleamDate -> "Date"
-    GleamBitArray -> "BitArray"
+    GleamBitArray | GleamMacaddr -> "BitArray"
+    GleamInterval -> "Interval"
+    GleamInet -> "Inet"
     GleamList(item) -> "List(" <> type_string(item) <> ")"
     GleamOption(inner) -> "option.Option(" <> type_string(inner) <> ")"
     GleamEnum(name) -> string_extra.pascal_case(name)
@@ -315,6 +318,9 @@ fn param_constructor(type_: GleamType) -> String {
     GleamTimeOfDay -> "ParamTimeOfDay"
     GleamDate -> "ParamDate"
     GleamBitArray -> "ParamBitArray"
+    GleamInterval -> "ParamInterval"
+    GleamInet -> "ParamInet"
+    GleamMacaddr -> "ParamMacaddr"
     GleamDynamic -> "ParamDynamic"
     GleamEnum(_) -> "ParamString"
     GleamOption(inner) -> "ParamNullable(" <> param_constructor(inner) <> ")"
@@ -332,6 +338,9 @@ fn type_decoder(type_: GleamType) -> String {
     GleamTimeOfDay -> "time_of_day_decoder()"
     GleamDate -> "calendar_date_decoder()"
     GleamBitArray -> "decode.bit_array"
+    GleamInterval -> "interval_decoder()"
+    GleamInet -> "inet_decoder()"
+    GleamMacaddr -> "macaddr_decoder()"
     GleamOption(inner) -> "decode.optional(" <> type_decoder(inner) <> ")"
     GleamList(item) -> "decode.list(of: " <> type_decoder(item) <> ")"
     GleamEnum(name) -> string_extra.snake_case(name) <> "_decoder()"

@@ -314,7 +314,9 @@ since they are too complex to handle with the current implementation.
 There is a plan for a better and more flexible implementation. Until then,
 it will be wrapped in a dynamic type.
 
-Postgres: `interval`, `timetz`, `inet`, `cidr`, `macaddr`, ranges, geometric types, `tsvector`, `tsquery`, …
+Postgres: `timetz`, `macaddr8`, ranges, geometric types, `hstore`, `tsvector`, `tsquery`, …
+
+Workaround: cast them in the query, f.e. `select value::text`.
 
 ### Targetting JavaScript
 

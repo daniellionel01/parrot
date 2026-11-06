@@ -59,6 +59,8 @@ pub fn to_shork(param: sql.Param) -> shork.Value {
       ))
     }
     sql.ParamTimeOfDay(x) -> shork.calendar_time_of_day(x)
+    sql.ParamInterval(_) | sql.ParamInet(_) | sql.ParamMacaddr(_) ->
+      panic as "postgres only"
     sql.ParamList(_) -> panic as "mysql does not support lists"
     sql.ParamDynamic(_) -> panic as "dynamic parameters are not supported"
   }

@@ -51,6 +51,9 @@ pub type GleamType {
   GleamTimeOfDay
   GleamDate
   GleamBitArray
+  GleamInterval
+  GleamInet
+  GleamMacaddr
   GleamList(GleamType)
   /// name as in the database
   GleamEnum(String)

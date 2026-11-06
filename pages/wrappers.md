@@ -13,3 +13,4 @@ These are tested against real databases in [test_projects](../test_projects).
 - SQLite has no date and time types. Dates, timestamps and times are stored as ISO 8601 text.
 - MySQL: `shork.bool` crashes as a query parameter, booleans are sent as `1` / `0`.
 - MySQL has no arrays, so `ParamList` is not supported.
+- pog has no encoders for `ParamInterval`, `ParamInet` and `ParamMacaddr`. The pog driver passes the tuples pog expects with an identity FFI.

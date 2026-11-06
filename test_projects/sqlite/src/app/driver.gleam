@@ -56,6 +56,8 @@ pub fn to_sqlight(param: sql.Param) -> sqlight.Value {
     sql.ParamTimestamp(x) ->
       sqlight.text(timestamp.to_rfc3339(x, calendar.utc_offset))
     sql.ParamTimeOfDay(x) -> sqlight.text(time_to_string(x))
+    sql.ParamInterval(_) | sql.ParamInet(_) | sql.ParamMacaddr(_) ->
+      panic as "postgres only"
     sql.ParamList(_) -> panic as "sqlite does not support lists"
     sql.ParamDynamic(_) -> panic as "dynamic parameters are not supported"
   }
