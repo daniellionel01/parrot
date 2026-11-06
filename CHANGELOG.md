@@ -68,6 +68,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Warnings of `pg_dump`, `mysqldump` and `sqlite3` are printed instead of ending up in the fetched schema.
 
+- A parameter named `sql` was silently sent as the query's sql text instead of its value.
+
+- Duplicate parameter and column names (f.e. `where id = ? or id = ?` or `select count(*), count(*)`) get a suffix like sqlc does for go (`id`, `id_2`). Parameters and columns named like a generated function (f.e. `bool_decoder`) or variable (f.e. `<slice>_slice`) no longer shadow it.
+
+- Names that would be defined twice in the generated module return an error instead of generating code that does not compile, f.e. an enum value `open` and a query `Open`, an enum value `date` and the imported `Date`, or the queries `GetUser` and `get_user`.
+
+- `:exec` and `:execresult` queries with a `returning` clause no longer generate an unused row type and decoder.
+
+- Generated functions have return type annotations.
+
 ## [2.3.0] - 2026-05-04
 
 - Add support for windows arm64 platform, since sqlc released a binary for it. (https://github.com/daniellionel01/parrot/pull/99)
