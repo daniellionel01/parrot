@@ -6,7 +6,8 @@ import gleam/list
 import gleam/string
 import parrot/internal/codegen/model.{
   type Enum, type Field, type GleamType, type Module, type Param, type Query,
-  GleamEnum, GleamList, GleamOption, Scalar,
+  GleamEnum, GleamList, GleamOption, NoRows, Rows, Scalar, SliceParam,
+  ValueParam,
 }
 import parrot/internal/codegen/runtime
 
@@ -24,8 +25,13 @@ pub fn module(module: Module) -> String {
 fn imports(module: Module) -> String {
   let params = list.flat_map(module.queries, fn(query) { query.params })
   let uses_list =
-    list.any(params, fn(param) { param.slice || contains_list(param.type_) })
-  let uses_slices = list.any(params, fn(param) { param.slice })
+    list.any(params, fn(param) {
+      case param {
+        ValueParam(type_:, ..) -> contains_list(type_)
+        SliceParam(..) -> True
+      }
+    })
+  let uses_slices = list.any(params, is_slice)
 
   runtime.imports
   |> append_if(uses_list, "import gleam/list")
@@ -55,7 +61,7 @@ fn append_if(
 // === ENUMS ================================================================
 
 fn enum(enum: Enum) -> String {
-  let model.Names(type_:, function:, decoder:) = enum.names
+  let model.EnumNames(type_:, to_string:, decoder:) = enum.names
   let variants = [enum.first, ..enum.rest]
 
   ["pub type " <> type_ <> " {", ..list.map(variants, fn(v) { "  " <> v.name })]
@@ -74,7 +80,7 @@ fn enum(enum: Enum) -> String {
     "  }",
     "}",
     "",
-    "pub fn " <> function <> "(val: " <> type_ <> ") -> String {",
+    "pub fn " <> to_string <> "(val: " <> type_ <> ") -> String {",
     "  case val {",
     ..list.map(variants, fn(v) {
       "    " <> v.name <> " -> \"" <> v.value <> "\""
@@ -87,17 +93,20 @@ fn enum(enum: Enum) -> String {
 // === QUERIES ==============================================================
 
 fn query(query: Query) -> String {
-  case query.columns {
-    [] -> function(query)
-    _ ->
-      row_type(query) <> "\n\n" <> function(query) <> "\n\n" <> decoder(query)
+  case query.returns {
+    NoRows -> function(query)
+    Rows(type_:, decoder: decoder_name, fields:) ->
+      row_type(type_, fields)
+      <> "\n\n"
+      <> function(query)
+      <> "\n\n"
+      <> decoder(type_, decoder_name, fields)
   }
 }
 
-fn row_type(query: Query) -> String {
-  let name = query.names.type_
+fn row_type(name: String, fields: List(Field)) -> String {
   let fields =
-    list.map(query.columns, fn(field) {
+    list.map(fields, fn(field) {
       "    " <> field.name <> ": " <> type_string(field.type_) <> ","
     })
 
@@ -110,9 +119,9 @@ fn function(query: Query) -> String {
   let arguments =
     query.params
     |> list.map(fn(param) {
-      let type_ = case param.slice {
-        True -> "List(" <> type_string(param.type_) <> ")"
-        False -> type_string(param.type_)
+      let type_ = case param {
+        ValueParam(type_:, ..) -> type_string(type_)
+        SliceParam(item:, ..) -> "List(" <> type_string(item) <> ")"
       }
       param.name <> " " <> param.name <> ": " <> type_
     })
@@ -120,7 +129,7 @@ fn function(query: Query) -> String {
 
   let slices =
     query.params
-    |> list.filter(fn(param) { param.slice })
+    |> list.filter(is_slice)
     |> list.map(fn(param) {
       // An empty list is replaced with `NULL`, same as sqlc does for go,
       // since `in ()` is not valid sql in every database.
@@ -133,17 +142,17 @@ fn function(query: Query) -> String {
       <> ", fn(_) { \"?\" }) |> string.join(\",\")\n  }"
     })
 
-  let #(returned, return_type) = case query.returns_rows {
-    True -> #(
-      ["sql", params(query.params), query.names.decoder <> "()"],
-      "#(String, List(Param), decode.Decoder(" <> query.names.type_ <> "))",
+  let #(returned, return_type) = case query.returns {
+    Rows(type_:, decoder:, ..) -> #(
+      ["sql", params(query.params), decoder <> "()"],
+      "#(String, List(Param), decode.Decoder(" <> type_ <> "))",
     )
-    False -> #(["sql", params(query.params)], "#(String, List(Param))")
+    NoRows -> #(["sql", params(query.params)], "#(String, List(Param))")
   }
 
   [
     "pub fn "
-      <> query.names.function
+      <> query.function
       <> "("
       <> arguments
       <> ") -> "
@@ -157,6 +166,13 @@ fn function(query: Query) -> String {
     "}",
   ])
   |> string.join("\n")
+}
+
+fn is_slice(param: Param) -> Bool {
+  case param {
+    ValueParam(..) -> False
+    SliceParam(..) -> True
+  }
 }
 
 fn slice_variable(param: String) -> String {
@@ -175,29 +191,33 @@ fn sql(parts: List(model.SqlPart)) -> String {
   |> string.join(" <> ")
 }
 
+/// Without slices the params are a list literal, otherwise every param
+/// becomes a list and they are flattened.
+///
 fn params(params: List(Param)) -> String {
-  case list.any(params, fn(param) { param.slice }) {
-    False -> "[" <> string.join(list.map(params, param_value), ", ") <> "]"
-    True ->
+  let values =
+    list.try_map(params, fn(param) {
+      case param {
+        ValueParam(name:, type_:) -> Ok(value_to_param(name, type_))
+        SliceParam(..) -> Error(Nil)
+      }
+    })
+
+  case values {
+    Ok(values) -> "[" <> string.join(values, ", ") <> "]"
+    Error(_) ->
       "list.flatten(["
       <> params
       |> list.map(fn(param) {
-        case param.slice {
-          True -> slice_values(param)
-          False -> "[" <> param_value(param) <> "]"
+        case param {
+          ValueParam(name:, type_:) -> "[" <> value_to_param(name, type_) <> "]"
+          SliceParam(name:, item:) ->
+            "list.map(" <> name <> ", " <> item_to_param(item) <> ")"
         }
       })
       |> string.join(", ")
       <> "])"
   }
-}
-
-fn param_value(param: Param) -> String {
-  value_to_param(param.name, param.type_)
-}
-
-fn slice_values(param: Param) -> String {
-  "list.map(" <> param.name <> ", " <> item_to_param(param.type_) <> ")"
 }
 
 /// Wraps the gleam value `variable` of type `type_` in a `Param`.
@@ -206,7 +226,7 @@ fn value_to_param(variable: String, type_: GleamType) -> String {
   case type_ {
     Scalar(scalar) -> runtime.scalar(scalar).param <> "(" <> variable <> ")"
     GleamEnum(names) ->
-      "ParamString(" <> names.function <> "(" <> variable <> "))"
+      "ParamString(" <> names.to_string <> "(" <> variable <> "))"
     GleamList(item) ->
       "ParamList(list.map(" <> variable <> ", " <> item_to_param(item) <> "))"
     GleamOption(inner) ->
@@ -227,10 +247,9 @@ fn item_to_param(item: GleamType) -> String {
   }
 }
 
-fn decoder(query: Query) -> String {
-  let type_name = query.names.type_
-  let fields =
-    list.index_map(query.columns, fn(field: Field, index) {
+fn decoder(type_name: String, name: String, fields: List(Field)) -> String {
+  let uses =
+    list.index_map(fields, fn(field, index) {
       "  use "
       <> field.name
       <> " <- decode.field("
@@ -240,18 +259,11 @@ fn decoder(query: Query) -> String {
       <> ")"
     })
   let arguments =
-    query.columns
+    fields
     |> list.map(fn(field) { field.name <> ":" })
     |> string.join(", ")
 
-  [
-    "pub fn "
-      <> query.names.decoder
-      <> "() -> decode.Decoder("
-      <> type_name
-      <> ") {",
-    ..fields
-  ]
+  ["pub fn " <> name <> "() -> decode.Decoder(" <> type_name <> ") {", ..uses]
   |> list.append([
     "  decode.success(" <> type_name <> "(" <> arguments <> "))",
     "}",

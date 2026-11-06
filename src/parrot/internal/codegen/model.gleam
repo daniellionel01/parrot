@@ -11,14 +11,14 @@ pub type Module {
   )
 }
 
-/// The generated type and its functions.
-pub type Names {
-  Names(type_: String, function: String, decoder: String)
+/// The generated type and the functions converting from and to the
+/// database's value.
+pub type EnumNames {
+  EnumNames(type_: String, to_string: String, decoder: String)
 }
 
-/// `function` turns a variant into its value.
 pub type Enum {
-  Enum(names: Names, first: Variant, rest: List(Variant))
+  Enum(names: EnumNames, first: Variant, rest: List(Variant))
 }
 
 /// `value` as it is in the database.
@@ -26,15 +26,21 @@ pub type Variant {
   Variant(name: String, value: String)
 }
 
-/// `type_` and `decoder` are the row's, if it returns rows.
+/// `function` is the name of the generated function.
 pub type Query {
   Query(
-    names: Names,
+    function: String,
     sql: List(SqlPart),
-    returns_rows: Bool,
     params: List(Param),
-    columns: List(Field),
+    returns: Returns,
   )
+}
+
+pub type Returns {
+  /// `:exec` and `:execresult`, even with a `returning` clause.
+  NoRows
+  /// `:one` and `:many`. Each row is decoded into the record `type_`.
+  Rows(type_: String, decoder: String, fields: List(Field))
 }
 
 /// The sql of a query is split at `sqlc.slice` placeholders, which are
@@ -44,9 +50,10 @@ pub type SqlPart {
   Slice(param: String)
 }
 
-/// A `slice` is a list of `type_`.
 pub type Param {
-  Param(name: String, type_: GleamType, slice: Bool)
+  ValueParam(name: String, type_: GleamType)
+  /// `sqlc.slice(name)`, a list of `item`s.
+  SliceParam(name: String, item: GleamType)
 }
 
 pub type Field {
@@ -55,7 +62,7 @@ pub type Field {
 
 pub type GleamType {
   Scalar(Scalar)
-  GleamEnum(Names)
+  GleamEnum(EnumNames)
   GleamList(GleamType)
   GleamOption(GleamType)
 }

@@ -9,10 +9,10 @@ import gleam/result
 import gleam/string
 import parrot/error.{type ParrotError}
 import parrot/internal/codegen/model.{
-  type GleamType, type Names, type Query, Field, GleamBitArray, GleamBool,
+  type EnumNames, type GleamType, EnumNames, Field, GleamBitArray, GleamBool,
   GleamDate, GleamDynamic, GleamEnum, GleamFloat, GleamInet, GleamInt,
   GleamInterval, GleamList, GleamMacaddr, GleamOption, GleamString,
-  GleamTimeOfDay, GleamTimestamp, Names, Query, Scalar,
+  GleamTimeOfDay, GleamTimestamp, Scalar,
 }
 import parrot/internal/sqlc
 import parrot/internal/string_extra
@@ -39,39 +39,17 @@ pub fn module(output: sqlc.Output) -> Result(model.Module, ParrotError) {
 fn query(
   query: sqlc.Query,
   catalog: sqlc.Catalog,
-) -> Result(Query, ParrotError) {
+) -> Result(model.Query, ParrotError) {
   use <- bool.guard(
     when: list.any(query.columns, fn(col) { col.is_embed }),
     return: Error(error.UnsupportedEmbedError(query.name)),
   )
 
   use params <- result.try(
-    list.try_map(query.params, fn(param) {
-      case escape_keyword(param.column.name) {
-        "" -> Error(error.UnnamedParameterError(query.name, param.number))
-        name ->
-          Ok(case param.column.is_sqlc_slice {
-            True -> {
-              let item =
-                sqlc.Column(
-                  ..param.column,
-                  is_sqlc_slice: False,
-                  not_null: True,
-                )
-              model.Param(name:, type_: column_type(item, catalog), slice: True)
-            }
-            False ->
-              model.Param(
-                name:,
-                type_: column_type(param.column, catalog),
-                slice: False,
-              )
-          })
-      }
-    }),
+    list.try_map(query.params, param(_, query.name, catalog)),
   )
 
-  use returns_rows <- result.try(
+  use command <- result.try(
     list.key_find(commands, query.cmd)
     |> result.replace_error(error.UnsupportedQueryCommandError(
       query.name,
@@ -80,45 +58,64 @@ fn query(
     )),
   )
 
-  let columns =
-    list.index_map(query.columns, fn(col, index) {
-      Field(
-        name: field_name(index, query, col),
-        type_: column_type(col, catalog),
+  let function = string_extra.snake_case(query.name)
+  let returns = case command {
+    WithoutRows -> model.NoRows
+    WithRows ->
+      model.Rows(
+        type_: string_extra.pascal_case(query.name),
+        decoder: function <> "_decoder",
+        fields: list.index_map(query.columns, fn(col, index) {
+          Field(
+            name: field_name(index, query, col),
+            type_: column_type(col, catalog),
+          )
+        }),
       )
-    })
+  }
 
-  Ok(Query(
-    names: query_names(query.name),
+  Ok(model.Query(
+    function: escape_keyword(function),
     sql: split_slices(query.text, list.zip(query.params, params)),
-    returns_rows:,
     params:,
-    columns:,
+    returns:,
   ))
 }
 
-/// The query annotations parrot supports and whether they return rows.
-const commands = [
-  #(":one", True),
-  #(":many", True),
-  #(":exec", False),
-  #(":execresult", False),
-]
-
-fn query_names(name: String) -> Names {
-  let function = string_extra.snake_case(name)
-  Names(
-    type_: string_extra.pascal_case(name),
-    function: escape_keyword(function),
-    decoder: function <> "_decoder",
-  )
+fn param(
+  param: sqlc.Param,
+  query: String,
+  catalog: sqlc.Catalog,
+) -> Result(model.Param, ParrotError) {
+  case escape_keyword(param.column.name), param.column.is_sqlc_slice {
+    "", _ -> Error(error.UnnamedParameterError(query, param.number))
+    name, True -> {
+      let item = sqlc.Column(..param.column, not_null: True)
+      Ok(model.SliceParam(name:, item: column_type(item, catalog)))
+    }
+    name, False ->
+      Ok(model.ValueParam(name:, type_: column_type(param.column, catalog)))
+  }
 }
 
-fn enum_names(name: String) -> Names {
+type Command {
+  WithRows
+  WithoutRows
+}
+
+/// The query annotations parrot supports.
+const commands = [
+  #(":one", WithRows),
+  #(":many", WithRows),
+  #(":exec", WithoutRows),
+  #(":execresult", WithoutRows),
+]
+
+fn enum_names(name: String) -> EnumNames {
   let function = string_extra.snake_case(name)
-  Names(
+  EnumNames(
     type_: string_extra.pascal_case(name),
-    function: function <> "_to_string",
+    to_string: function <> "_to_string",
     decoder: function <> "_decoder",
   )
 }
@@ -128,20 +125,21 @@ fn split_slices(
   text: String,
   params: List(#(sqlc.Param, model.Param)),
 ) -> List(model.SqlPart) {
-  list.fold(params, [model.Text(text)], fn(parts, param) {
-    let #(sqlc_param, param) = param
-    use <- bool.guard(!param.slice, parts)
-    let placeholder = "/*SLICE:" <> sqlc_param.column.name <> "*/?"
-    list.flat_map(parts, fn(part) {
+  use parts, param <- list.fold(params, [model.Text(text)])
+  case param {
+    #(_, model.ValueParam(..)) -> parts
+    #(sqlc_param, model.SliceParam(name:, ..)) -> {
+      let placeholder = "/*SLICE:" <> sqlc_param.column.name <> "*/?"
+      use part <- list.flat_map(parts)
       case part {
         model.Slice(_) -> [part]
         model.Text(text) ->
           string.split(text, placeholder)
           |> list.map(model.Text)
-          |> list.intersperse(model.Slice(param.name))
+          |> list.intersperse(model.Slice(name))
       }
-    })
-  })
+    }
+  }
 }
 
 /// Columns with the same name are prefixed with their table. Unnamed
@@ -277,7 +275,7 @@ fn used_enums(output: sqlc.Output) -> List(sqlc.Enum) {
 ///
 fn enums(
   enums: List(sqlc.Enum),
-  queries: List(Query),
+  queries: List(model.Query),
 ) -> Result(List(model.Enum), ParrotError) {
   use enums <- result.try(
     list.try_map(enums, fn(enum) {
@@ -297,7 +295,12 @@ fn enums(
   let query_clash =
     list.find_map(enums, fn(enum) {
       use _ <- result.map(
-        list.find(queries, fn(query) { query.names.type_ == enum.names.type_ }),
+        list.find(queries, fn(query) {
+          case query.returns {
+            model.Rows(type_:, ..) -> type_ == enum.names.type_
+            model.NoRows -> False
+          }
+        }),
       )
       error.DuplicateDefinitionError(enum.names.type_)
     })
