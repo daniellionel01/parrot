@@ -23,8 +23,8 @@ fn runtime_definitions() -> #(List(String), List(String)) {
   let #(types, values, _) =
     runtime.code
     |> string.split("\n")
-    |> list.fold(#([], [], False), fn(acc, line) {
-      let #(types, values, in_type) = acc
+    |> list.fold(#([], [], False), fn(state, line) {
+      let #(types, values, in_type) = state
       case line {
         "pub type " <> rest -> #([name(rest, " "), ..types], values, True)
         "}" -> #(types, values, False)
@@ -34,7 +34,7 @@ fn runtime_definitions() -> #(List(String), List(String)) {
           in_type,
         )
         "  " <> rest if in_type -> #(types, [name(rest, "("), ..values], True)
-        _ -> acc
+        _ -> state
       }
     })
 

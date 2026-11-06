@@ -101,8 +101,8 @@ pub fn user_role_decoder() -> decode.Decoder(UserRole) {
   }
 }
 
-pub fn user_role_to_string(val: UserRole) -> String {
-  case val {
+pub fn user_role_to_string(value: UserRole) -> String {
+  case value {
     Admin -> "admin"
     RegularUser -> "regular_user"
     Guest -> "guest"
@@ -132,7 +132,7 @@ pub fn set_past_roles(
   let sql = "update users set past_roles = $1 where id = $2"
   #(sql, [
     ParamList(
-      list.map(past_roles, fn(v) { ParamString(user_role_to_string(v)) }),
+      list.map(past_roles, fn(value) { ParamString(user_role_to_string(value)) }),
     ),
     ParamInt(id),
   ])

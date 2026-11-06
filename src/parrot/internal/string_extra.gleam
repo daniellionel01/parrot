@@ -43,32 +43,33 @@ fn split_words(text: String) -> List(String) {
 }
 
 fn split(
-  in: List(String),
-  up: Bool,
+  graphemes: List(String),
+  in_uppercase: Bool,
   word: String,
   words: List(String),
 ) -> List(String) {
-  case in {
+  case graphemes {
     [] if word == "" -> list.reverse(words)
     [] -> list.reverse(add(words, word))
 
-    ["\n", ..in]
-    | ["\t", ..in]
-    | ["!", ..in]
-    | ["?", ..in]
-    | ["#", ..in]
-    | [".", ..in]
-    | ["-", ..in]
-    | ["_", ..in]
-    | [" ", ..in] -> split(in, False, "", add(words, word))
+    ["\n", ..graphemes]
+    | ["\t", ..graphemes]
+    | ["!", ..graphemes]
+    | ["?", ..graphemes]
+    | ["#", ..graphemes]
+    | [".", ..graphemes]
+    | ["-", ..graphemes]
+    | ["_", ..graphemes]
+    | [" ", ..graphemes] -> split(graphemes, False, "", add(words, word))
 
-    [g, ..in] -> {
-      case is_upper(g) {
-        False -> split(in, False, word <> g, words)
+    [grapheme, ..graphemes] -> {
+      case is_upper(grapheme) {
+        False -> split(graphemes, False, word <> grapheme, words)
 
-        True if up -> split(in, up, word <> g, words)
+        True if in_uppercase ->
+          split(graphemes, in_uppercase, word <> grapheme, words)
 
-        True -> split(in, True, g, add(words, word))
+        True -> split(graphemes, True, grapheme, add(words, word))
       }
     }
   }
@@ -81,6 +82,6 @@ fn add(words: List(String), word: String) -> List(String) {
   }
 }
 
-fn is_upper(g: String) -> Bool {
-  string.lowercase(g) != g
+fn is_upper(grapheme: String) -> Bool {
+  string.lowercase(grapheme) != grapheme
 }

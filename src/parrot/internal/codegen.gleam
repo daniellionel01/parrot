@@ -20,10 +20,10 @@ pub fn generate(
 ) -> Result(List(String), ParrotError) {
   use module <- result.try(analyse.module(output))
 
-  let dir = filepath.directory_name(path)
+  let directory = filepath.directory_name(path)
   use _ <- result.try(
-    simplifile.create_directory_all(dir)
-    |> result.map_error(error.CouldNotWriteModule(dir, _)),
+    simplifile.create_directory_all(directory)
+    |> result.map_error(error.CouldNotWriteModule(directory, _)),
   )
   use _ <- result.try(
     simplifile.write(path, print.module(module))

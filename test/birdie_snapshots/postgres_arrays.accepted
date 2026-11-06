@@ -109,7 +109,7 @@ pub fn insert_post(
   #(sql, [
     ParamList(list.map(tags, ParamString)),
     ParamNullable(
-      option.map(scores, fn(v) { ParamList(list.map(v, ParamInt)) }),
+      option.map(scores, fn(value) { ParamList(list.map(value, ParamInt)) }),
     ),
   ])
 }

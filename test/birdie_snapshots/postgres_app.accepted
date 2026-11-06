@@ -391,8 +391,8 @@ pub fn user_role_decoder() -> decode.Decoder(UserRole) {
   }
 }
 
-pub fn user_role_to_string(val: UserRole) -> String {
-  case val {
+pub fn user_role_to_string(value: UserRole) -> String {
+  case value {
     Admin -> "admin"
     User -> "user"
     Guest -> "guest"
@@ -462,7 +462,7 @@ RETURNING id"
   #(sql, [
     ParamString(username),
     ParamNullable(
-      option.map(role, fn(v) { ParamString(user_role_to_string(v)) }),
+      option.map(role, fn(value) { ParamString(user_role_to_string(value)) }),
     ),
   ])
 }

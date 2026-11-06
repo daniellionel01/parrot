@@ -133,7 +133,7 @@ returning id"
     sql,
     [
       ParamString(title),
-      ParamNullable(option.map(author_id, fn(v) { ParamInt(v) })),
+      ParamNullable(option.map(author_id, fn(value) { ParamInt(value) })),
     ],
     create_book_decoder(),
   )
@@ -153,5 +153,5 @@ pub fn delete_books_by_author(
   author_id author_id: option.Option(Int),
 ) -> #(String, List(Param)) {
   let sql = "delete from books where author_id = $1"
-  #(sql, [ParamNullable(option.map(author_id, fn(v) { ParamInt(v) }))])
+  #(sql, [ParamNullable(option.map(author_id, fn(value) { ParamInt(value) }))])
 }

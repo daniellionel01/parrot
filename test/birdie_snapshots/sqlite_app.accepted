@@ -291,7 +291,7 @@ VALUES
   (?, ?)"
   #(sql, [
     ParamString(username),
-    ParamNullable(option.map(role, fn(v) { ParamString(v) })),
+    ParamNullable(option.map(role, fn(value) { ParamString(value) })),
   ])
 }
 
@@ -319,7 +319,7 @@ SET
 WHERE
   id = ?"
   #(sql, [
-    ParamNullable(option.map(type_, fn(v) { ParamString(v) })),
+    ParamNullable(option.map(type_, fn(value) { ParamString(value) })),
     ParamInt(id),
   ])
 }

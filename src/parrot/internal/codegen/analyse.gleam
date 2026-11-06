@@ -22,23 +22,36 @@ import parrot/internal/sqlc
 import parrot/internal/string_extra
 
 pub fn module(output: sqlc.Output) -> Result(model.Module, ParrotError) {
-  let catalog = output.catalog
-  use queries <- result.try(list.try_map(output.queries, query(_, catalog)))
-  use enums <- result.try(enums(used_enums(output)))
-  use _ <- result.try(check_names(enums, list.zip(output.queries, queries)))
+  use queries <- result.try(
+    list.try_map(output.queries, query(_, output.catalog)),
+  )
 
-  let unknown_types =
-    output.queries
-    |> list.flat_map(fn(query) {
-      use col <- list.filter_map(query.columns)
-      case innermost(column_type(col, catalog)) {
-        Scalar(GleamDynamic) -> Ok(col.type_ref.name)
-        _ -> Error(Nil)
+  let field_types =
+    list.flat_map(queries, fn(query) {
+      case query.returns {
+        model.Rows(fields:, ..) -> list.map(fields, fn(field) { field.type_ })
+        model.NoRows -> []
       }
     })
-    |> list.unique
+  let param_types =
+    list.flat_map(queries, fn(query) { list.map(query.params, param_type) })
 
-  Ok(model.Module(enums: list.map(enums, pair.second), queries:, unknown_types:))
+  // in order of use
+  let enums =
+    list.append(field_types, param_types)
+    |> list.flat_map(enums_in)
+    |> list.unique
+  use _ <- result.try(check_names(enums, list.zip(output.queries, queries)))
+
+  let unknown_types = field_types |> list.flat_map(unknown_types) |> list.unique
+  Ok(model.Module(enums:, queries:, unknown_types:))
+}
+
+fn param_type(param: model.Param) -> GleamType {
+  case param {
+    model.ValueParam(type_:, ..) -> type_
+    model.SliceParam(item:, ..) -> item
+  }
 }
 
 fn query(
@@ -46,7 +59,7 @@ fn query(
   catalog: sqlc.Catalog,
 ) -> Result(model.Query, ParrotError) {
   use <- bool.guard(
-    when: list.any(query.columns, fn(col) { col.is_embed }),
+    when: list.any(query.columns, fn(column) { column.is_embed }),
     return: Error(error.UnsupportedEmbed(query.name)),
   )
 
@@ -60,25 +73,32 @@ fn query(
   )
 
   use command <- result.try(
-    list.key_find(commands, query.cmd)
+    list.key_find(commands, query.annotation)
     |> result.replace_error(error.UnsupportedAnnotation(
       query.name,
-      query.cmd,
+      query.annotation,
       list.map(commands, fn(command) { command.0 }),
     )),
   )
 
   let function = string_extra.snake_case(query.name)
-  let returns = case command {
-    WithoutRows -> model.NoRows
-    WithRows ->
+  use returns <- result.try(case command {
+    WithoutRows -> Ok(model.NoRows)
+    WithRows -> {
+      use fields <- result.map(fields(query, catalog))
       model.Rows(
         type_: string_extra.pascal_case(query.name),
         decoder: function <> "_decoder",
-        fields: fields(query, catalog),
+        fields:,
       )
-  }
-  let params = params(query.params, unique_labels(labels), returns:, catalog:)
+    }
+  })
+  use params <- result.try(params(
+    query.params,
+    unique_labels(labels),
+    returns:,
+    catalog:,
+  ))
 
   let params_by_number = list.zip(query.params, params)
   let #(sql, values) =
@@ -101,17 +121,24 @@ fn params(
   labels: List(String),
   returns returns: model.Returns,
   catalog catalog: sqlc.Catalog,
-) -> List(model.Param) {
-  let params =
-    list.map2(params, labels, fn(param, label) {
+) -> Result(List(model.Param), ParrotError) {
+  use params <- result.map(
+    list.zip(params, labels)
+    |> list.try_map(fn(param) {
+      let #(param, label) = param
       case param.column.is_sqlc_slice {
         True -> {
           let item = sqlc.Column(..param.column, not_null: True)
-          #(label, column_type(item, catalog), True)
+          use type_ <- result.map(column_type(item, catalog))
+          #(label, type_, True)
         }
-        False -> #(label, column_type(param.column, catalog), False)
+        False -> {
+          use type_ <- result.map(column_type(param.column, catalog))
+          #(label, type_, False)
+        }
       }
-    })
+    }),
+  )
 
   let decoder = case returns {
     model.Rows(decoder:, ..) -> [decoder]
@@ -119,7 +146,7 @@ fn params(
   }
   let to_strings =
     list.flat_map(params, fn(param) {
-      list.map(enums_in(param.1), fn(names) { names.to_string })
+      list.map(enums_in(param.1), fn(enum) { enum.names.to_string })
     })
   let reserved = set.from_list(["sql", ..list.append(decoder, to_strings)])
 
@@ -147,17 +174,20 @@ fn params(
 
 /// The variables of the row decoder do not shadow the decoders it calls.
 ///
-fn fields(query: sqlc.Query, catalog: sqlc.Catalog) -> List(model.Field) {
+fn fields(
+  query: sqlc.Query,
+  catalog: sqlc.Catalog,
+) -> Result(List(model.Field), ParrotError) {
   let labels =
-    list.index_map(query.columns, fn(col, index) {
-      field_name(index, query, col)
+    list.index_map(query.columns, fn(column, index) {
+      field_name(index, query, column)
     })
     |> unique_labels
-  let types = list.map(query.columns, column_type(_, catalog))
+  use types <- result.map(list.try_map(query.columns, column_type(_, catalog)))
 
   let enum_decoders =
     list.flat_map(types, fn(type_) {
-      list.map(enums_in(type_), fn(names) { names.decoder })
+      list.map(enums_in(type_), fn(enum) { enum.names.decoder })
     })
   let reserved = set.from_list(list.append(runtime.values, enum_decoders))
 
@@ -174,11 +204,31 @@ fn fields(query: sqlc.Query, catalog: sqlc.Catalog) -> List(model.Field) {
 }
 
 /// The enums used by a type.
-fn enums_in(type_: GleamType) -> List(EnumNames) {
+fn enums_in(type_: GleamType) -> List(model.Enum) {
   case type_ {
     Scalar(_) -> []
-    GleamEnum(names) -> [names]
+    GleamEnum(enum) -> [enum]
     GleamList(inner) | GleamOption(inner) -> enums_in(inner)
+  }
+}
+
+/// The sql types parrot does not know used by a type.
+fn unknown_types(type_: GleamType) -> List(String) {
+  case type_ {
+    Scalar(GleamDynamic(sql_type:)) -> [sql_type]
+    Scalar(GleamBitArray)
+    | Scalar(GleamBool)
+    | Scalar(GleamDate)
+    | Scalar(GleamFloat)
+    | Scalar(GleamInet)
+    | Scalar(GleamInt)
+    | Scalar(GleamInterval)
+    | Scalar(GleamMacaddr)
+    | Scalar(GleamString)
+    | Scalar(GleamTimeOfDay)
+    | Scalar(GleamTimestamp)
+    | GleamEnum(_) -> []
+    GleamList(inner) | GleamOption(inner) -> unknown_types(inner)
   }
 }
 
@@ -395,7 +445,10 @@ fn scan(
   placeholders: List(Placeholder),
 ) -> #(String, List(Placeholder)) {
   case state, sql {
-    _, [] -> #(string.concat(list.reverse(out)), list.reverse(placeholders))
+    Code, [] | Quoted(_), [] | LineComment, [] | BlockComment, [] -> #(
+      string.concat(list.reverse(out)),
+      list.reverse(placeholders),
+    )
 
     Code, ["?", ..rest] -> {
       let #(digits, rest) = list.split_while(rest, is_digit)
@@ -440,11 +493,12 @@ fn is_digit(char: String) -> Bool {
 
 /// Columns with the same name are prefixed with their table. Unnamed
 /// columns are called `col_<index>`.
-fn field_name(index: Int, query: sqlc.Query, col: sqlc.Column) -> String {
-  let occurrences = list.count(query.columns, fn(c) { c.name == col.name })
-  let name = case occurrences > 1, col.table {
-    True, option.Some(table) -> table <> "_" <> col.name
-    _, _ -> col.name
+fn field_name(index: Int, query: sqlc.Query, column: sqlc.Column) -> String {
+  let occurrences =
+    list.count(query.columns, fn(other) { other.name == column.name })
+  let name = case occurrences > 1, column.table {
+    True, option.Some(table) -> table <> "_" <> column.name
+    _, _ -> column.name
   }
   case string_extra.snake_case(name) {
     "" -> "col_" <> int.to_string(index)
@@ -452,27 +506,49 @@ fn field_name(index: Int, query: sqlc.Query, col: sqlc.Column) -> String {
   }
 }
 
-fn column_type(col: sqlc.Column, catalog: sqlc.Catalog) -> GleamType {
-  use <- bool.lazy_guard(when: !col.not_null, return: fn() {
-    GleamOption(column_type(sqlc.Column(..col, not_null: True), catalog))
+fn column_type(
+  column: sqlc.Column,
+  catalog: sqlc.Catalog,
+) -> Result(GleamType, ParrotError) {
+  use <- bool.lazy_guard(when: !column.not_null, return: fn() {
+    column_type(sqlc.Column(..column, not_null: True), catalog)
+    |> result.map(GleamOption)
   })
-  use <- bool.lazy_guard(when: col.is_array, return: fn() {
-    GleamList(column_type(sqlc.Column(..col, is_array: False), catalog))
+  use <- bool.lazy_guard(when: column.is_array, return: fn() {
+    column_type(sqlc.Column(..column, is_array: False), catalog)
+    |> result.map(GleamList)
   })
-  case find_enum(col, catalog) {
-    Ok(enum) -> GleamEnum(enum_names(enum.name))
-    Error(_) -> Scalar(scalar(col))
+  case find_enum(column, catalog) {
+    Ok(enum) -> result.map(gleam_enum(enum), GleamEnum)
+    Error(_) -> Ok(Scalar(scalar(column)))
   }
 }
 
-fn scalar(col: sqlc.Column) -> model.Scalar {
-  let sql_type = string.lowercase(sql_type_name(col))
-  use <- bool.guard(sql_type == "tinyint" && col.length == 1, GleamBool)
+fn gleam_enum(enum: sqlc.Enum) -> Result(model.Enum, ParrotError) {
+  let variants =
+    list.map(enum.values, fn(value) {
+      model.Variant(name: string_extra.pascal_case(value), value:)
+    })
+  case variants {
+    [first, ..rest] ->
+      Ok(model.Enum(
+        name: enum.name,
+        names: enum_names(enum.name),
+        first:,
+        rest:,
+      ))
+    [] -> Error(error.EmptyEnum(enum.name))
+  }
+}
+
+fn scalar(column: sqlc.Column) -> model.Scalar {
+  let sql_type = string.lowercase(sql_type_name(column))
+  use <- bool.guard(sql_type == "tinyint" && column.length == 1, GleamBool)
 
   case sql_type {
     "interval" -> GleamInterval
     // `timetz` includes an offset, which `TimeOfDay` can not represent.
-    "timetz" | "time with time zone" -> GleamDynamic
+    "timetz" | "time with time zone" -> GleamDynamic(column.type_ref.name)
     "inet" | "cidr" -> GleamInet
     "macaddr" -> GleamMacaddr
     "int" <> _
@@ -513,19 +589,12 @@ fn scalar(col: sqlc.Column) -> model.Scalar {
     "datetime" <> _ | "time" <> _ -> GleamTimestamp
     "date" <> _ -> GleamDate
     "bool" <> _ -> GleamBool
-    _ -> GleamDynamic
+    _ -> GleamDynamic(column.type_ref.name)
   }
 }
 
-fn innermost(type_: GleamType) -> GleamType {
-  case type_ {
-    GleamOption(inner) | GleamList(inner) -> innermost(inner)
-    _ -> type_
-  }
-}
-
-fn sql_type_name(col: sqlc.Column) -> String {
-  case col.type_ref.name {
+fn sql_type_name(column: sqlc.Column) -> String {
+  case column.type_ref.name {
     "pg_catalog." <> name | "public." <> name -> name
     name -> name
   }
@@ -536,51 +605,19 @@ fn sql_type_name(col: sqlc.Column) -> String {
 /// of the catalog sqlc built up (f.e. one created by an extension).
 ///
 fn find_enum(
-  col: sqlc.Column,
+  column: sqlc.Column,
   catalog: sqlc.Catalog,
 ) -> Result(sqlc.Enum, Nil) {
-  let schema_name = case col.type_ref.schema {
+  let schema_name = case column.type_ref.schema {
     "" | "pg_catalog" -> catalog.default_schema
     schema_name -> schema_name
   }
-  let name = sql_type_name(col)
+  let name = sql_type_name(column)
 
   use schema <- result.try(
-    list.find(catalog.schemas, fn(s) { s.name == schema_name }),
+    list.find(catalog.schemas, fn(schema) { schema.name == schema_name }),
   )
-  list.find(schema.enums, fn(e) { e.name == name })
-}
-
-/// The enums of all columns and parameters, in order of use.
-fn used_enums(output: sqlc.Output) -> List(sqlc.Enum) {
-  list.flat_map(output.queries, fn(query) {
-    query.columns
-    |> list.append(list.map(query.params, fn(param) { param.column }))
-    |> list.filter_map(fn(col) {
-      case innermost(column_type(col, output.catalog)) {
-        GleamEnum(_) -> find_enum(col, output.catalog)
-        _ -> Error(Nil)
-      }
-    })
-  })
-  |> list.unique
-}
-
-/// Each enum together with its name in the database.
-///
-fn enums(
-  enums: List(sqlc.Enum),
-) -> Result(List(#(String, model.Enum)), ParrotError) {
-  use enum <- list.try_map(enums)
-  let variants =
-    list.map(enum.vals, fn(value) {
-      model.Variant(name: string_extra.pascal_case(value), value:)
-    })
-  case variants {
-    [first, ..rest] ->
-      Ok(#(enum.name, model.Enum(names: enum_names(enum.name), first:, rest:)))
-    [] -> Error(error.EmptyEnum(enum.name))
-  }
+  list.find(schema.enums, fn(enum) { enum.name == name })
 }
 
 type Namespace {
@@ -594,7 +631,7 @@ type Namespace {
 /// does not compile, or one of them silently shadows an imported one.
 ///
 fn check_names(
-  enums: List(#(String, model.Enum)),
+  enums: List(model.Enum),
   queries: List(#(sqlc.Query, model.Query)),
 ) -> Result(Nil, ParrotError) {
   let runtime =
@@ -609,7 +646,7 @@ fn check_names(
 
   let enums =
     list.flat_map(enums, fn(enum) {
-      let #(enum_name, model.Enum(names:, first:, rest:)) = enum
+      let model.Enum(name: enum_name, names:, first:, rest:) = enum
       let definition = error.EnumDefinition(enum_name)
       let variants =
         list.map([first, ..rest], fn(variant) {

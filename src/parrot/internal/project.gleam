@@ -23,12 +23,12 @@ pub fn root() -> String {
   }
 }
 
-pub fn find_root(dir: String) -> Result(String, Nil) {
-  case simplifile.is_file(filepath.join(dir, "gleam.toml")) {
-    Ok(True) -> Ok(dir)
+pub fn find_root(directory: String) -> Result(String, Nil) {
+  case simplifile.is_file(filepath.join(directory, "gleam.toml")) {
+    Ok(True) -> Ok(directory)
     _ ->
-      case filepath.directory_name(dir) {
-        parent if parent == dir || parent == "" -> Error(Nil)
+      case filepath.directory_name(directory) {
+        parent if parent == directory || parent == "" -> Error(Nil)
         parent -> find_root(parent)
       }
   }
@@ -36,7 +36,7 @@ pub fn find_root(dir: String) -> Result(String, Nil) {
 
 /// Where parrot keeps the sqlc binary and its intermediate files.
 ///
-pub fn work_dir(root: String) -> String {
+pub fn work_directory(root: String) -> String {
   filepath.join(root, "build/.parrot")
 }
 
@@ -66,23 +66,23 @@ pub fn parrot_is_dependency(toml: dict.Dict(String, tom.Toml)) -> Bool {
   result.is_ok(tom.get(toml, ["dependencies", "parrot"]))
 }
 
-/// The `*.sql` files inside of every `sql` directory below `dir`, sorted so
+/// The `*.sql` files inside of every `sql` directory below `directory`, sorted so
 /// the generated module is the same on every operating system.
 /// https://github.com/giacomocavalieri/squirrel/blob/main/src/squirrel.gleam
 ///
-pub fn sql_files(dir: String) -> Result(List(String), error.ParrotError) {
-  use files <- result.map(walk(dir))
+pub fn sql_files(directory: String) -> Result(List(String), error.ParrotError) {
+  use files <- result.map(walk(directory))
   list.sort(files, by: string.compare)
 }
 
-fn walk(dir: String) -> Result(List(String), error.ParrotError) {
+fn walk(directory: String) -> Result(List(String), error.ParrotError) {
   use entries <- result.try(
-    simplifile.read_directory(dir)
-    |> result.map_error(error.CouldNotReadQueries(dir, _)),
+    simplifile.read_directory(directory)
+    |> result.map_error(error.CouldNotReadQueries(directory, _)),
   )
-  let paths = list.map(entries, filepath.join(dir, _))
+  let paths = list.map(entries, filepath.join(directory, _))
 
-  case filepath.base_name(dir) {
+  case filepath.base_name(directory) {
     "sql" ->
       paths
       |> list.filter(fn(path) {

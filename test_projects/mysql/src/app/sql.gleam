@@ -41,8 +41,8 @@ pub type Inet {
 pub fn bool_decoder() -> decode.Decoder(Bool) {
   let int_to_bool = {
     decode.int
-    |> decode.then(fn(v) {
-      case v {
+    |> decode.then(fn(number) {
+      case number {
         0 -> decode.success(False)
         1 -> decode.success(True)
         _ -> decode.failure(False, "could not decode int to boolean")
@@ -76,7 +76,8 @@ pub fn calendar_date_decoder() -> decode.Decoder(Date) {
 fn date_string_decoder() -> decode.Decoder(Date) {
   use date <- decode.then(decode.string)
   case timestamp.parse_rfc3339(date <> "T00:00:00Z") {
-    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).0)
+    Ok(parsed) ->
+      decode.success(timestamp.to_calendar(parsed, calendar.utc_offset).0)
     Error(_) ->
       decode.failure(calendar.Date(0, calendar.January, 1), "Calendar date")
   }
@@ -87,10 +88,10 @@ fn date_string_decoder() -> decode.Decoder(Date) {
 fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
   use datetime <- decode.then(decode.string)
   case timestamp.parse_rfc3339(datetime) {
-    Ok(ts) -> decode.success(ts)
+    Ok(parsed) -> decode.success(parsed)
     Error(_) ->
       case timestamp.parse_rfc3339(datetime <> "Z") {
-        Ok(ts) -> decode.success(ts)
+        Ok(parsed) -> decode.success(parsed)
         Error(_) ->
           decode.failure(
             timestamp.from_unix_seconds(0),
@@ -136,7 +137,8 @@ pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
 fn time_of_day_string_decoder() -> decode.Decoder(TimeOfDay) {
   use time <- decode.then(decode.string)
   case timestamp.parse_rfc3339("1970-01-01T" <> time <> "Z") {
-    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).1)
+    Ok(parsed) ->
+      decode.success(timestamp.to_calendar(parsed, calendar.utc_offset).1)
     Error(_) -> decode.failure(calendar.TimeOfDay(0, 0, 0, 0), "Time of day")
   }
 }
@@ -228,15 +230,14 @@ pub fn macaddr_decoder() -> decode.Decoder(BitArray) {
 fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
   let int = {
     decode.int
-    |> decode.map(fn(i) { #(i, 0) })
+    |> decode.map(fn(seconds) { #(seconds, 0) })
   }
   let float = {
     decode.float
-    |> decode.map(fn(f) {
-      let floored = float.floor(f)
-      let seconds = float.round(floored)
-      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
-      #(seconds, nanoseconds)
+    |> decode.map(fn(seconds) {
+      let floored = float.floor(seconds)
+      let nanoseconds = float.round({ seconds -. floored } *. 1_000_000_000.0)
+      #(float.round(floored), nanoseconds)
     })
   }
   decode.one_of(int, [float])
@@ -256,8 +257,8 @@ pub fn moods_value_decoder() -> decode.Decoder(MoodsValue) {
   }
 }
 
-pub fn moods_value_to_string(val: MoodsValue) -> String {
-  case val {
+pub fn moods_value_to_string(value: MoodsValue) -> String {
+  case value {
     Happy -> "happy"
     Sad -> "sad"
   }
@@ -277,8 +278,8 @@ pub fn moods_nullable_value_decoder() -> decode.Decoder(MoodsNullableValue) {
   }
 }
 
-pub fn moods_nullable_value_to_string(val: MoodsNullableValue) -> String {
-  case val {
+pub fn moods_nullable_value_to_string(value: MoodsNullableValue) -> String {
+  case value {
     Glad -> "glad"
     Mad -> "mad"
   }
@@ -291,7 +292,7 @@ pub fn insert_tinyint(
   let sql = "insert into tinyints (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamInt(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamInt(value) })),
   ])
 }
 
@@ -318,7 +319,7 @@ pub fn insert_integer(
   let sql = "insert into integers (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamInt(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamInt(value) })),
   ])
 }
 
@@ -345,7 +346,7 @@ pub fn insert_unsigned(
   let sql = "insert into unsigneds (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamInt(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamInt(value) })),
   ])
 }
 
@@ -376,7 +377,7 @@ pub fn insert_bigint(
   let sql = "insert into bigints (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamInt(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamInt(value) })),
   ])
 }
 
@@ -403,7 +404,7 @@ pub fn insert_float(
   let sql = "insert into floats (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamFloat(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamFloat(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamFloat(value) })),
   ])
 }
 
@@ -430,7 +431,7 @@ pub fn insert_double(
   let sql = "insert into doubles (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamFloat(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamFloat(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamFloat(value) })),
   ])
 }
 
@@ -457,7 +458,7 @@ pub fn insert_decimal(
   let sql = "insert into decimals (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamFloat(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamFloat(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamFloat(value) })),
   ])
 }
 
@@ -484,7 +485,7 @@ pub fn insert_varchar(
   let sql = "insert into varchars (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamString(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamString(value) })),
   ])
 }
 
@@ -511,7 +512,7 @@ pub fn insert_text(
   let sql = "insert into texts (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamString(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamString(value) })),
   ])
 }
 
@@ -538,7 +539,9 @@ pub fn insert_blob(
   let sql = "insert into blobs (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamBitArray(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamBitArray(v) })),
+    ParamNullable(
+      option.map(nullable_value, fn(value) { ParamBitArray(value) }),
+    ),
   ])
 }
 
@@ -565,7 +568,7 @@ pub fn insert_boolean(
   let sql = "insert into booleans (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamBool(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamBool(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamBool(value) })),
   ])
 }
 
@@ -592,7 +595,7 @@ pub fn insert_date(
   let sql = "insert into dates (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamDate(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamDate(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamDate(value) })),
   ])
 }
 
@@ -622,7 +625,9 @@ pub fn insert_datetime(
   let sql = "insert into datetimes (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamTimestamp(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamTimestamp(v) })),
+    ParamNullable(
+      option.map(nullable_value, fn(value) { ParamTimestamp(value) }),
+    ),
   ])
 }
 
@@ -653,7 +658,9 @@ pub fn insert_timestamp(
   let sql = "insert into timestamps (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamTimestamp(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamTimestamp(v) })),
+    ParamNullable(
+      option.map(nullable_value, fn(value) { ParamTimestamp(value) }),
+    ),
   ])
 }
 
@@ -684,7 +691,9 @@ pub fn insert_time(
   let sql = "insert into times (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamTimeOfDay(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamTimeOfDay(v) })),
+    ParamNullable(
+      option.map(nullable_value, fn(value) { ParamTimeOfDay(value) }),
+    ),
   ])
 }
 
@@ -711,7 +720,7 @@ pub fn insert_json(
   let sql = "insert into jsons (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamString(value),
-    ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+    ParamNullable(option.map(nullable_value, fn(value) { ParamString(value) })),
   ])
 }
 
@@ -739,8 +748,8 @@ pub fn insert_mood(
   #(sql, [
     ParamString(moods_value_to_string(value)),
     ParamNullable(
-      option.map(nullable_value, fn(v) {
-        ParamString(moods_nullable_value_to_string(v))
+      option.map(nullable_value, fn(value) {
+        ParamString(moods_nullable_value_to_string(value))
       }),
     ),
   ])

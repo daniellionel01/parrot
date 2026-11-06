@@ -40,8 +40,8 @@ pub type Inet {
 pub fn bool_decoder() -> decode.Decoder(Bool) {
   let int_to_bool = {
     decode.int
-    |> decode.then(fn(v) {
-      case v {
+    |> decode.then(fn(number) {
+      case number {
         0 -> decode.success(False)
         1 -> decode.success(True)
         _ -> decode.failure(False, "could not decode int to boolean")
@@ -75,7 +75,8 @@ pub fn calendar_date_decoder() -> decode.Decoder(Date) {
 fn date_string_decoder() -> decode.Decoder(Date) {
   use date <- decode.then(decode.string)
   case timestamp.parse_rfc3339(date <> "T00:00:00Z") {
-    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).0)
+    Ok(parsed) ->
+      decode.success(timestamp.to_calendar(parsed, calendar.utc_offset).0)
     Error(_) ->
       decode.failure(calendar.Date(0, calendar.January, 1), "Calendar date")
   }
@@ -86,10 +87,10 @@ fn date_string_decoder() -> decode.Decoder(Date) {
 fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
   use datetime <- decode.then(decode.string)
   case timestamp.parse_rfc3339(datetime) {
-    Ok(ts) -> decode.success(ts)
+    Ok(parsed) -> decode.success(parsed)
     Error(_) ->
       case timestamp.parse_rfc3339(datetime <> "Z") {
-        Ok(ts) -> decode.success(ts)
+        Ok(parsed) -> decode.success(parsed)
         Error(_) ->
           decode.failure(
             timestamp.from_unix_seconds(0),
@@ -135,7 +136,8 @@ pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
 fn time_of_day_string_decoder() -> decode.Decoder(TimeOfDay) {
   use time <- decode.then(decode.string)
   case timestamp.parse_rfc3339("1970-01-01T" <> time <> "Z") {
-    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).1)
+    Ok(parsed) ->
+      decode.success(timestamp.to_calendar(parsed, calendar.utc_offset).1)
     Error(_) -> decode.failure(calendar.TimeOfDay(0, 0, 0, 0), "Time of day")
   }
 }
@@ -227,15 +229,14 @@ pub fn macaddr_decoder() -> decode.Decoder(BitArray) {
 fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
   let int = {
     decode.int
-    |> decode.map(fn(i) { #(i, 0) })
+    |> decode.map(fn(seconds) { #(seconds, 0) })
   }
   let float = {
     decode.float
-    |> decode.map(fn(f) {
-      let floored = float.floor(f)
-      let seconds = float.round(floored)
-      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
-      #(seconds, nanoseconds)
+    |> decode.map(fn(seconds) {
+      let floored = float.floor(seconds)
+      let nanoseconds = float.round({ seconds -. floored } *. 1_000_000_000.0)
+      #(float.round(floored), nanoseconds)
     })
   }
   decode.one_of(int, [float])
@@ -255,8 +256,8 @@ pub fn mood_decoder() -> decode.Decoder(Mood) {
   }
 }
 
-pub fn mood_to_string(val: Mood) -> String {
-  case val {
+pub fn mood_to_string(value: Mood) -> String {
+  case value {
     Happy -> "happy"
     Sad -> "sad"
   }
@@ -277,7 +278,7 @@ returning value, nullable_value"
     sql,
     [
       ParamInt(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamInt(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamInt(value) })),
     ],
     smallint_round_trip_decoder(),
   )
@@ -304,7 +305,7 @@ returning value, nullable_value"
     sql,
     [
       ParamInt(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamInt(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamInt(value) })),
     ],
     integer_round_trip_decoder(),
   )
@@ -331,7 +332,7 @@ returning value, nullable_value"
     sql,
     [
       ParamInt(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamInt(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamInt(value) })),
     ],
     bigint_round_trip_decoder(),
   )
@@ -358,7 +359,7 @@ returning value, nullable_value"
     sql,
     [
       ParamFloat(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamFloat(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamFloat(value) })),
     ],
     real_round_trip_decoder(),
   )
@@ -385,7 +386,7 @@ returning value, nullable_value"
     sql,
     [
       ParamFloat(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamFloat(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamFloat(value) })),
     ],
     double_round_trip_decoder(),
   )
@@ -412,7 +413,7 @@ returning value, nullable_value"
     sql,
     [
       ParamFloat(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamFloat(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamFloat(value) })),
     ],
     numeric_round_trip_decoder(),
   )
@@ -439,7 +440,9 @@ returning value, nullable_value"
     sql,
     [
       ParamString(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamString(value) }),
+      ),
     ],
     text_round_trip_decoder(),
   )
@@ -466,7 +469,9 @@ returning value, nullable_value"
     sql,
     [
       ParamString(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamString(value) }),
+      ),
     ],
     varchar_round_trip_decoder(),
   )
@@ -493,7 +498,9 @@ returning value, nullable_value"
     sql,
     [
       ParamString(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamString(value) }),
+      ),
     ],
     char_round_trip_decoder(),
   )
@@ -520,7 +527,7 @@ returning value, nullable_value"
     sql,
     [
       ParamBool(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamBool(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamBool(value) })),
     ],
     boolean_round_trip_decoder(),
   )
@@ -547,7 +554,9 @@ returning value, nullable_value"
     sql,
     [
       ParamBitArray(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamBitArray(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamBitArray(value) }),
+      ),
     ],
     bytea_round_trip_decoder(),
   )
@@ -574,7 +583,9 @@ returning value, nullable_value"
     sql,
     [
       ParamBitArray(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamBitArray(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamBitArray(value) }),
+      ),
     ],
     uuid_round_trip_decoder(),
   )
@@ -601,7 +612,9 @@ returning value, nullable_value"
     sql,
     [
       ParamString(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamString(value) }),
+      ),
     ],
     json_round_trip_decoder(),
   )
@@ -628,7 +641,9 @@ returning value, nullable_value"
     sql,
     [
       ParamString(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamString(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamString(value) }),
+      ),
     ],
     jsonb_round_trip_decoder(),
   )
@@ -655,7 +670,7 @@ returning value, nullable_value"
     sql,
     [
       ParamDate(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamDate(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamDate(value) })),
     ],
     date_round_trip_decoder(),
   )
@@ -685,7 +700,9 @@ returning value, nullable_value"
     sql,
     [
       ParamTimestamp(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamTimestamp(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamTimestamp(value) }),
+      ),
     ],
     timestamp_round_trip_decoder(),
   )
@@ -715,7 +732,9 @@ returning value, nullable_value"
     sql,
     [
       ParamTimestamp(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamTimestamp(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamTimestamp(value) }),
+      ),
     ],
     timestamptz_round_trip_decoder(),
   )
@@ -742,7 +761,9 @@ returning value, nullable_value"
     sql,
     [
       ParamTimeOfDay(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamTimeOfDay(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamTimeOfDay(value) }),
+      ),
     ],
     time_round_trip_decoder(),
   )
@@ -770,7 +791,9 @@ returning value, nullable_value"
     [
       ParamString(mood_to_string(value)),
       ParamNullable(
-        option.map(nullable_value, fn(v) { ParamString(mood_to_string(v)) }),
+        option.map(nullable_value, fn(value) {
+          ParamString(mood_to_string(value))
+        }),
       ),
     ],
     mood_round_trip_decoder(),
@@ -802,7 +825,9 @@ returning value, nullable_value"
     [
       ParamList(list.map(value, ParamString)),
       ParamNullable(
-        option.map(nullable_value, fn(v) { ParamList(list.map(v, ParamString)) }),
+        option.map(nullable_value, fn(value) {
+          ParamList(list.map(value, ParamString))
+        }),
       ),
     ],
     text_array_round_trip_decoder(),
@@ -837,7 +862,9 @@ returning value, nullable_value"
     [
       ParamList(list.map(value, ParamInt)),
       ParamNullable(
-        option.map(nullable_value, fn(v) { ParamList(list.map(v, ParamInt)) }),
+        option.map(nullable_value, fn(value) {
+          ParamList(list.map(value, ParamInt))
+        }),
       ),
     ],
     integer_array_round_trip_decoder(),
@@ -896,10 +923,14 @@ returning value, nullable_value"
   #(
     sql,
     [
-      ParamList(list.map(value, fn(v) { ParamString(mood_to_string(v)) })),
+      ParamList(
+        list.map(value, fn(value) { ParamString(mood_to_string(value)) }),
+      ),
       ParamNullable(
-        option.map(nullable_value, fn(v) {
-          ParamList(list.map(v, fn(v) { ParamString(mood_to_string(v)) }))
+        option.map(nullable_value, fn(value) {
+          ParamList(
+            list.map(value, fn(value) { ParamString(mood_to_string(value)) }),
+          )
         }),
       ),
     ],
@@ -931,7 +962,9 @@ returning value, nullable_value"
     sql,
     [
       ParamInterval(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamInterval(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamInterval(value) }),
+      ),
     ],
     interval_round_trip_decoder(),
   )
@@ -958,7 +991,7 @@ returning value, nullable_value"
     sql,
     [
       ParamInet(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamInet(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamInet(value) })),
     ],
     inet_round_trip_decoder(),
   )
@@ -985,7 +1018,7 @@ returning value, nullable_value"
     sql,
     [
       ParamInet(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamInet(v) })),
+      ParamNullable(option.map(nullable_value, fn(value) { ParamInet(value) })),
     ],
     cidr_round_trip_decoder(),
   )
@@ -1012,7 +1045,9 @@ returning value, nullable_value"
     sql,
     [
       ParamMacaddr(value),
-      ParamNullable(option.map(nullable_value, fn(v) { ParamMacaddr(v) })),
+      ParamNullable(
+        option.map(nullable_value, fn(value) { ParamMacaddr(value) }),
+      ),
     ],
     macaddr_round_trip_decoder(),
   )

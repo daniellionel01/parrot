@@ -17,8 +17,9 @@ pub type EnumNames {
   EnumNames(type_: String, to_string: String, decoder: String)
 }
 
+/// `name` as it is in the database.
 pub type Enum {
-  Enum(names: EnumNames, first: Variant, rest: List(Variant))
+  Enum(name: String, names: EnumNames, first: Variant, rest: List(Variant))
 }
 
 /// `value` as it is in the database.
@@ -76,7 +77,7 @@ pub type Field {
 
 pub type GleamType {
   Scalar(Scalar)
-  GleamEnum(EnumNames)
+  GleamEnum(Enum)
   GleamList(GleamType)
   GleamOption(GleamType)
 }
@@ -93,5 +94,6 @@ pub type Scalar {
   GleamInterval
   GleamInet
   GleamMacaddr
-  GleamDynamic
+  /// A type parrot does not know.
+  GleamDynamic(sql_type: String)
 }

@@ -130,12 +130,12 @@ pub fn insert_thing(
 values (?, ?, ?, ?, ?, ?, ?, ?)"
   #(sql, [
     ParamString(name),
-    ParamNullable(option.map(nickname, fn(v) { ParamString(v) })),
+    ParamNullable(option.map(nickname, fn(value) { ParamString(value) })),
     ParamFloat(score),
-    ParamNullable(option.map(data, fn(v) { ParamBitArray(v) })),
+    ParamNullable(option.map(data, fn(value) { ParamBitArray(value) })),
     ParamBool(active),
-    ParamNullable(option.map(born, fn(v) { ParamDate(v) })),
+    ParamNullable(option.map(born, fn(value) { ParamDate(value) })),
     ParamTimestamp(created_at),
-    ParamNullable(option.map(price, fn(v) { ParamFloat(v) })),
+    ParamNullable(option.map(price, fn(value) { ParamFloat(value) })),
   ])
 }

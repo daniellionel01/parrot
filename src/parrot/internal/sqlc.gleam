@@ -72,15 +72,15 @@ pub type Schema {
 }
 
 pub type Enum {
-  Enum(name: String, vals: List(String))
+  Enum(name: String, values: List(String))
 }
 
 pub type Query {
   Query(
     text: String,
     name: String,
-    /// the annotation, f.e. `:one`
-    cmd: String,
+    /// f.e. `:one`
+    annotation: String,
     columns: List(Column),
     params: List(Param),
   )
@@ -117,32 +117,32 @@ pub type SchemaSource {
   SchemaSql(String)
 }
 
-/// Runs `sqlc generate` inside of `dir`. `binary`, `dir` and all paths are
+/// Runs `sqlc generate` inside of `directory`. `binary`, `directory` and all paths are
 /// absolute.
 ///
 pub fn generate(
   binary: String,
-  in dir: String,
+  in directory: String,
   engine engine: Engine,
   schema schema: SchemaSource,
   queries queries: List(String),
 ) -> Result(Output, ParrotError) {
-  use _ <- result.try(create_work_directory(dir))
+  use _ <- result.try(create_work_directory(directory))
   use schema <- result.try(case schema {
     SchemaFiles(path) -> Ok(path)
-    SchemaSql(sql) -> write(filepath.join(dir, "schema.sql"), sql)
+    SchemaSql(sql) -> write(filepath.join(directory, "schema.sql"), sql)
   })
   use _ <- result.try(write(
-    filepath.join(dir, "sqlc.json"),
-    config(engine, schema, queries, dir),
+    filepath.join(directory, "sqlc.json"),
+    config(engine, schema, queries, directory),
   ))
 
-  let output_path = filepath.join(dir, "queries.json")
+  let output_path = filepath.join(directory, "queries.json")
   let _ = simplifile.delete(output_path)
   use _ <- result.try(
     child_process.from_file(binary)
     |> child_process.args(["generate", "--file", "sqlc.json"])
-    |> child_process.cwd(dir)
+    |> child_process.cwd(directory)
     |> command.run
     |> result.map_error(error.SqlcFailed),
   )
@@ -162,9 +162,9 @@ fn config(
   engine: Engine,
   schema: String,
   queries: List(String),
-  dir: String,
+  directory: String,
 ) -> String {
-  let relative = relative(_, from: dir)
+  let relative = relative(_, from: directory)
   json.object([
     #("version", json.string("2")),
     #(
@@ -173,7 +173,10 @@ fn config(
         json.object([
           #("engine", json.string(database.engine_name(engine))),
           #("schema", json.string(relative(schema))),
-          #("queries", json.array(queries, fn(q) { json.string(relative(q)) })),
+          #(
+            "queries",
+            json.array(queries, fn(query) { json.string(relative(query)) }),
+          ),
           #(
             "gen",
             json.object([
@@ -194,9 +197,9 @@ fn config(
   |> json.to_string
 }
 
-fn create_work_directory(dir: String) -> Result(Nil, ParrotError) {
-  simplifile.create_directory_all(dir)
-  |> result.map_error(error.CouldNotUseWorkDirectory(dir, _))
+fn create_work_directory(directory: String) -> Result(Nil, ParrotError) {
+  simplifile.create_directory_all(directory)
+  |> result.map_error(error.CouldNotUseWorkDirectory(directory, _))
 }
 
 fn write(path: String, contents: String) -> Result(String, ParrotError) {
@@ -205,22 +208,24 @@ fn write(path: String, contents: String) -> Result(String, ParrotError) {
   |> result.replace(path)
 }
 
-fn relative(path: String, from dir: String) -> String {
+fn relative(path: String, from directory: String) -> String {
   let normalise = fn(path) {
     filepath.split(filepath.expand(path) |> result.unwrap(path))
   }
-  let #(path, dir) = drop_common_prefix(normalise(path), normalise(dir))
-  list.append(list.repeat("..", list.length(dir)), path)
+  let #(path, directory) =
+    drop_common_prefix(normalise(path), normalise(directory))
+  list.append(list.repeat("..", list.length(directory)), path)
   |> string.join("/")
 }
 
 fn drop_common_prefix(
-  a: List(String),
-  b: List(String),
+  left: List(String),
+  right: List(String),
 ) -> #(List(String), List(String)) {
-  case a, b {
-    [x, ..a_rest], [y, ..b_rest] if x == y -> drop_common_prefix(a_rest, b_rest)
-    _, _ -> #(a, b)
+  case left, right {
+    [first, ..left_rest], [other, ..right_rest] if first == other ->
+      drop_common_prefix(left_rest, right_rest)
+    _, _ -> #(left, right)
   }
 }
 
@@ -259,8 +264,8 @@ fn output_decoder() -> decode.Decoder(Output) {
 
   let enum_decoder = {
     use name <- decode.field("name", decode.string)
-    use vals <- decode.field("vals", decode.list(decode.string))
-    decode.success(Enum(name:, vals:))
+    use values <- decode.field("vals", decode.list(decode.string))
+    decode.success(Enum(name:, values:))
   }
 
   let catalog_decoder = {
@@ -285,10 +290,10 @@ fn output_decoder() -> decode.Decoder(Output) {
   let query_decoder = {
     use text <- decode.field("text", decode.string)
     use name <- decode.field("name", decode.string)
-    use cmd <- decode.field("cmd", decode.string)
+    use annotation <- decode.field("cmd", decode.string)
     use columns <- decode.field("columns", decode.list(column_decoder))
     use params <- decode.field("params", decode.list(param_decoder))
-    decode.success(Query(text:, name:, cmd:, columns:, params:))
+    decode.success(Query(text:, name:, annotation:, columns:, params:))
   }
 
   use catalog <- decode.field("catalog", catalog_decoder)
@@ -298,11 +303,11 @@ fn output_decoder() -> decode.Decoder(Output) {
 
 // === BINARY ===============================================================
 
-/// The sqlc binary parrot downloads into `dir`. It is downloaded again if it
+/// The sqlc binary parrot downloads into `directory`. It is downloaded again if it
 /// does not match the release's checksum.
 ///
-pub fn managed_binary(in dir: String) -> Result(String, ParrotError) {
-  let path = filepath.join(dir, "sqlc")
+pub fn managed_binary(in directory: String) -> Result(String, ParrotError) {
+  let path = filepath.join(directory, "sqlc")
   use #(platform, expected) <- result.try(current_platform())
 
   case result.map(simplifile.read_bits(path), sha256) == Ok(expected) {
@@ -326,7 +331,7 @@ pub fn managed_binary(in dir: String) -> Result(String, ParrotError) {
           other: set.from_list([Read, Execute]),
         )
       {
-        use _ <- result.try(simplifile.create_directory_all(dir))
+        use _ <- result.try(simplifile.create_directory_all(directory))
         use _ <- result.try(simplifile.write_bits(path, binary))
         simplifile.set_permissions(path, permissions)
       }

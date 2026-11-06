@@ -51,16 +51,16 @@ pub fn sqlite_url(path: String) -> String {
   "sqlite:" <> path
 }
 
-/// Relative sqlite paths are resolved from `dir`, the project's root, the
+/// Relative sqlite paths are resolved from `directory`, the project's root, the
 /// same as by the application.
 ///
 pub fn fetch_schema(
   engine: Engine,
   url: String,
-  in dir: String,
+  in directory: String,
 ) -> Result(String, ParrotError) {
   case engine {
-    Sqlite -> fetch_sqlite(sqlite_path(url, dir))
+    Sqlite -> fetch_sqlite(sqlite_path(url, directory))
     Mysql -> fetch_mysql(url)
     Postgresql -> fetch_postgres(url)
   }
@@ -68,7 +68,7 @@ pub fn fetch_schema(
 
 /// sqlite connection strings may also just be a path.
 ///
-fn sqlite_path(url: String, dir: String) -> String {
+fn sqlite_path(url: String, directory: String) -> String {
   let path = case url {
     "sqlite://" <> path | "sqlite:" <> path -> path
     "file://" <> path | "file:" <> path -> path
@@ -76,7 +76,7 @@ fn sqlite_path(url: String, dir: String) -> String {
   }
   case filepath.is_absolute(path) {
     True -> path
-    False -> filepath.join(dir, path)
+    False -> filepath.join(directory, path)
   }
 }
 

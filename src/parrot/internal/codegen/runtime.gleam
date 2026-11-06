@@ -69,7 +69,7 @@ pub fn scalar(scalar: Scalar) -> ScalarCode {
       ScalarCode("Interval", "ParamInterval", "interval_decoder()")
     GleamInet -> ScalarCode("Inet", "ParamInet", "inet_decoder()")
     GleamMacaddr -> ScalarCode("BitArray", "ParamMacaddr", "macaddr_decoder()")
-    GleamDynamic ->
+    GleamDynamic(..) ->
       ScalarCode("decode.Dynamic", "ParamDynamic", "decode.dynamic")
   }
 }
@@ -108,8 +108,8 @@ pub type Inet {
 pub fn bool_decoder() -> decode.Decoder(Bool) {
   let int_to_bool = {
     decode.int
-    |> decode.then(fn(v) {
-      case v {
+    |> decode.then(fn(number) {
+      case number {
         0 -> decode.success(False)
         1 -> decode.success(True)
         _ -> decode.failure(False, \"could not decode int to boolean\")
@@ -143,7 +143,8 @@ pub fn calendar_date_decoder() -> decode.Decoder(Date) {
 fn date_string_decoder() -> decode.Decoder(Date) {
   use date <- decode.then(decode.string)
   case timestamp.parse_rfc3339(date <> \"T00:00:00Z\") {
-    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).0)
+    Ok(parsed) ->
+      decode.success(timestamp.to_calendar(parsed, calendar.utc_offset).0)
     Error(_) ->
       decode.failure(calendar.Date(0, calendar.January, 1), \"Calendar date\")
   }
@@ -154,10 +155,10 @@ fn date_string_decoder() -> decode.Decoder(Date) {
 fn datetime_string_decoder() -> decode.Decoder(Timestamp) {
   use datetime <- decode.then(decode.string)
   case timestamp.parse_rfc3339(datetime) {
-    Ok(ts) -> decode.success(ts)
+    Ok(parsed) -> decode.success(parsed)
     Error(_) ->
       case timestamp.parse_rfc3339(datetime <> \"Z\") {
-        Ok(ts) -> decode.success(ts)
+        Ok(parsed) -> decode.success(parsed)
         Error(_) ->
           decode.failure(
             timestamp.from_unix_seconds(0),
@@ -203,7 +204,8 @@ pub fn time_of_day_decoder() -> decode.Decoder(TimeOfDay) {
 fn time_of_day_string_decoder() -> decode.Decoder(TimeOfDay) {
   use time <- decode.then(decode.string)
   case timestamp.parse_rfc3339(\"1970-01-01T\" <> time <> \"Z\") {
-    Ok(ts) -> decode.success(timestamp.to_calendar(ts, calendar.utc_offset).1)
+    Ok(parsed) ->
+      decode.success(timestamp.to_calendar(parsed, calendar.utc_offset).1)
     Error(_) -> decode.failure(calendar.TimeOfDay(0, 0, 0, 0), \"Time of day\")
   }
 }
@@ -295,15 +297,14 @@ pub fn macaddr_decoder() -> decode.Decoder(BitArray) {
 fn seconds_decoder() -> decode.Decoder(#(Int, Int)) {
   let int = {
     decode.int
-    |> decode.map(fn(i) { #(i, 0) })
+    |> decode.map(fn(seconds) { #(seconds, 0) })
   }
   let float = {
     decode.float
-    |> decode.map(fn(f) {
-      let floored = float.floor(f)
-      let seconds = float.round(floored)
-      let nanoseconds = float.round({ f -. floored } *. 1_000_000_000.0)
-      #(seconds, nanoseconds)
+    |> decode.map(fn(seconds) {
+      let floored = float.floor(seconds)
+      let nanoseconds = float.round({ seconds -. floored } *. 1_000_000_000.0)
+      #(float.round(floored), nanoseconds)
     })
   }
   decode.one_of(int, [float])

@@ -202,8 +202,8 @@ pub fn users_status_decoder() -> decode.Decoder(UsersStatus) {
   }
 }
 
-pub fn users_status_to_string(val: UsersStatus) -> String {
-  case val {
+pub fn users_status_to_string(value: UsersStatus) -> String {
+  case value {
     Like -> "like"
     Neutral -> "neutral"
   }

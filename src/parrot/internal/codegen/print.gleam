@@ -64,15 +64,22 @@ fn enum(enum: Enum) -> String {
   let model.EnumNames(type_:, to_string:, decoder:) = enum.names
   let variants = [enum.first, ..enum.rest]
 
-  ["pub type " <> type_ <> " {", ..list.map(variants, fn(v) { "  " <> v.name })]
+  [
+    "pub type " <> type_ <> " {",
+    ..list.map(variants, fn(variant) { "  " <> variant.name })
+  ]
   |> list.append([
     "}",
     "",
     "pub fn " <> decoder <> "() -> decode.Decoder(" <> type_ <> ") {",
     "  use variant <- decode.then(decode.string)",
     "  case variant {",
-    ..list.map(variants, fn(v) {
-      "    \"" <> v.value <> "\" -> decode.success(" <> v.name <> ")"
+    ..list.map(variants, fn(variant) {
+      "    \""
+      <> variant.value
+      <> "\" -> decode.success("
+      <> variant.name
+      <> ")"
     })
   ])
   |> list.append([
@@ -80,10 +87,10 @@ fn enum(enum: Enum) -> String {
     "  }",
     "}",
     "",
-    "pub fn " <> to_string <> "(val: " <> type_ <> ") -> String {",
-    "  case val {",
-    ..list.map(variants, fn(v) {
-      "    " <> v.name <> " -> \"" <> v.value <> "\""
+    "pub fn " <> to_string <> "(value: " <> type_ <> ") -> String {",
+    "  case value {",
+    ..list.map(variants, fn(variant) {
+      "    " <> variant.name <> " -> \"" <> variant.value <> "\""
     })
   ])
   |> list.append(["  }", "}"])
@@ -107,7 +114,7 @@ fn query(query: Query) -> String {
 fn row_type(name: String, fields: List(Field)) -> String {
   let fields =
     list.map(fields, fn(field) {
-      "    " <> field.label <> ": " <> type_string(field.type_) <> ","
+      "    " <> field.label <> ": " <> type_to_string(field.type_) <> ","
     })
 
   ["pub type " <> name <> " {", "  " <> name <> "(", ..fields]
@@ -120,8 +127,8 @@ fn function(query: Query) -> String {
     query.params
     |> list.map(fn(param) {
       let type_ = case param {
-        ValueParam(type_:, ..) -> type_string(type_)
-        SliceParam(item:, ..) -> "List(" <> type_string(item) <> ")"
+        ValueParam(type_:, ..) -> type_to_string(type_)
+        SliceParam(item:, ..) -> "List(" <> type_to_string(item) <> ")"
       }
       param.label <> " " <> param.variable <> ": " <> type_
     })
@@ -226,15 +233,15 @@ fn params(params: List(Param)) -> String {
 fn value_to_param(variable: String, type_: GleamType) -> String {
   case type_ {
     Scalar(scalar) -> runtime.scalar(scalar).param <> "(" <> variable <> ")"
-    GleamEnum(names) ->
-      "ParamString(" <> names.to_string <> "(" <> variable <> "))"
+    GleamEnum(enum) ->
+      "ParamString(" <> enum.names.to_string <> "(" <> variable <> "))"
     GleamList(item) ->
       "ParamList(list.map(" <> variable <> ", " <> item_to_param(item) <> "))"
     GleamOption(inner) ->
       "ParamNullable(option.map("
       <> variable
-      <> ", fn(v) { "
-      <> value_to_param("v", inner)
+      <> ", fn(value) { "
+      <> value_to_param("value", inner)
       <> " }))"
   }
 }
@@ -244,7 +251,8 @@ fn value_to_param(variable: String, type_: GleamType) -> String {
 fn item_to_param(item: GleamType) -> String {
   case item {
     Scalar(scalar) -> runtime.scalar(scalar).param
-    _ -> "fn(v) { " <> value_to_param("v", item) <> " }"
+    GleamEnum(_) | GleamList(_) | GleamOption(_) ->
+      "fn(value) { " <> value_to_param("value", item) <> " }"
   }
 }
 
@@ -279,19 +287,19 @@ fn decoder(type_name: String, name: String, fields: List(Field)) -> String {
 
 // === TYPES ================================================================
 
-fn type_string(type_: GleamType) -> String {
+fn type_to_string(type_: GleamType) -> String {
   case type_ {
     Scalar(scalar) -> runtime.scalar(scalar).type_
-    GleamEnum(names) -> names.type_
-    GleamList(item) -> "List(" <> type_string(item) <> ")"
-    GleamOption(inner) -> "option.Option(" <> type_string(inner) <> ")"
+    GleamEnum(enum) -> enum.names.type_
+    GleamList(item) -> "List(" <> type_to_string(item) <> ")"
+    GleamOption(inner) -> "option.Option(" <> type_to_string(inner) <> ")"
   }
 }
 
 fn type_decoder(type_: GleamType) -> String {
   case type_ {
     Scalar(scalar) -> runtime.scalar(scalar).decoder
-    GleamEnum(names) -> names.decoder <> "()"
+    GleamEnum(enum) -> enum.names.decoder <> "()"
     GleamList(item) -> "decode.list(of: " <> type_decoder(item) <> ")"
     GleamOption(inner) -> "decode.optional(" <> type_decoder(inner) <> ")"
   }

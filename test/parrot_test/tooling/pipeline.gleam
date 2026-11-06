@@ -20,9 +20,11 @@ pub type Output {
 /// Loads a fixture from `test/fixtures/<name>/{schema,queries}.sql`.
 ///
 pub fn from_files(name: String, engine: Engine) -> Fixture {
-  let dir = filepath.join("test/fixtures", name)
-  let assert Ok(schema) = simplifile.read(filepath.join(dir, "schema.sql"))
-  let assert Ok(queries) = simplifile.read(filepath.join(dir, "queries.sql"))
+  let directory = filepath.join("test/fixtures", name)
+  let assert Ok(schema) =
+    simplifile.read(filepath.join(directory, "schema.sql"))
+  let assert Ok(queries) =
+    simplifile.read(filepath.join(directory, "queries.sql"))
   Fixture(name:, engine:, schema:, queries:)
 }
 
@@ -35,7 +37,7 @@ pub fn run(fixture: Fixture) -> Result(Output, error.ParrotError) {
   let queries = write(root, "src/app/sql/queries.sql", fixture.queries)
   let module = filepath.join(root, "src/app/sql.gleam")
   let assert Ok(binary) =
-    sqlc.managed_binary(in: project.work_dir(project.root()))
+    sqlc.managed_binary(in: project.work_directory(project.root()))
 
   use output <- result.try(
     sqlc.generate(
@@ -62,8 +64,9 @@ fn write(root: String, path: String, contents: String) -> String {
 /// An empty directory for a test's files.
 ///
 pub fn scratch_dir(name: String) -> String {
-  let dir = filepath.join(project.work_dir(project.root()), "test/" <> name)
-  let _ = simplifile.delete(dir)
-  let assert Ok(_) = simplifile.create_directory_all(dir)
-  dir
+  let directory =
+    filepath.join(project.work_directory(project.root()), "test/" <> name)
+  let _ = simplifile.delete(directory)
+  let assert Ok(_) = simplifile.create_directory_all(directory)
+  directory
 }

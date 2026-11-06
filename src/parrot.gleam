@@ -42,8 +42,8 @@ pub fn main() -> Nil {
       io.println(text)
       exit(0)
     }
-    Error(e) -> {
-      io.println_error(cli.red("\nError: " <> error.to_string(e)))
+    Error(reason) -> {
+      io.println_error(cli.red("\nError: " <> error.to_string(reason)))
       exit(1)
     }
   }
@@ -56,7 +56,7 @@ fn generate(
   config: config.Config,
   root: String,
 ) -> Result(Nil, error.ParrotError) {
-  let work_dir = project.work_dir(root)
+  let work_directory = project.work_directory(root)
   let src = filepath.join(root, "src")
   use queries <- result.try(project.sql_files(src))
   use <- bool.guard(
@@ -64,7 +64,7 @@ fn generate(
     return: Error(error.NoQueriesFound(src)),
   )
 
-  use binary <- result.try(sqlc_binary(config.sqlc, root, work_dir))
+  use binary <- result.try(sqlc_binary(config.sqlc, root, work_directory))
 
   use schema <- result.try(case config.schema {
     config.FromFiles(path) -> Ok(sqlc.SchemaFiles(from_root(path, root)))
@@ -78,7 +78,7 @@ fn generate(
   io.println("\u{2728} generating gleam code...")
   use output <- result.try(sqlc.generate(
     binary,
-    in: work_dir,
+    in: work_directory,
     engine: config.engine,
     schema:,
     queries:,
@@ -98,10 +98,10 @@ fn generate(
 fn sqlc_binary(
   sqlc: config.Sqlc,
   root: String,
-  work_dir: String,
+  work_directory: String,
 ) -> Result(String, error.ParrotError) {
   case sqlc {
-    config.Managed -> sqlc.managed_binary(in: work_dir)
+    config.Managed -> sqlc.managed_binary(in: work_directory)
     config.System ->
       child_process.find_executable("sqlc")
       |> result.replace_error(error.SqlcNotInPath)

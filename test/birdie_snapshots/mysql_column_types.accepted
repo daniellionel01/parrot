@@ -93,8 +93,8 @@ pub fn accounts_status_decoder() -> decode.Decoder(AccountsStatus) {
   }
 }
 
-pub fn accounts_status_to_string(val: AccountsStatus) -> String {
-  case val {
+pub fn accounts_status_to_string(value: AccountsStatus) -> String {
+  case value {
     Active -> "active"
     Suspended -> "suspended"
   }

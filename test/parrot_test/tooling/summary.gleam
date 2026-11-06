@@ -35,7 +35,7 @@ fn render_enum(
   "enum "
   <> qualified(schema, enum.name, default_schema)
   <> "\n  "
-  <> string.join(enum.vals, " | ")
+  <> string.join(enum.values, " | ")
 }
 
 fn render_query(query: sqlc.Query) -> String {
@@ -55,36 +55,36 @@ fn render_query(query: sqlc.Query) -> String {
     [] -> ["  columns: none"]
     columns -> [
       "  columns:",
-      ..list.map(columns, fn(col) { "    " <> render_column(col) })
+      ..list.map(columns, fn(column) { "    " <> render_column(column) })
     ]
   }
 
-  ["query " <> query.name <> " " <> query.cmd]
+  ["query " <> query.name <> " " <> query.annotation]
   |> list.append(params)
   |> list.append(columns)
   |> string.join("\n")
 }
 
-fn render_column(col: sqlc.Column) -> String {
-  let table = case col.table {
+fn render_column(column: sqlc.Column) -> String {
+  let table = case column.table {
     option.Some(table) if table != "" -> table <> "."
     _ -> ""
   }
-  let name = case col.name {
+  let name = case column.name {
     "" -> "<unnamed>"
     name -> name
   }
-  let array = case col.is_array {
+  let array = case column.is_array {
     False -> ""
     True -> "[]"
   }
   let flags =
     [
-      case col.not_null {
+      case column.not_null {
         True -> option.Some("not null")
         False -> option.Some("null")
       },
-      case col.is_sqlc_slice {
+      case column.is_sqlc_slice {
         True -> option.Some("slice")
         False -> option.None
       },
@@ -94,7 +94,7 @@ fn render_column(col: sqlc.Column) -> String {
   table
   <> name
   <> ": "
-  <> col.type_ref.name
+  <> column.type_ref.name
   <> array
   <> " ("
   <> string.join(flags, ", ")
