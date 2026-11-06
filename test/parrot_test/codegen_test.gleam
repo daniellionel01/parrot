@@ -167,6 +167,20 @@ select id from posts where $1::text = any(tags);",
   |> snap_error(title: "unnamed param")
 }
 
+pub fn embed_unsupported_error_test() {
+  fixture(
+    sqlc.PostgreSQL,
+    schema: "
+create table authors (id serial primary key, name text not null);
+create table books (id serial primary key, author_id int not null, title text not null);",
+    queries: "
+-- name: BooksWithAuthors :many
+select sqlc.embed(books), sqlc.embed(authors)
+from books join authors on authors.id = books.author_id;",
+  )
+  |> snap_error(title: "embed")
+}
+
 pub fn execrows_unsupported_error_test() {
   fixture(
     sqlc.PostgreSQL,

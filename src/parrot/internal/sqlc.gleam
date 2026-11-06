@@ -167,6 +167,8 @@ pub type TableColumn {
     array_dims: Int,
     table: Option(TableRef),
     type_ref: TypeRef,
+    /// set for `sqlc.embed(table)`
+    embed_table: Option(TableRef),
   )
 }
 
@@ -281,6 +283,11 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
     use array_dims <- decode.field("array_dims", decode.int)
     use table <- decode.field("table", decode.optional(table_ref_decoder))
     use type_ref <- decode.field("type", type_ref_decoder)
+    use embed_table <- decode.optional_field(
+      "embed_table",
+      option.None,
+      decode.optional(table_ref_decoder),
+    )
 
     TableColumn(
       name,
@@ -298,6 +305,7 @@ pub fn decode_sqlc(data: dynamic.Dynamic) {
       array_dims,
       table,
       type_ref,
+      embed_table,
     )
     |> decode.success()
   }

@@ -452,6 +452,11 @@ pub fn gen_query_function(
 ) -> Result(String, error.ParrotError) {
   let fn_name = string_extra.snake_case(query.name)
 
+  use <- bool.guard(
+    when: list.any(query.columns, fn(col) { option.is_some(col.embed_table) }),
+    return: Error(error.UnsupportedEmbedError(query.name)),
+  )
+
   use def_fn_args <- result.try(
     list.try_map(query.params, fn(p) {
       let gleam_type = sqlc_col_to_gleam(p.column, context)

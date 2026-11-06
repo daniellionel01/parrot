@@ -34,6 +34,7 @@ pub type ParrotError {
   DuplicateEnumValueError(String, String, String)
   UnnamedParameterError(query: String, position: Int)
   UnsupportedQueryCommandError(query: String, command: String)
+  UnsupportedEmbedError(query: String)
 }
 
 pub fn to_string(error: ParrotError) {
@@ -154,6 +155,12 @@ pub fn to_string(error: ParrotError) {
       <> query
       <> "' has no name, so parrot can not generate a function argument for it. "
       <> "Please use a named parameter instead, f.e. \"sqlc.arg(name)\" or \"@name\"."
+    }
+    UnsupportedEmbedError(query:) -> {
+      "query '"
+      <> query
+      <> "' uses `sqlc.embed`, which parrot does not support yet. "
+      <> "Select the columns instead."
     }
     UnsupportedQueryCommandError(query:, command:) -> {
       "query '"
