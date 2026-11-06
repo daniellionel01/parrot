@@ -9,6 +9,10 @@ import gleam/bool
 import gleam/crypto
 import gleam/dynamic
 import gleam/dynamic/decode
+import gleam/http/request
+import gleam/http/response
+import gleam/httpc
+import gleam/int
 import gleam/json
 import gleam/option.{type Option, Some}
 import gleam/result
@@ -548,7 +552,7 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
     |> result.map_error(error.FileError("create directory", dir, _)),
   )
 
-  use #(download, hash) <- result.try(get_download_path_and_hash())
+  use #(url, hash) <- result.try(get_download_path_and_hash())
 
   // delete current version if version does not match
   use _ <- result.try(case binary_exists(path) {
@@ -572,19 +576,7 @@ pub fn download_binary() -> Result(Nil, error.ParrotError) {
     check_sqlc_integrity(bin, hash)
   })
 
-  use tarball <- result.try(
-    download_zip(download)
-    |> result.map_error(fn(_) {
-      error.SqlcDownloadError("could not curl the sqlc binary")
-    }),
-  )
-
-  use bin <- result.try(
-    extract_sqlc_binary(tarball)
-    |> result.map_error(fn(_) {
-      error.SqlcDownloadError("could not unzip the sqlc binary")
-    }),
-  )
+  use bin <- result.try(download_and_extract(url))
   use _ <- result.try(check_sqlc_integrity(bin, hash))
 
   use _ <- result.try(
@@ -608,10 +600,34 @@ pub fn get_os() -> String
 @external(erlang, "parrot_ffi", "get_cpu")
 pub fn get_cpu() -> String
 
-@external(erlang, "parrot_ffi", "download_zip")
-pub fn download_zip(url: String) -> Result(BitArray, dynamic.Dynamic)
+/// Downloads a sqlc release and returns the sqlc binary inside of it.
+///
+pub fn download_and_extract(
+  url: String,
+) -> Result(BitArray, error.ParrotError) {
+  use tarball <- result.try(download(url))
+  extract_sqlc_binary(tarball)
+  |> result.replace_error(error.SqlcDownloadError(
+    "could not extract sqlc from " <> url,
+  ))
+}
+
+fn download(url: String) -> Result(BitArray, error.ParrotError) {
+  let failed = fn(reason) {
+    error.SqlcDownloadError("could not download " <> url <> ": " <> reason)
+  }
+  use req <- result.try(
+    request.to(url) |> result.replace_error(failed("invalid url")),
+  )
+  let req = request.set_body(req, <<>>)
+
+  case httpc.configure() |> httpc.timeout(60_000) |> httpc.dispatch_bits(req) {
+    Ok(response.Response(status: 200, body:, ..)) -> Ok(body)
+    Ok(response.Response(status:, ..)) ->
+      Error(failed("status " <> int.to_string(status)))
+    Error(e) -> Error(failed(string.inspect(e)))
+  }
+}
 
 @external(erlang, "parrot_ffi", "extract_sqlc_binary")
-pub fn extract_sqlc_binary(
-  tarball: BitArray,
-) -> Result(BitArray, dynamic.Dynamic)
+fn extract_sqlc_binary(tarball: BitArray) -> Result(BitArray, Nil)

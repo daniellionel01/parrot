@@ -27,6 +27,7 @@ gleam_httpc = ">= 5.0.0 and < 6.0.0"
 gleam_crypto = ">= 1.5.1 and < 2.0.0"
 gleam_stdlib = ">= 1.0.3 and < 2.0.0"
 child_process = ">= 2.1.2 and < 3.0.0"
+gleam_http = ">= 4.5.0 and < 5.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

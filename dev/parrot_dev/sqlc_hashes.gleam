@@ -18,9 +18,7 @@ pub fn main() {
   list.each(binaries, fn(path) {
     let download_path = sqlc.download_base <> path
 
-    let assert Ok(tarball) = sqlc.download_zip(download_path)
-
-    let assert Ok(bin) = sqlc.extract_sqlc_binary(tarball)
+    let assert Ok(bin) = sqlc.download_and_extract(download_path)
 
     let hash = crypto.hash(crypto.Sha256, bin)
     let hash_string =

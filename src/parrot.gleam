@@ -52,7 +52,7 @@ pub fn main() {
 /// exit(0) -> success
 /// exit(1) -> failure
 ///
-@external(erlang, "parrot_ffi", "exit")
+@external(erlang, "erlang", "halt")
 fn exit(n: Int) -> Nil
 
 fn generate(config: config.Config) -> Result(Nil, error.ParrotError) {
