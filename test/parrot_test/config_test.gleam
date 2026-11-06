@@ -1,7 +1,6 @@
 import gleam/list
 import gleam/option.{Some}
-import parrot/internal/cli.{Flags, no_flags}
-import parrot/internal/config.{Config}
+import parrot/internal/config.{Config, Flags, no_flags}
 import parrot/internal/database
 import parrot/internal/error
 import tom
@@ -9,7 +8,7 @@ import tom
 const url = "postgresql://user:pass@localhost/app"
 
 fn resolve(
-  flags: cli.Flags,
+  flags: config.Flags,
   toml: String,
   env: List(#(String, String)),
 ) -> Result(config.Config, error.ParrotError) {
@@ -18,12 +17,12 @@ fn resolve(
 }
 
 pub fn parse_test() {
-  assert cli.parse([
+  assert config.parse([
       "--sqlite", "app.db", "-e", "URL", "--output", "src/db.gleam", "--schema",
       "priv/schema.sql", "--engine", "mysql", "--sqlc", "system",
     ])
     == Ok(
-      cli.Generate(Flags(
+      config.Generate(Flags(
         sqlite: Some("app.db"),
         env: Some("URL"),
         output: Some("src/db.gleam"),
@@ -32,19 +31,19 @@ pub fn parse_test() {
         sqlc: Some("system"),
       )),
     )
-  assert cli.parse(["--env-var", "URL"])
-    == Ok(cli.Generate(Flags(..no_flags, env: Some("URL"))))
+  assert config.parse(["--env-var", "URL"])
+    == Ok(config.Generate(Flags(..no_flags, env: Some("URL"))))
 }
 
 pub fn parse_help_test() {
-  assert cli.parse(["help"]) == Ok(cli.Help)
-  assert cli.parse(["--sqlite", "app.db", "-h"]) == Ok(cli.Help)
+  assert config.parse(["help"]) == Ok(config.Help)
+  assert config.parse(["--sqlite", "app.db", "-h"]) == Ok(config.Help)
 }
 
 pub fn parse_invalid_test() {
-  assert cli.parse(["--wibble"]) == Error(error.UnknownArgument("--wibble"))
-  assert cli.parse(["generate"]) == Error(error.UnknownArgument("generate"))
-  assert cli.parse(["--output", "a.gleam", "--sqlite"])
+  assert config.parse(["--wibble"]) == Error(error.UnknownArgument("--wibble"))
+  assert config.parse(["generate"]) == Error(error.UnknownArgument("generate"))
+  assert config.parse(["--output", "a.gleam", "--sqlite"])
     == Error(error.MissingFlagValue("--sqlite"))
 }
 

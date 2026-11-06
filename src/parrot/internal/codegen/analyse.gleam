@@ -19,7 +19,6 @@ import parrot/internal/codegen/model.{
 import parrot/internal/codegen/runtime
 import parrot/internal/error.{type ParrotError}
 import parrot/internal/sqlc
-import parrot/internal/string_extra
 
 pub fn module(output: sqlc.Output) -> Result(model.Module, ParrotError) {
   use queries <- result.try(
@@ -81,13 +80,13 @@ fn query(
     )),
   )
 
-  let function = string_extra.snake_case(query.name)
+  let function = snake_case(query.name)
   use returns <- result.try(case command {
     WithoutRows -> Ok(model.NoRows)
     WithRows -> {
       use fields <- result.map(fields(query, catalog))
       model.Rows(
-        type_: string_extra.pascal_case(query.name),
+        type_: pascal_case(query.name),
         decoder: function <> "_decoder",
         fields:,
       )
@@ -277,9 +276,9 @@ const commands = [
 ]
 
 fn enum_names(name: String) -> EnumNames {
-  let function = string_extra.snake_case(name)
+  let function = snake_case(name)
   EnumNames(
-    type_: string_extra.pascal_case(name),
+    type_: pascal_case(name),
     to_string: function <> "_to_string",
     decoder: function <> "_decoder",
   )
@@ -500,7 +499,7 @@ fn field_name(index: Int, query: sqlc.Query, column: sqlc.Column) -> String {
     True, option.Some(table) -> table <> "_" <> column.name
     _, _ -> column.name
   }
-  case string_extra.snake_case(name) {
+  case snake_case(name) {
     "" -> "col_" <> int.to_string(index)
     name -> escape_keyword(name)
   }
@@ -527,7 +526,7 @@ fn column_type(
 fn gleam_enum(enum: sqlc.Enum) -> Result(model.Enum, ParrotError) {
   let variants =
     list.map(enum.values, fn(value) {
-      model.Variant(name: string_extra.pascal_case(value), value:)
+      model.Variant(name: pascal_case(value), value:)
     })
   case variants {
     [first, ..rest] ->
@@ -718,4 +717,89 @@ fn escape_keyword(name: String) -> String {
     | "use" -> name <> "_"
     _ -> name
   }
+}
+
+// === CASES ================================================================
+// Thank you https://github.com/lpil/justin
+
+/// Convert a string to a `snake_case`.
+///
+/// # Examples
+///
+/// ```gleam
+/// snake_case("Hello World")
+/// // -> "hello_world"
+/// ```
+///
+fn snake_case(text: String) -> String {
+  text
+  |> split_words
+  |> string.join("_")
+  |> string.lowercase
+}
+
+/// Convert a string to a `PascalCase`.
+///
+/// # Examples
+///
+/// ```gleam
+/// pascal_case("Hello World")
+/// // -> "HelloWorld"
+/// ```
+///
+fn pascal_case(text: String) -> String {
+  text
+  |> split_words
+  |> list.map(string.capitalise)
+  |> string.concat
+}
+
+fn split_words(text: String) -> List(String) {
+  text
+  |> string.to_graphemes
+  |> split(False, "", [])
+}
+
+fn split(
+  graphemes: List(String),
+  in_uppercase: Bool,
+  word: String,
+  words: List(String),
+) -> List(String) {
+  case graphemes {
+    [] if word == "" -> list.reverse(words)
+    [] -> list.reverse(add(words, word))
+
+    ["\n", ..graphemes]
+    | ["\t", ..graphemes]
+    | ["!", ..graphemes]
+    | ["?", ..graphemes]
+    | ["#", ..graphemes]
+    | [".", ..graphemes]
+    | ["-", ..graphemes]
+    | ["_", ..graphemes]
+    | [" ", ..graphemes] -> split(graphemes, False, "", add(words, word))
+
+    [grapheme, ..graphemes] -> {
+      case is_upper(grapheme) {
+        False -> split(graphemes, False, word <> grapheme, words)
+
+        True if in_uppercase ->
+          split(graphemes, in_uppercase, word <> grapheme, words)
+
+        True -> split(graphemes, True, grapheme, add(words, word))
+      }
+    }
+  }
+}
+
+fn add(words: List(String), word: String) -> List(String) {
+  case word {
+    "" -> words
+    _ -> [word, ..words]
+  }
+}
+
+fn is_upper(grapheme: String) -> Bool {
+  string.lowercase(grapheme) != grapheme
 }

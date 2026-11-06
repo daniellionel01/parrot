@@ -6,7 +6,6 @@ import gleam/bool
 import gleam/io
 import gleam/list
 import gleam/result
-import parrot/internal/cli
 import parrot/internal/codegen
 import parrot/internal/config
 import parrot/internal/database
@@ -16,15 +15,15 @@ import parrot/internal/sqlc
 
 pub fn main() -> Nil {
   let result = {
-    use command <- result.try(cli.parse(argv.load().arguments))
+    use command <- result.try(config.parse(argv.load().arguments))
     case command {
-      cli.Help -> Ok(cli.usage)
-      cli.Generate(flags) -> {
+      config.Help -> Ok(usage)
+      config.Generate(flags) -> {
         let root = project.root()
         use toml <- result.try(project.toml(root))
         case project.parrot_is_dependency(toml) {
           True ->
-            io.println_error(cli.yellow(
+            io.println_error(yellow(
               "warning: parrot is only needed during development, move it to "
               <> "[dev-dependencies]: gleam remove parrot && gleam add --dev parrot",
             ))
@@ -43,7 +42,7 @@ pub fn main() -> Nil {
       exit(0)
     }
     Error(reason) -> {
-      io.println_error(cli.red("\nError: " <> error.to_string(reason)))
+      io.println_error(red("\nError: " <> error.to_string(reason)))
       exit(1)
     }
   }
@@ -89,7 +88,7 @@ fn generate(
   ))
 
   list.each(unknown_types, fn(unknown) {
-    io.println_error(cli.yellow("unknown column type: " <> unknown))
+    io.println_error(yellow("unknown column type: " <> unknown))
   })
   io.println("")
   Ok(Nil)
@@ -119,7 +118,7 @@ fn check_version(binary: String) -> Result(String, error.ParrotError) {
   case found == expected {
     True -> Nil
     False ->
-      io.println_error(cli.yellow(
+      io.println_error(yellow(
         "warning: expected sqlc " <> expected <> ", found " <> found,
       ))
   }
@@ -133,4 +132,35 @@ fn from_root(path: String, root: String) -> String {
     True -> path
     False -> filepath.join(root, path)
   }
+}
+
+const usage =
+  "Generate type-safe Gleam code from SQL queries
+
+Usage: gleam run -m parrot -- [OPTIONS]
+
+Options:
+      --sqlite <PATH>    SQLite database file
+  -e, --env-var <NAME>   Environment variable with the connection string [default: DATABASE_URL]
+      --output <PATH>    Generated module [default: src/<project>/sql.gleam]
+      --schema <PATH>    Schema or migration files instead of a database
+      --engine <ENGINE>  postgresql, mysql or sqlite [default: from the connection string]
+      --sqlc <PATH>      sqlc binary, or \"system\" for sqlc in PATH [default: downloaded by parrot]
+  -h, --help             Print help
+
+Examples:
+  gleam run -m parrot
+  gleam run -m parrot -- --sqlite priv/app.db
+  gleam run -m parrot -- --schema priv/migrations --engine postgresql
+
+Options can also be set in gleam.toml: https://parrot.hexdocs.pm/toml-reference.html"
+
+const colorless = "\u{001b}[0m"
+
+fn red(text: String) -> String {
+  "\u{001b}[31m" <> text <> colorless
+}
+
+fn yellow(text: String) -> String {
+  "\u{001b}[33m" <> text <> colorless
 }
