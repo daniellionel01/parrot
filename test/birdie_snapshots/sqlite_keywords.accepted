@@ -43,7 +43,9 @@ pub type Type {
   Type(type_: String)
 }
 
-pub fn type_(type_ type_: String) {
+pub fn type_(
+  type_ type_: String,
+) -> #(String, List(Param), decode.Decoder(Type)) {
   let sql = "select type from things where type = ?1"
   #(sql, [ParamString(type_)], type_decoder())
 }

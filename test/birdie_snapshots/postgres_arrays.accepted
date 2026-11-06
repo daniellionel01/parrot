@@ -72,7 +72,7 @@ pub type GetPost {
   )
 }
 
-pub fn get_post(id id: Int) {
+pub fn get_post(id id: Int) -> #(String, List(Param), decode.Decoder(GetPost)) {
   let sql = "select id, tags, scores, matrix from posts where id = $1"
   #(sql, [ParamInt(id)], get_post_decoder())
 }
@@ -89,7 +89,9 @@ pub type PostsWithTag {
   PostsWithTag(id: Int)
 }
 
-pub fn posts_with_tag(tag tag: String) {
+pub fn posts_with_tag(
+  tag tag: String,
+) -> #(String, List(Param), decode.Decoder(PostsWithTag)) {
   let sql = "select id from posts where $1::text = any(tags)"
   #(sql, [ParamString(tag)], posts_with_tag_decoder())
 }
@@ -102,7 +104,7 @@ pub fn posts_with_tag_decoder() -> decode.Decoder(PostsWithTag) {
 pub fn insert_post(
   tags tags: List(String),
   scores scores: option.Option(List(Int)),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into posts (tags, scores) values ($1, $2)"
   #(sql, [
     ParamList(list.map(tags, ParamString)),

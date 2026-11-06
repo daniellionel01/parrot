@@ -8,7 +8,11 @@ import tom
 
 const url = "postgresql://user:pass@localhost/app"
 
-fn resolve(flags: cli.Flags, toml: String, env: List(#(String, String))) {
+fn resolve(
+  flags: cli.Flags,
+  toml: String,
+  env: List(#(String, String)),
+) -> Result(config.Config, error.ParrotError) {
   let assert Ok(toml) = tom.parse("name = \"app\"\n" <> toml)
   config.resolve(flags, toml, list.key_find(env, _))
 }
@@ -46,7 +50,7 @@ pub fn defaults_test() {
   assert resolve(no_flags, "", [#("DATABASE_URL", url)])
     == Ok(Config(
       output: "src/app/sql.gleam",
-      engine: database.PostgreSQL,
+      engine: database.Postgresql,
       schema: config.FromDatabase(url),
       sqlc: config.Managed,
     ))
@@ -65,7 +69,7 @@ bin = \"system\"
   assert resolve(no_flags, toml, [#("APP_DB", url)])
     == Ok(Config(
       output: "src/app/db.gleam",
-      engine: database.PostgreSQL,
+      engine: database.Postgresql,
       schema: config.FromDatabase(url),
       sqlc: config.System,
     ))
@@ -81,7 +85,7 @@ pub fn flags_override_toml_test() {
 pub fn sqlite_test() {
   let flags = Flags(..no_flags, sqlite: Some("app.db"))
   let assert Ok(Config(
-    engine: database.SQLite,
+    engine: database.Sqlite,
     schema: config.FromDatabase("sqlite:app.db"),
     ..,
   )) = resolve(flags, "", [])
@@ -91,7 +95,7 @@ pub fn schema_without_database_test() {
   let flags =
     Flags(..no_flags, schema: Some("priv/schema.sql"), engine: Some("mysql"))
   let assert Ok(Config(
-    engine: database.MySQL,
+    engine: database.Mysql,
     schema: config.FromFiles("priv/schema.sql"),
     ..,
   )) = resolve(flags, "", [])
@@ -102,7 +106,7 @@ pub fn schema_without_database_test() {
 
 pub fn sqlite_overrides_env_test() {
   let flags = Flags(..no_flags, sqlite: Some("app.db"))
-  let assert Ok(Config(engine: database.SQLite, ..)) =
+  let assert Ok(Config(engine: database.Sqlite, ..)) =
     resolve(flags, "", [#("DATABASE_URL", url)])
 }
 

@@ -97,7 +97,9 @@ pub type GetEvent {
   )
 }
 
-pub fn get_event(id id: Int) {
+pub fn get_event(
+  id id: Int,
+) -> #(String, List(Param), decode.Decoder(GetEvent)) {
   let sql =
     "select id, happened_at, happened_at_tz, day, starts, starts_tz, duration, payload, external_id, ip, amount, ratio, is_public, raw from events where id = $1"
   #(sql, [ParamInt(id)], get_event_decoder())
@@ -143,7 +145,7 @@ pub fn insert_event(
   external_id external_id: BitArray,
   ratio ratio: Float,
   is_public is_public: Bool,
-) {
+) -> #(String, List(Param)) {
   let sql =
     "insert into events (happened_at, day, payload, external_id, ratio, is_public)
 values ($1, $2, $3, $4, $5, $6)"

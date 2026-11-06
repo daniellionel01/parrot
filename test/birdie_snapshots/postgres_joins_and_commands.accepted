@@ -86,7 +86,11 @@ pub type BooksWithAuthors {
   BooksWithAuthors(title: String, name: option.Option(String))
 }
 
-pub fn books_with_authors() {
+pub fn books_with_authors() -> #(
+  String,
+  List(Param),
+  decode.Decoder(BooksWithAuthors),
+) {
   let sql =
     "select books.title, authors.name
 from books left join authors on authors.id = books.author_id"
@@ -103,7 +107,7 @@ pub type CountBooks {
   CountBooks(count: Int)
 }
 
-pub fn count_books() {
+pub fn count_books() -> #(String, List(Param), decode.Decoder(CountBooks)) {
   let sql = "select count(*) from books"
   #(sql, [], count_books_decoder())
 }
@@ -120,7 +124,7 @@ pub type CreateBook {
 pub fn create_book(
   title title: String,
   author_id author_id: option.Option(Int),
-) {
+) -> #(String, List(Param), decode.Decoder(CreateBook)) {
   let sql =
     "insert into books (title, author_id)
 values ($1, $2)
@@ -140,12 +144,14 @@ pub fn create_book_decoder() -> decode.Decoder(CreateBook) {
   decode.success(CreateBook(id:))
 }
 
-pub fn delete_book(id id: Int) {
+pub fn delete_book(id id: Int) -> #(String, List(Param)) {
   let sql = "delete from books where id = $1"
   #(sql, [ParamInt(id)])
 }
 
-pub fn delete_books_by_author(author_id author_id: option.Option(Int)) {
+pub fn delete_books_by_author(
+  author_id author_id: option.Option(Int),
+) -> #(String, List(Param)) {
   let sql = "delete from books where author_id = $1"
   #(sql, [ParamNullable(option.map(author_id, fn(v) { ParamInt(v) }))])
 }

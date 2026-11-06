@@ -5,29 +5,29 @@ import gleam/string
 import parrot/error
 import parrot/internal/command
 import parrot/internal/database
-import parrot_test/tooling/fixtures
+import parrot_test/tooling/fixture
 import parrot_test/tooling/pipeline
 import parrot_test/tooling/test_database
 
 pub fn sqlite_database_does_not_exist_test() {
-  assert database.fetch_schema(database.SQLite, "does_not_exist.db", in: "/app")
-    == Error(error.SqliteDBNotFound("/app/does_not_exist.db"))
+  assert database.fetch_schema(database.Sqlite, "does_not_exist.db", in: "/app")
+    == Error(error.SqliteDatabaseNotFound("/app/does_not_exist.db"))
 }
 
 pub fn sqlite_url_test() {
-  let assert Ok(database.SQLite) = database.engine_from_url("file:app.db")
+  let assert Ok(database.Sqlite) = database.engine_from_url("file:app.db")
   assert database.fetch_schema(
-      database.SQLite,
+      database.Sqlite,
       "file:does_not_exist.db",
       in: "/app",
     )
-    == Error(error.SqliteDBNotFound("/app/does_not_exist.db"))
+    == Error(error.SqliteDatabaseNotFound("/app/does_not_exist.db"))
   assert database.fetch_schema(
-      database.SQLite,
+      database.Sqlite,
       "sqlite:///tmp/app.db",
       in: "/app",
     )
-    == Error(error.SqliteDBNotFound("/tmp/app.db"))
+    == Error(error.SqliteDatabaseNotFound("/tmp/app.db"))
 }
 
 pub fn sqlite_path_is_relative_to_project_test() {
@@ -39,13 +39,13 @@ pub fn sqlite_path_is_relative_to_project_test() {
     |> child_process.cwd(root)
     |> command.run
 
-  assert database.fetch_schema(database.SQLite, "sqlite:app.db", in: root)
+  assert database.fetch_schema(database.Sqlite, "sqlite:app.db", in: root)
     == Ok("CREATE TABLE t (id integer);")
 }
 
 pub fn mysql_password_is_percent_decoded_test() {
   use <- integration_only
-  let assert Ok(url) = test_database.create(fixtures.mysql_column_types())
+  let assert Ok(url) = test_database.create(fixture.mysql_column_types())
   let assert Ok(url) =
     test_database.mysql_user(
       url,
@@ -53,7 +53,7 @@ pub fn mysql_password_is_percent_decoded_test() {
       "p@ss:w/rd",
       "p%40ss%3Aw%2Frd",
     )
-  let assert Ok(schema) = database.fetch_schema(database.MySQL, url, in: ".")
+  let assert Ok(schema) = database.fetch_schema(database.Mysql, url, in: ".")
   assert string.contains(schema, "CREATE TABLE `accounts`")
 }
 

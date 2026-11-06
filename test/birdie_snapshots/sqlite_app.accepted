@@ -243,7 +243,7 @@ pub type Simple {
   Simple(col_0: Int)
 }
 
-pub fn simple() {
+pub fn simple() -> #(String, List(Param), decode.Decoder(Simple)) {
   let sql = "select 1"
   #(sql, [], simple_decoder())
 }
@@ -257,7 +257,7 @@ pub type CountUsers {
   CountUsers(count: Int)
 }
 
-pub fn count_users() {
+pub fn count_users() -> #(String, List(Param), decode.Decoder(CountUsers)) {
   let sql =
     "SELECT
   count(*)
@@ -271,7 +271,7 @@ pub fn count_users_decoder() -> decode.Decoder(CountUsers) {
   decode.success(CountUsers(count:))
 }
 
-pub fn create_user(username username: String) {
+pub fn create_user(username username: String) -> #(String, List(Param)) {
   let sql =
     "INSERT INTO
   users (username)
@@ -283,7 +283,7 @@ VALUES
 pub fn create_user_with_role(
   username username: String,
   role role: option.Option(String),
-) {
+) -> #(String, List(Param)) {
   let sql =
     "INSERT INTO
   users (username, role)
@@ -295,7 +295,10 @@ VALUES
   ])
 }
 
-pub fn update_user_username(username username: String, id id: Int) {
+pub fn update_user_username(
+  username username: String,
+  id id: Int,
+) -> #(String, List(Param)) {
   let sql =
     "UPDATE users
 SET
@@ -305,7 +308,10 @@ WHERE
   #(sql, [ParamString(username), ParamInt(id)])
 }
 
-pub fn update_user_type(type_ type_: option.Option(String), id id: Int) {
+pub fn update_user_type(
+  type_ type_: option.Option(String),
+  id id: Int,
+) -> #(String, List(Param)) {
   let sql =
     "UPDATE users
 SET
@@ -331,7 +337,9 @@ pub type GetUserByUsername {
   )
 }
 
-pub fn get_user_by_username(username username: String) {
+pub fn get_user_by_username(
+  username username: String,
+) -> #(String, List(Param), decode.Decoder(GetUserByUsername)) {
   let sql =
     "SELECT
   id, username, created_at, balance, last_known_location, role, avatar, type
@@ -369,7 +377,9 @@ pub type PostsByUsername {
   PostsByUsername(id: Int, title: String, user_id: Int)
 }
 
-pub fn posts_by_username(username username: String) {
+pub fn posts_by_username(
+  username username: String,
+) -> #(String, List(Param), decode.Decoder(PostsByUsername)) {
   let sql =
     "select
   id,
@@ -395,7 +405,11 @@ pub type PostsByAdmins {
   PostsByAdmins(id: Int, title: String, user_id: Int)
 }
 
-pub fn posts_by_admins() {
+pub fn posts_by_admins() -> #(
+  String,
+  List(Param),
+  decode.Decoder(PostsByAdmins),
+) {
   let sql =
     "select
   id,
@@ -421,7 +435,9 @@ pub type PostsByIds {
   PostsByIds(id: Int)
 }
 
-pub fn posts_by_ids(ids ids: List(Int)) {
+pub fn posts_by_ids(
+  ids ids: List(Int),
+) -> #(String, List(Param), decode.Decoder(PostsByIds)) {
   let ids_slice = case ids {
     [] -> "NULL"
     _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
@@ -441,7 +457,10 @@ pub type PostsByIdsAndTitle {
   PostsByIdsAndTitle(id: Int)
 }
 
-pub fn posts_by_ids_and_title(ids ids: List(Int), title title: String) {
+pub fn posts_by_ids_and_title(
+  ids ids: List(Int),
+  title title: String,
+) -> #(String, List(Param), decode.Decoder(PostsByIdsAndTitle)) {
   let ids_slice = case ids {
     [] -> "NULL"
     _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
@@ -465,7 +484,10 @@ pub type PostsByIdsAndStatus {
   PostsByIdsAndStatus(id: Int)
 }
 
-pub fn posts_by_ids_and_status(title title: String, ids ids: List(Int)) {
+pub fn posts_by_ids_and_status(
+  title title: String,
+  ids ids: List(Int),
+) -> #(String, List(Param), decode.Decoder(PostsByIdsAndStatus)) {
   let ids_slice = case ids {
     [] -> "NULL"
     _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
@@ -489,7 +511,10 @@ pub type MultipleSlices {
   MultipleSlices(id: Int)
 }
 
-pub fn multiple_slices(titles titles: List(String), ids ids: List(Int)) {
+pub fn multiple_slices(
+  titles titles: List(String),
+  ids ids: List(Int),
+) -> #(String, List(Param), decode.Decoder(MultipleSlices)) {
   let titles_slice = case titles {
     [] -> "NULL"
     _ -> list.map(titles, fn(_) { "?" }) |> string.join(",")
@@ -521,7 +546,7 @@ pub fn multiple_slices_and_argument(
   user_id user_id: Int,
   titles titles: List(String),
   ids ids: List(Int),
-) {
+) -> #(String, List(Param), decode.Decoder(MultipleSlicesAndArgument)) {
   let titles_slice = case titles {
     [] -> "NULL"
     _ -> list.map(titles, fn(_) { "?" }) |> string.join(",")

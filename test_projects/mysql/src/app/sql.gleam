@@ -38,7 +38,7 @@ pub type Inet {
   Inet(address: BitArray, mask: Int)
 }
 
-pub fn bool_decoder() {
+pub fn bool_decoder() -> decode.Decoder(Bool) {
   let int_to_bool = {
     decode.int
     |> decode.then(fn(v) {
@@ -247,7 +247,7 @@ pub type MoodsValue {
   Sad
 }
 
-pub fn moods_value_decoder() {
+pub fn moods_value_decoder() -> decode.Decoder(MoodsValue) {
   use variant <- decode.then(decode.string)
   case variant {
     "happy" -> decode.success(Happy)
@@ -256,7 +256,7 @@ pub fn moods_value_decoder() {
   }
 }
 
-pub fn moods_value_to_string(val: MoodsValue) {
+pub fn moods_value_to_string(val: MoodsValue) -> String {
   case val {
     Happy -> "happy"
     Sad -> "sad"
@@ -268,7 +268,7 @@ pub type MoodsNullableValue {
   Mad
 }
 
-pub fn moods_nullable_value_decoder() {
+pub fn moods_nullable_value_decoder() -> decode.Decoder(MoodsNullableValue) {
   use variant <- decode.then(decode.string)
   case variant {
     "glad" -> decode.success(Glad)
@@ -277,7 +277,7 @@ pub fn moods_nullable_value_decoder() {
   }
 }
 
-pub fn moods_nullable_value_to_string(val: MoodsNullableValue) {
+pub fn moods_nullable_value_to_string(val: MoodsNullableValue) -> String {
   case val {
     Glad -> "glad"
     Mad -> "mad"
@@ -287,7 +287,7 @@ pub fn moods_nullable_value_to_string(val: MoodsNullableValue) {
 pub fn insert_tinyint(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into tinyints (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
@@ -299,7 +299,7 @@ pub type SelectTinyint {
   SelectTinyint(value: Int, nullable_value: option.Option(Int))
 }
 
-pub fn select_tinyint() {
+pub fn select_tinyint() -> #(String, List(Param), decode.Decoder(SelectTinyint)) {
   let sql =
     "select value, nullable_value from tinyints where id = last_insert_id()"
   #(sql, [], select_tinyint_decoder())
@@ -314,7 +314,7 @@ pub fn select_tinyint_decoder() -> decode.Decoder(SelectTinyint) {
 pub fn insert_integer(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into integers (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
@@ -326,7 +326,7 @@ pub type SelectInteger {
   SelectInteger(value: Int, nullable_value: option.Option(Int))
 }
 
-pub fn select_integer() {
+pub fn select_integer() -> #(String, List(Param), decode.Decoder(SelectInteger)) {
   let sql =
     "select value, nullable_value from integers where id = last_insert_id()"
   #(sql, [], select_integer_decoder())
@@ -341,7 +341,7 @@ pub fn select_integer_decoder() -> decode.Decoder(SelectInteger) {
 pub fn insert_unsigned(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into unsigneds (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
@@ -353,7 +353,11 @@ pub type SelectUnsigned {
   SelectUnsigned(value: Int, nullable_value: option.Option(Int))
 }
 
-pub fn select_unsigned() {
+pub fn select_unsigned() -> #(
+  String,
+  List(Param),
+  decode.Decoder(SelectUnsigned),
+) {
   let sql =
     "select value, nullable_value from unsigneds where id = last_insert_id()"
   #(sql, [], select_unsigned_decoder())
@@ -368,7 +372,7 @@ pub fn select_unsigned_decoder() -> decode.Decoder(SelectUnsigned) {
 pub fn insert_bigint(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into bigints (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamInt(value),
@@ -380,7 +384,7 @@ pub type SelectBigint {
   SelectBigint(value: Int, nullable_value: option.Option(Int))
 }
 
-pub fn select_bigint() {
+pub fn select_bigint() -> #(String, List(Param), decode.Decoder(SelectBigint)) {
   let sql =
     "select value, nullable_value from bigints where id = last_insert_id()"
   #(sql, [], select_bigint_decoder())
@@ -395,7 +399,7 @@ pub fn select_bigint_decoder() -> decode.Decoder(SelectBigint) {
 pub fn insert_float(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into floats (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamFloat(value),
@@ -407,7 +411,7 @@ pub type SelectFloat {
   SelectFloat(value: Float, nullable_value: option.Option(Float))
 }
 
-pub fn select_float() {
+pub fn select_float() -> #(String, List(Param), decode.Decoder(SelectFloat)) {
   let sql =
     "select value, nullable_value from floats where id = last_insert_id()"
   #(sql, [], select_float_decoder())
@@ -422,7 +426,7 @@ pub fn select_float_decoder() -> decode.Decoder(SelectFloat) {
 pub fn insert_double(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into doubles (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamFloat(value),
@@ -434,7 +438,7 @@ pub type SelectDouble {
   SelectDouble(value: Float, nullable_value: option.Option(Float))
 }
 
-pub fn select_double() {
+pub fn select_double() -> #(String, List(Param), decode.Decoder(SelectDouble)) {
   let sql =
     "select value, nullable_value from doubles where id = last_insert_id()"
   #(sql, [], select_double_decoder())
@@ -449,7 +453,7 @@ pub fn select_double_decoder() -> decode.Decoder(SelectDouble) {
 pub fn insert_decimal(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into decimals (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamFloat(value),
@@ -461,7 +465,7 @@ pub type SelectDecimal {
   SelectDecimal(value: Float, nullable_value: option.Option(Float))
 }
 
-pub fn select_decimal() {
+pub fn select_decimal() -> #(String, List(Param), decode.Decoder(SelectDecimal)) {
   let sql =
     "select value, nullable_value from decimals where id = last_insert_id()"
   #(sql, [], select_decimal_decoder())
@@ -476,7 +480,7 @@ pub fn select_decimal_decoder() -> decode.Decoder(SelectDecimal) {
 pub fn insert_varchar(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into varchars (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamString(value),
@@ -488,7 +492,7 @@ pub type SelectVarchar {
   SelectVarchar(value: String, nullable_value: option.Option(String))
 }
 
-pub fn select_varchar() {
+pub fn select_varchar() -> #(String, List(Param), decode.Decoder(SelectVarchar)) {
   let sql =
     "select value, nullable_value from varchars where id = last_insert_id()"
   #(sql, [], select_varchar_decoder())
@@ -503,7 +507,7 @@ pub fn select_varchar_decoder() -> decode.Decoder(SelectVarchar) {
 pub fn insert_text(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into texts (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamString(value),
@@ -515,7 +519,7 @@ pub type SelectText {
   SelectText(value: String, nullable_value: option.Option(String))
 }
 
-pub fn select_text() {
+pub fn select_text() -> #(String, List(Param), decode.Decoder(SelectText)) {
   let sql =
     "select value, nullable_value from texts where id = last_insert_id()"
   #(sql, [], select_text_decoder())
@@ -530,7 +534,7 @@ pub fn select_text_decoder() -> decode.Decoder(SelectText) {
 pub fn insert_blob(
   value value: BitArray,
   nullable_value nullable_value: option.Option(BitArray),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into blobs (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamBitArray(value),
@@ -542,7 +546,7 @@ pub type SelectBlob {
   SelectBlob(value: BitArray, nullable_value: option.Option(BitArray))
 }
 
-pub fn select_blob() {
+pub fn select_blob() -> #(String, List(Param), decode.Decoder(SelectBlob)) {
   let sql =
     "select value, nullable_value from blobs where id = last_insert_id()"
   #(sql, [], select_blob_decoder())
@@ -557,7 +561,7 @@ pub fn select_blob_decoder() -> decode.Decoder(SelectBlob) {
 pub fn insert_boolean(
   value value: Bool,
   nullable_value nullable_value: option.Option(Bool),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into booleans (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamBool(value),
@@ -569,7 +573,7 @@ pub type SelectBoolean {
   SelectBoolean(value: Bool, nullable_value: option.Option(Bool))
 }
 
-pub fn select_boolean() {
+pub fn select_boolean() -> #(String, List(Param), decode.Decoder(SelectBoolean)) {
   let sql =
     "select value, nullable_value from booleans where id = last_insert_id()"
   #(sql, [], select_boolean_decoder())
@@ -584,7 +588,7 @@ pub fn select_boolean_decoder() -> decode.Decoder(SelectBoolean) {
 pub fn insert_date(
   value value: Date,
   nullable_value nullable_value: option.Option(Date),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into dates (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamDate(value),
@@ -596,7 +600,7 @@ pub type SelectDate {
   SelectDate(value: Date, nullable_value: option.Option(Date))
 }
 
-pub fn select_date() {
+pub fn select_date() -> #(String, List(Param), decode.Decoder(SelectDate)) {
   let sql =
     "select value, nullable_value from dates where id = last_insert_id()"
   #(sql, [], select_date_decoder())
@@ -614,7 +618,7 @@ pub fn select_date_decoder() -> decode.Decoder(SelectDate) {
 pub fn insert_datetime(
   value value: Timestamp,
   nullable_value nullable_value: option.Option(Timestamp),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into datetimes (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamTimestamp(value),
@@ -626,7 +630,11 @@ pub type SelectDatetime {
   SelectDatetime(value: Timestamp, nullable_value: option.Option(Timestamp))
 }
 
-pub fn select_datetime() {
+pub fn select_datetime() -> #(
+  String,
+  List(Param),
+  decode.Decoder(SelectDatetime),
+) {
   let sql =
     "select value, nullable_value from datetimes where id = last_insert_id()"
   #(sql, [], select_datetime_decoder())
@@ -641,7 +649,7 @@ pub fn select_datetime_decoder() -> decode.Decoder(SelectDatetime) {
 pub fn insert_timestamp(
   value value: Timestamp,
   nullable_value nullable_value: option.Option(Timestamp),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into timestamps (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamTimestamp(value),
@@ -653,7 +661,11 @@ pub type SelectTimestamp {
   SelectTimestamp(value: Timestamp, nullable_value: option.Option(Timestamp))
 }
 
-pub fn select_timestamp() {
+pub fn select_timestamp() -> #(
+  String,
+  List(Param),
+  decode.Decoder(SelectTimestamp),
+) {
   let sql =
     "select value, nullable_value from timestamps where id = last_insert_id()"
   #(sql, [], select_timestamp_decoder())
@@ -668,7 +680,7 @@ pub fn select_timestamp_decoder() -> decode.Decoder(SelectTimestamp) {
 pub fn insert_time(
   value value: TimeOfDay,
   nullable_value nullable_value: option.Option(TimeOfDay),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into times (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamTimeOfDay(value),
@@ -680,7 +692,7 @@ pub type SelectTime {
   SelectTime(value: TimeOfDay, nullable_value: option.Option(TimeOfDay))
 }
 
-pub fn select_time() {
+pub fn select_time() -> #(String, List(Param), decode.Decoder(SelectTime)) {
   let sql =
     "select value, nullable_value from times where id = last_insert_id()"
   #(sql, [], select_time_decoder())
@@ -695,7 +707,7 @@ pub fn select_time_decoder() -> decode.Decoder(SelectTime) {
 pub fn insert_json(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into jsons (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamString(value),
@@ -707,7 +719,7 @@ pub type SelectJson {
   SelectJson(value: String, nullable_value: option.Option(String))
 }
 
-pub fn select_json() {
+pub fn select_json() -> #(String, List(Param), decode.Decoder(SelectJson)) {
   let sql =
     "select value, nullable_value from jsons where id = last_insert_id()"
   #(sql, [], select_json_decoder())
@@ -722,7 +734,7 @@ pub fn select_json_decoder() -> decode.Decoder(SelectJson) {
 pub fn insert_mood(
   value value: MoodsValue,
   nullable_value nullable_value: option.Option(MoodsNullableValue),
-) {
+) -> #(String, List(Param)) {
   let sql = "insert into moods (value, nullable_value) values (?, ?)"
   #(sql, [
     ParamString(moods_value_to_string(value)),
@@ -741,7 +753,7 @@ pub type SelectMood {
   )
 }
 
-pub fn select_mood() {
+pub fn select_mood() -> #(String, List(Param), decode.Decoder(SelectMood)) {
   let sql =
     "select value, nullable_value from moods where id = last_insert_id()"
   #(sql, [], select_mood_decoder())
@@ -756,7 +768,10 @@ pub fn select_mood_decoder() -> decode.Decoder(SelectMood) {
   decode.success(SelectMood(value:, nullable_value:))
 }
 
-pub fn insert_keywords(type_ type_: String, case_ case_: String) {
+pub fn insert_keywords(
+  type_ type_: String,
+  case_ case_: String,
+) -> #(String, List(Param)) {
   let sql = "insert into keywords (`type`, `case`) values (?, ?)"
   #(sql, [ParamString(type_), ParamString(case_)])
 }
@@ -765,7 +780,11 @@ pub type SelectKeywords {
   SelectKeywords(type_: String, case_: String)
 }
 
-pub fn select_keywords() {
+pub fn select_keywords() -> #(
+  String,
+  List(Param),
+  decode.Decoder(SelectKeywords),
+) {
   let sql = "select `type`, `case` from keywords where id = last_insert_id()"
   #(sql, [], select_keywords_decoder())
 }
@@ -776,7 +795,7 @@ pub fn select_keywords_decoder() -> decode.Decoder(SelectKeywords) {
   decode.success(SelectKeywords(type_:, case_:))
 }
 
-pub fn insert_slice(value value: Int) {
+pub fn insert_slice(value value: Int) -> #(String, List(Param)) {
   let sql = "insert into slices (value) values (?)"
   #(sql, [ParamInt(value)])
 }
@@ -785,7 +804,9 @@ pub type SelectSlice {
   SelectSlice(value: Int)
 }
 
-pub fn select_slice(values values: List(Int)) {
+pub fn select_slice(
+  values values: List(Int),
+) -> #(String, List(Param), decode.Decoder(SelectSlice)) {
   let values_slice = case values {
     [] -> "NULL"
     _ -> list.map(values, fn(_) { "?" }) |> string.join(",")

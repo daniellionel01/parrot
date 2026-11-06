@@ -16,33 +16,33 @@ import parrot/internal/command
 import simplifile
 
 pub type Engine {
-  SQLite
-  MySQL
-  PostgreSQL
+  Sqlite
+  Mysql
+  Postgresql
 }
 
 pub fn engine_name(engine: Engine) -> String {
   case engine {
-    SQLite -> "sqlite"
-    MySQL -> "mysql"
-    PostgreSQL -> "postgresql"
+    Sqlite -> "sqlite"
+    Mysql -> "mysql"
+    Postgresql -> "postgresql"
   }
 }
 
 pub fn engine_from_name(name: String) -> Result(Engine, ParrotError) {
   case string.lowercase(name) {
-    "postgresql" | "postgres" -> Ok(PostgreSQL)
-    "mysql" -> Ok(MySQL)
-    "sqlite" -> Ok(SQLite)
+    "postgresql" | "postgres" -> Ok(Postgresql)
+    "mysql" -> Ok(Mysql)
+    "sqlite" -> Ok(Sqlite)
     _ -> Error(error.UnknownEngine(name))
   }
 }
 
 pub fn engine_from_url(url: String) -> Result(Engine, ParrotError) {
   case url {
-    "postgres" <> _ -> Ok(PostgreSQL)
-    "mysql" <> _ -> Ok(MySQL)
-    "sqlite" <> _ | "file:" <> _ -> Ok(SQLite)
+    "postgres" <> _ -> Ok(Postgresql)
+    "mysql" <> _ -> Ok(Mysql)
+    "sqlite" <> _ | "file:" <> _ -> Ok(Sqlite)
     _ -> Error(error.MissingEngine)
   }
 }
@@ -60,9 +60,9 @@ pub fn fetch_schema(
   in dir: String,
 ) -> Result(String, ParrotError) {
   case engine {
-    SQLite -> fetch_sqlite(sqlite_path(url, dir))
-    MySQL -> fetch_mysql(url)
-    PostgreSQL -> fetch_postgres(url)
+    Sqlite -> fetch_sqlite(sqlite_path(url, dir))
+    Mysql -> fetch_mysql(url)
+    Postgresql -> fetch_postgres(url)
   }
 }
 
@@ -84,7 +84,7 @@ fn fetch_sqlite(path: String) -> Result(String, ParrotError) {
   // `sqlite3` would silently create an empty database otherwise.
   use <- bool.guard(
     when: simplifile.is_file(path) != Ok(True),
-    return: Error(error.SqliteDBNotFound(path)),
+    return: Error(error.SqliteDatabaseNotFound(path)),
   )
   dump("sqlite3", [path, ".schema"], [])
   |> result.map(string.trim)

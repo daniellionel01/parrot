@@ -25,11 +25,11 @@ Options can also be set in gleam.toml: https://parrot.hexdocs.pm/toml-reference.
 
 const colorless = "\u{001b}[0m"
 
-pub fn red(text: String) {
+pub fn red(text: String) -> String {
   "\u{001b}[31m" <> text <> colorless
 }
 
-pub fn yellow(text: String) {
+pub fn yellow(text: String) -> String {
   "\u{001b}[33m" <> text <> colorless
 }
 

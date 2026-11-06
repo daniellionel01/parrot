@@ -38,7 +38,7 @@ pub type Inet {
   Inet(address: BitArray, mask: Int)
 }
 
-pub fn bool_decoder() {
+pub fn bool_decoder() -> decode.Decoder(Bool) {
   let int_to_bool = {
     decode.int
     |> decode.then(fn(v) {
@@ -249,7 +249,7 @@ pub type IntegerRoundTrip {
 pub fn integer_round_trip(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param), decode.Decoder(IntegerRoundTrip)) {
   let sql =
     "insert into integers (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -276,7 +276,7 @@ pub type RealRoundTrip {
 pub fn real_round_trip(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param), decode.Decoder(RealRoundTrip)) {
   let sql =
     "insert into reals (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -303,7 +303,7 @@ pub type NumericRoundTrip {
 pub fn numeric_round_trip(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param), decode.Decoder(NumericRoundTrip)) {
   let sql =
     "insert into numerics (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -330,7 +330,7 @@ pub type TextRoundTrip {
 pub fn text_round_trip(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param), decode.Decoder(TextRoundTrip)) {
   let sql =
     "insert into texts (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -357,7 +357,7 @@ pub type VarcharRoundTrip {
 pub fn varchar_round_trip(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param), decode.Decoder(VarcharRoundTrip)) {
   let sql =
     "insert into varchars (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -384,7 +384,7 @@ pub type BlobRoundTrip {
 pub fn blob_round_trip(
   value value: BitArray,
   nullable_value nullable_value: option.Option(BitArray),
-) {
+) -> #(String, List(Param), decode.Decoder(BlobRoundTrip)) {
   let sql =
     "insert into blobs (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -411,7 +411,7 @@ pub type BooleanRoundTrip {
 pub fn boolean_round_trip(
   value value: Bool,
   nullable_value nullable_value: option.Option(Bool),
-) {
+) -> #(String, List(Param), decode.Decoder(BooleanRoundTrip)) {
   let sql =
     "insert into booleans (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -438,7 +438,7 @@ pub type DateRoundTrip {
 pub fn date_round_trip(
   value value: Date,
   nullable_value nullable_value: option.Option(Date),
-) {
+) -> #(String, List(Param), decode.Decoder(DateRoundTrip)) {
   let sql =
     "insert into dates (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -468,7 +468,7 @@ pub type DatetimeRoundTrip {
 pub fn datetime_round_trip(
   value value: Timestamp,
   nullable_value nullable_value: option.Option(Timestamp),
-) {
+) -> #(String, List(Param), decode.Decoder(DatetimeRoundTrip)) {
   let sql =
     "insert into datetimes (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -495,7 +495,11 @@ pub type SqliteWrittenDatetime {
   )
 }
 
-pub fn sqlite_written_datetime() {
+pub fn sqlite_written_datetime() -> #(
+  String,
+  List(Param),
+  decode.Decoder(SqliteWrittenDatetime),
+) {
   let sql =
     "insert into datetimes (value, nullable_value)
 values ('2024-03-01 12:30:00', '2024-03-01T12:30:00.250')
@@ -518,7 +522,7 @@ pub type TimestampRoundTrip {
 pub fn timestamp_round_trip(
   value value: Timestamp,
   nullable_value nullable_value: option.Option(Timestamp),
-) {
+) -> #(String, List(Param), decode.Decoder(TimestampRoundTrip)) {
   let sql =
     "insert into timestamps (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -545,7 +549,7 @@ pub type TimeRoundTrip {
 pub fn time_round_trip(
   value value: TimeOfDay,
   nullable_value nullable_value: option.Option(TimeOfDay),
-) {
+) -> #(String, List(Param), decode.Decoder(TimeRoundTrip)) {
   let sql =
     "insert into times (value, nullable_value) values (?, ?)
 returning value, nullable_value"
@@ -569,7 +573,10 @@ pub type KeywordsRoundTrip {
   KeywordsRoundTrip(type_: String, case_: String)
 }
 
-pub fn keywords_round_trip(type_ type_: String, case_ case_: String) {
+pub fn keywords_round_trip(
+  type_ type_: String,
+  case_ case_: String,
+) -> #(String, List(Param), decode.Decoder(KeywordsRoundTrip)) {
   let sql =
     "insert into keywords (\"type\", \"case\") values (?, ?)
 returning \"type\", \"case\""
@@ -586,7 +593,7 @@ pub fn keywords_round_trip_decoder() -> decode.Decoder(KeywordsRoundTrip) {
   decode.success(KeywordsRoundTrip(type_:, case_:))
 }
 
-pub fn insert_slice(value value: Int) {
+pub fn insert_slice(value value: Int) -> #(String, List(Param)) {
   let sql = "insert into slices (value) values (?)"
   #(sql, [ParamInt(value)])
 }
@@ -595,7 +602,9 @@ pub type SelectSlice {
   SelectSlice(value: Int)
 }
 
-pub fn select_slice(values values: List(Int)) {
+pub fn select_slice(
+  values values: List(Int),
+) -> #(String, List(Param), decode.Decoder(SelectSlice)) {
   let values_slice = case values {
     [] -> "NULL"
     _ -> list.map(values, fn(_) { "?" }) |> string.join(",")

@@ -21,9 +21,9 @@ pub fn create(fixture: Fixture) -> Result(String, String) {
   let name = "parrot_test_" <> fixture.name
 
   case fixture.engine {
-    database.SQLite -> create_sqlite(name, fixture.schema)
-    database.PostgreSQL -> create_postgres(name, fixture.schema)
-    database.MySQL -> create_mysql(name, fixture.schema)
+    database.Sqlite -> create_sqlite(name, fixture.schema)
+    database.Postgresql -> create_postgres(name, fixture.schema)
+    database.Mysql -> create_mysql(name, fixture.schema)
   }
 }
 

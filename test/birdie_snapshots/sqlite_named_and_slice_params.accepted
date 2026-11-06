@@ -64,7 +64,9 @@ pub type ThingsByIds {
   ThingsByIds(id: Int, name: String)
 }
 
-pub fn things_by_ids(ids ids: List(Int)) {
+pub fn things_by_ids(
+  ids ids: List(Int),
+) -> #(String, List(Param), decode.Decoder(ThingsByIds)) {
   let ids_slice = case ids {
     [] -> "NULL"
     _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")
@@ -79,7 +81,10 @@ pub fn things_by_ids_decoder() -> decode.Decoder(ThingsByIds) {
   decode.success(ThingsByIds(id:, name:))
 }
 
-pub fn rename_thing(new_name new_name: String, id id: Int) {
+pub fn rename_thing(
+  new_name new_name: String,
+  id id: Int,
+) -> #(String, List(Param)) {
   let sql = "update things set name = ?1 where id = ?2"
   #(sql, [ParamString(new_name), ParamInt(id)])
 }
@@ -88,7 +93,9 @@ pub type ThingsByName {
   ThingsByName(id: Int)
 }
 
-pub fn things_by_name(name name: String) {
+pub fn things_by_name(
+  name name: String,
+) -> #(String, List(Param), decode.Decoder(ThingsByName)) {
   let sql = "select id from things where name = ?1"
   #(sql, [ParamString(name)], things_by_name_decoder())
 }

@@ -37,7 +37,7 @@ pub type Inet {
   Inet(address: BitArray, mask: Int)
 }
 
-pub fn bool_decoder() {
+pub fn bool_decoder() -> decode.Decoder(Bool) {
   let int_to_bool = {
     decode.int
     |> decode.then(fn(v) {
@@ -246,7 +246,7 @@ pub type Mood {
   Sad
 }
 
-pub fn mood_decoder() {
+pub fn mood_decoder() -> decode.Decoder(Mood) {
   use variant <- decode.then(decode.string)
   case variant {
     "happy" -> decode.success(Happy)
@@ -255,7 +255,7 @@ pub fn mood_decoder() {
   }
 }
 
-pub fn mood_to_string(val: Mood) {
+pub fn mood_to_string(val: Mood) -> String {
   case val {
     Happy -> "happy"
     Sad -> "sad"
@@ -269,7 +269,7 @@ pub type SmallintRoundTrip {
 pub fn smallint_round_trip(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param), decode.Decoder(SmallintRoundTrip)) {
   let sql =
     "insert into smallints (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -296,7 +296,7 @@ pub type IntegerRoundTrip {
 pub fn integer_round_trip(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param), decode.Decoder(IntegerRoundTrip)) {
   let sql =
     "insert into integers (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -323,7 +323,7 @@ pub type BigintRoundTrip {
 pub fn bigint_round_trip(
   value value: Int,
   nullable_value nullable_value: option.Option(Int),
-) {
+) -> #(String, List(Param), decode.Decoder(BigintRoundTrip)) {
   let sql =
     "insert into bigints (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -350,7 +350,7 @@ pub type RealRoundTrip {
 pub fn real_round_trip(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param), decode.Decoder(RealRoundTrip)) {
   let sql =
     "insert into reals (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -377,7 +377,7 @@ pub type DoubleRoundTrip {
 pub fn double_round_trip(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param), decode.Decoder(DoubleRoundTrip)) {
   let sql =
     "insert into doubles (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -404,7 +404,7 @@ pub type NumericRoundTrip {
 pub fn numeric_round_trip(
   value value: Float,
   nullable_value nullable_value: option.Option(Float),
-) {
+) -> #(String, List(Param), decode.Decoder(NumericRoundTrip)) {
   let sql =
     "insert into numerics (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -431,7 +431,7 @@ pub type TextRoundTrip {
 pub fn text_round_trip(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param), decode.Decoder(TextRoundTrip)) {
   let sql =
     "insert into texts (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -458,7 +458,7 @@ pub type VarcharRoundTrip {
 pub fn varchar_round_trip(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param), decode.Decoder(VarcharRoundTrip)) {
   let sql =
     "insert into varchars (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -485,7 +485,7 @@ pub type CharRoundTrip {
 pub fn char_round_trip(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param), decode.Decoder(CharRoundTrip)) {
   let sql =
     "insert into chars (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -512,7 +512,7 @@ pub type BooleanRoundTrip {
 pub fn boolean_round_trip(
   value value: Bool,
   nullable_value nullable_value: option.Option(Bool),
-) {
+) -> #(String, List(Param), decode.Decoder(BooleanRoundTrip)) {
   let sql =
     "insert into booleans (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -539,7 +539,7 @@ pub type ByteaRoundTrip {
 pub fn bytea_round_trip(
   value value: BitArray,
   nullable_value nullable_value: option.Option(BitArray),
-) {
+) -> #(String, List(Param), decode.Decoder(ByteaRoundTrip)) {
   let sql =
     "insert into byteas (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -566,7 +566,7 @@ pub type UuidRoundTrip {
 pub fn uuid_round_trip(
   value value: BitArray,
   nullable_value nullable_value: option.Option(BitArray),
-) {
+) -> #(String, List(Param), decode.Decoder(UuidRoundTrip)) {
   let sql =
     "insert into uuids (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -593,7 +593,7 @@ pub type JsonRoundTrip {
 pub fn json_round_trip(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param), decode.Decoder(JsonRoundTrip)) {
   let sql =
     "insert into jsons (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -620,7 +620,7 @@ pub type JsonbRoundTrip {
 pub fn jsonb_round_trip(
   value value: String,
   nullable_value nullable_value: option.Option(String),
-) {
+) -> #(String, List(Param), decode.Decoder(JsonbRoundTrip)) {
   let sql =
     "insert into jsonbs (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -647,7 +647,7 @@ pub type DateRoundTrip {
 pub fn date_round_trip(
   value value: Date,
   nullable_value nullable_value: option.Option(Date),
-) {
+) -> #(String, List(Param), decode.Decoder(DateRoundTrip)) {
   let sql =
     "insert into dates (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -677,7 +677,7 @@ pub type TimestampRoundTrip {
 pub fn timestamp_round_trip(
   value value: Timestamp,
   nullable_value nullable_value: option.Option(Timestamp),
-) {
+) -> #(String, List(Param), decode.Decoder(TimestampRoundTrip)) {
   let sql =
     "insert into timestamps (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -707,7 +707,7 @@ pub type TimestamptzRoundTrip {
 pub fn timestamptz_round_trip(
   value value: Timestamp,
   nullable_value nullable_value: option.Option(Timestamp),
-) {
+) -> #(String, List(Param), decode.Decoder(TimestamptzRoundTrip)) {
   let sql =
     "insert into timestamptzs (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -734,7 +734,7 @@ pub type TimeRoundTrip {
 pub fn time_round_trip(
   value value: TimeOfDay,
   nullable_value nullable_value: option.Option(TimeOfDay),
-) {
+) -> #(String, List(Param), decode.Decoder(TimeRoundTrip)) {
   let sql =
     "insert into times (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -761,7 +761,7 @@ pub type MoodRoundTrip {
 pub fn mood_round_trip(
   value value: Mood,
   nullable_value nullable_value: option.Option(Mood),
-) {
+) -> #(String, List(Param), decode.Decoder(MoodRoundTrip)) {
   let sql =
     "insert into moods (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -793,7 +793,7 @@ pub type TextArrayRoundTrip {
 pub fn text_array_round_trip(
   value value: List(String),
   nullable_value nullable_value: option.Option(List(String)),
-) {
+) -> #(String, List(Param), decode.Decoder(TextArrayRoundTrip)) {
   let sql =
     "insert into text_arrays (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -828,7 +828,7 @@ pub type IntegerArrayRoundTrip {
 pub fn integer_array_round_trip(
   value value: List(Int),
   nullable_value nullable_value: option.Option(List(Int)),
-) {
+) -> #(String, List(Param), decode.Decoder(IntegerArrayRoundTrip)) {
   let sql =
     "insert into integer_arrays (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -859,7 +859,10 @@ pub type KeywordsRoundTrip {
   KeywordsRoundTrip(type_: String, case_: String)
 }
 
-pub fn keywords_round_trip(type_ type_: String, case_ case_: String) {
+pub fn keywords_round_trip(
+  type_ type_: String,
+  case_ case_: String,
+) -> #(String, List(Param), decode.Decoder(KeywordsRoundTrip)) {
   let sql =
     "insert into keywords (\"type\", \"case\") values ($1, $2)
 returning \"type\", \"case\""
@@ -886,7 +889,7 @@ pub type MoodArrayRoundTrip {
 pub fn mood_array_round_trip(
   value value: List(Mood),
   nullable_value nullable_value: option.Option(List(Mood)),
-) {
+) -> #(String, List(Param), decode.Decoder(MoodArrayRoundTrip)) {
   let sql =
     "insert into mood_arrays (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -920,7 +923,7 @@ pub type IntervalRoundTrip {
 pub fn interval_round_trip(
   value value: Interval,
   nullable_value nullable_value: option.Option(Interval),
-) {
+) -> #(String, List(Param), decode.Decoder(IntervalRoundTrip)) {
   let sql =
     "insert into intervals (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -947,7 +950,7 @@ pub type InetRoundTrip {
 pub fn inet_round_trip(
   value value: Inet,
   nullable_value nullable_value: option.Option(Inet),
-) {
+) -> #(String, List(Param), decode.Decoder(InetRoundTrip)) {
   let sql =
     "insert into inets (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -974,7 +977,7 @@ pub type CidrRoundTrip {
 pub fn cidr_round_trip(
   value value: Inet,
   nullable_value nullable_value: option.Option(Inet),
-) {
+) -> #(String, List(Param), decode.Decoder(CidrRoundTrip)) {
   let sql =
     "insert into cidrs (value, nullable_value) values ($1, $2)
 returning value, nullable_value"
@@ -1001,7 +1004,7 @@ pub type MacaddrRoundTrip {
 pub fn macaddr_round_trip(
   value value: BitArray,
   nullable_value nullable_value: option.Option(BitArray),
-) {
+) -> #(String, List(Param), decode.Decoder(MacaddrRoundTrip)) {
   let sql =
     "insert into macaddrs (value, nullable_value) values ($1, $2)
 returning value, nullable_value"

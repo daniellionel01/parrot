@@ -62,7 +62,7 @@ fn enum(enum: Enum) -> String {
   |> list.append([
     "}",
     "",
-    "pub fn " <> decoder <> "() {",
+    "pub fn " <> decoder <> "() -> decode.Decoder(" <> type_ <> ") {",
     "  use variant <- decode.then(decode.string)",
     "  case variant {",
     ..list.map(variants, fn(v) {
@@ -74,7 +74,7 @@ fn enum(enum: Enum) -> String {
     "  }",
     "}",
     "",
-    "pub fn " <> function <> "(val: " <> type_ <> ") {",
+    "pub fn " <> function <> "(val: " <> type_ <> ") -> String {",
     "  case val {",
     ..list.map(variants, fn(v) {
       "    " <> v.name <> " -> \"" <> v.value <> "\""
@@ -133,12 +133,24 @@ fn function(query: Query) -> String {
       <> ", fn(_) { \"?\" }) |> string.join(\",\")\n  }"
     })
 
-  let returned = case query.returns_rows {
-    True -> ["sql", params(query.params), query.names.decoder <> "()"]
-    False -> ["sql", params(query.params)]
+  let #(returned, return_type) = case query.returns_rows {
+    True -> #(
+      ["sql", params(query.params), query.names.decoder <> "()"],
+      "#(String, List(Param), decode.Decoder(" <> query.names.type_ <> "))",
+    )
+    False -> #(["sql", params(query.params)], "#(String, List(Param))")
   }
 
-  ["pub fn " <> query.names.function <> "(" <> arguments <> ") {", ..slices]
+  [
+    "pub fn "
+      <> query.names.function
+      <> "("
+      <> arguments
+      <> ") -> "
+      <> return_type
+      <> " {",
+    ..slices
+  ]
   |> list.append([
     "  let sql = " <> sql(query.sql),
     "  #(" <> string.join(returned, ", ") <> ")",

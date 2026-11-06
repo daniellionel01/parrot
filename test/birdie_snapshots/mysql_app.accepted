@@ -193,7 +193,7 @@ pub type UsersStatus {
   Neutral
 }
 
-pub fn users_status_decoder() {
+pub fn users_status_decoder() -> decode.Decoder(UsersStatus) {
   use variant <- decode.then(decode.string)
   case variant {
     "like" -> decode.success(Like)
@@ -202,7 +202,7 @@ pub fn users_status_decoder() {
   }
 }
 
-pub fn users_status_to_string(val: UsersStatus) {
+pub fn users_status_to_string(val: UsersStatus) -> String {
   case val {
     Like -> "like"
     Neutral -> "neutral"
@@ -213,7 +213,7 @@ pub type Simple {
   Simple(col_0: Int)
 }
 
-pub fn simple() {
+pub fn simple() -> #(String, List(Param), decode.Decoder(Simple)) {
   let sql = "select 1"
   #(sql, [], simple_decoder())
 }
@@ -233,7 +233,7 @@ pub type GetUser {
   )
 }
 
-pub fn get_user(id id: Int) {
+pub fn get_user(id id: Int) -> #(String, List(Param), decode.Decoder(GetUser)) {
   let sql =
     "SELECT
   id, username, created_at, status, admin
@@ -265,7 +265,7 @@ pub type ListUsers {
   )
 }
 
-pub fn list_users() {
+pub fn list_users() -> #(String, List(Param), decode.Decoder(ListUsers)) {
   let sql =
     "SELECT
   id, username, created_at, status, admin
@@ -285,7 +285,7 @@ pub fn list_users_decoder() -> decode.Decoder(ListUsers) {
   decode.success(ListUsers(id:, username:, created_at:, status:, admin:))
 }
 
-pub fn create_user(username username: String) {
+pub fn create_user(username username: String) -> #(String, List(Param)) {
   let sql =
     "INSERT INTO
   users (username)
@@ -294,7 +294,10 @@ VALUES
   #(sql, [ParamString(username)])
 }
 
-pub fn update_user_username(username username: String, id id: Int) {
+pub fn update_user_username(
+  username username: String,
+  id id: Int,
+) -> #(String, List(Param)) {
   let sql =
     "UPDATE users
 SET
@@ -304,7 +307,7 @@ WHERE
   #(sql, [ParamString(username), ParamInt(id)])
 }
 
-pub fn delete_user(id id: Int) {
+pub fn delete_user(id id: Int) -> #(String, List(Param)) {
   let sql =
     "DELETE FROM users
 WHERE
@@ -322,7 +325,9 @@ pub type GetUserByUsername {
   )
 }
 
-pub fn get_user_by_username(username username: String) {
+pub fn get_user_by_username(
+  username username: String,
+) -> #(String, List(Param), decode.Decoder(GetUserByUsername)) {
   let sql =
     "SELECT
   id, username, created_at, status, admin
@@ -348,7 +353,9 @@ pub type PostsByUsername {
   PostsByUsername(id: Int, title: String, user_id: option.Option(Int))
 }
 
-pub fn posts_by_username(username username: String) {
+pub fn posts_by_username(
+  username username: String,
+) -> #(String, List(Param), decode.Decoder(PostsByUsername)) {
   let sql =
     "select
   id,
@@ -374,7 +381,11 @@ pub type PostsByAdmins {
   PostsByAdmins(id: Int, title: String, user_id: option.Option(Int))
 }
 
-pub fn posts_by_admins() {
+pub fn posts_by_admins() -> #(
+  String,
+  List(Param),
+  decode.Decoder(PostsByAdmins),
+) {
   let sql =
     "select
   id,

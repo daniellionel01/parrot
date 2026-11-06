@@ -66,7 +66,7 @@ pub type Simple {
   Simple(col_0: Int)
 }
 
-pub fn simple() {
+pub fn simple() -> #(String, List(Param), decode.Decoder(Simple)) {
   let sql = "select 1"
   #(sql, [], simple_decoder())
 }
@@ -80,7 +80,7 @@ pub type CountUsers {
   CountUsers(count: Int)
 }
 
-pub fn count_users() {
+pub fn count_users() -> #(String, List(Param), decode.Decoder(CountUsers)) {
   let sql =
     "SELECT
   count(*)
@@ -94,7 +94,7 @@ pub fn count_users_decoder() -> decode.Decoder(CountUsers) {
   decode.success(CountUsers(count:))
 }
 
-pub fn create_user(username username: String) {
+pub fn create_user(username username: String) -> #(String, List(Param)) {
   let sql =
     "INSERT INTO
   users (username)

@@ -59,7 +59,7 @@ pub type CountUsers {
   CountUsers(count: Int)
 }
 
-pub fn count_users() {
+pub fn count_users() -> #(String, List(Param), decode.Decoder(CountUsers)) {
   let sql = "select count(*) from users"
   #(sql, [], count_users_decoder())
 }
@@ -69,7 +69,7 @@ pub fn count_users_decoder() -> decode.Decoder(CountUsers) {
   decode.success(CountUsers(count:))
 }
 
-pub fn create_user(username username: String) {
+pub fn create_user(username username: String) -> #(String, List(Param)) {
   let sql = "insert into users (username) values (?)"
   #(sql, [ParamString(username)])
 }
@@ -78,7 +78,7 @@ pub type ListUsers {
   ListUsers(id: Int, username: String)
 }
 
-pub fn list_users() {
+pub fn list_users() -> #(String, List(Param), decode.Decoder(ListUsers)) {
   let sql = "select id, username from users"
   #(sql, [], list_users_decoder())
 }

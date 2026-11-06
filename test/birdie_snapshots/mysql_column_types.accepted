@@ -84,7 +84,7 @@ pub type AccountsStatus {
   Suspended
 }
 
-pub fn accounts_status_decoder() {
+pub fn accounts_status_decoder() -> decode.Decoder(AccountsStatus) {
   use variant <- decode.then(decode.string)
   case variant {
     "active" -> decode.success(Active)
@@ -93,7 +93,7 @@ pub fn accounts_status_decoder() {
   }
 }
 
-pub fn accounts_status_to_string(val: AccountsStatus) {
+pub fn accounts_status_to_string(val: AccountsStatus) -> String {
   case val {
     Active -> "active"
     Suspended -> "suspended"
@@ -113,7 +113,9 @@ pub type GetAccount {
   )
 }
 
-pub fn get_account(id id: Int) {
+pub fn get_account(
+  id id: Int,
+) -> #(String, List(Param), decode.Decoder(GetAccount)) {
   let sql =
     "select id, email, status, is_verified, balance, created_at, last_login, birthday from accounts where id = ?"
   #(sql, [ParamInt(id)], get_account_decoder())
@@ -145,7 +147,7 @@ pub fn create_account(
   status status: AccountsStatus,
   is_verified is_verified: Bool,
   created_at created_at: Timestamp,
-) {
+) -> #(String, List(Param)) {
   let sql =
     "insert into accounts (email, status, is_verified, created_at)
 values (?, ?, ?, ?)"
@@ -161,7 +163,9 @@ pub type AccountsByIds {
   AccountsByIds(id: Int, email: String)
 }
 
-pub fn accounts_by_ids(ids ids: List(Int)) {
+pub fn accounts_by_ids(
+  ids ids: List(Int),
+) -> #(String, List(Param), decode.Decoder(AccountsByIds)) {
   let ids_slice = case ids {
     [] -> "NULL"
     _ -> list.map(ids, fn(_) { "?" }) |> string.join(",")

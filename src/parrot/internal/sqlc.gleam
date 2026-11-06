@@ -28,7 +28,7 @@ pub const sqlc_version = "1.31.1"
 const download_base = "https://downloads.sqlc.dev/sqlc_" <> sqlc_version
 
 /// sha256 of the sqlc release for each `<os>_<cpu>`, printed by
-/// `gleam run -m parrot_dev/sqlc_hashes`.
+/// `gleam run -m parrot_dev/sqlc_hash`.
 ///
 pub const platforms = [
   #(

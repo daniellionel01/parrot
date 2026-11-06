@@ -16,7 +16,7 @@ pub type ParrotError {
   FileError(action: String, path: String, reason: simplifile.FileError)
   NoQueriesFound
 
-  SqliteDBNotFound(path: String)
+  SqliteDatabaseNotFound(path: String)
   InvalidConnectionString(engine: String, expected: String)
 
   SchemaDumpError(command: String, output: String)
@@ -41,7 +41,7 @@ pub type ParrotError {
   UnsupportedEmbedError(query: String)
 }
 
-pub fn to_string(error: ParrotError) {
+pub fn to_string(error: ParrotError) -> String {
   case error {
     EnvironmentVariableEmpty(e) -> {
       "Environment Variable \"" <> e <> "\" is empty!"
@@ -73,7 +73,7 @@ pub fn to_string(error: ParrotError) {
       "no queries were found. Parrot looks for `*.sql` files inside of "
       <> "`sql` directories in `src`, f.e. `src/app/sql/users.sql`."
     }
-    SqliteDBNotFound(path:) -> {
+    SqliteDatabaseNotFound(path:) -> {
       "sqlite database `" <> path <> "` does not exist"
     }
     InvalidConnectionString(engine:, expected:) -> {

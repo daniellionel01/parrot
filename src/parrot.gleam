@@ -14,7 +14,7 @@ import parrot/internal/database
 import parrot/internal/project
 import parrot/internal/sqlc
 
-pub fn main() {
+pub fn main() -> Nil {
   let result = {
     use command <- result.try(cli.parse(argv.load().arguments))
     case command {

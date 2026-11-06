@@ -73,7 +73,7 @@ pub type Inet {
   Inet(address: BitArray, mask: Int)
 }
 
-pub fn bool_decoder() {
+pub fn bool_decoder() -> decode.Decoder(Bool) {
   let int_to_bool = {
     decode.int
     |> decode.then(fn(v) {

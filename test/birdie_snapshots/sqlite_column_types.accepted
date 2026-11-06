@@ -84,7 +84,9 @@ pub type GetThing {
   )
 }
 
-pub fn get_thing(id id: Int) {
+pub fn get_thing(
+  id id: Int,
+) -> #(String, List(Param), decode.Decoder(GetThing)) {
   let sql =
     "select id, name, nickname, score, data, active, born, created_at, price from things where id = ?"
   #(sql, [ParamInt(id)], get_thing_decoder())
@@ -122,7 +124,7 @@ pub fn insert_thing(
   born born: option.Option(Date),
   created_at created_at: Timestamp,
   price price: option.Option(Float),
-) {
+) -> #(String, List(Param)) {
   let sql =
     "insert into things (name, nickname, score, data, active, born, created_at, price)
 values (?, ?, ?, ?, ?, ?, ?, ?)"

@@ -91,7 +91,7 @@ pub type UserRole {
   Guest
 }
 
-pub fn user_role_decoder() {
+pub fn user_role_decoder() -> decode.Decoder(UserRole) {
   use variant <- decode.then(decode.string)
   case variant {
     "admin" -> decode.success(Admin)
@@ -101,7 +101,7 @@ pub fn user_role_decoder() {
   }
 }
 
-pub fn user_role_to_string(val: UserRole) {
+pub fn user_role_to_string(val: UserRole) -> String {
   case val {
     Admin -> "admin"
     RegularUser -> "regular_user"
@@ -113,7 +113,9 @@ pub type GetPastRoles {
   GetPastRoles(past_roles: List(UserRole))
 }
 
-pub fn get_past_roles(id id: Int) {
+pub fn get_past_roles(
+  id id: Int,
+) -> #(String, List(Param), decode.Decoder(GetPastRoles)) {
   let sql = "select past_roles from users where id = $1"
   #(sql, [ParamInt(id)], get_past_roles_decoder())
 }
@@ -123,7 +125,10 @@ pub fn get_past_roles_decoder() -> decode.Decoder(GetPastRoles) {
   decode.success(GetPastRoles(past_roles:))
 }
 
-pub fn set_past_roles(past_roles past_roles: List(UserRole), id id: Int) {
+pub fn set_past_roles(
+  past_roles past_roles: List(UserRole),
+  id id: Int,
+) -> #(String, List(Param)) {
   let sql = "update users set past_roles = $1 where id = $2"
   #(sql, [
     ParamList(
@@ -137,7 +142,7 @@ pub type GetUserRoles {
   GetUserRoles(role: UserRole, previous_role: option.Option(UserRole))
 }
 
-pub fn get_user_roles() {
+pub fn get_user_roles() -> #(String, List(Param), decode.Decoder(GetUserRoles)) {
   let sql = "select role, previous_role from users"
   #(sql, [], get_user_roles_decoder())
 }
@@ -148,7 +153,7 @@ pub fn get_user_roles_decoder() -> decode.Decoder(GetUserRoles) {
   decode.success(GetUserRoles(role:, previous_role:))
 }
 
-pub fn set_role(role role: UserRole, id id: Int) {
+pub fn set_role(role role: UserRole, id id: Int) -> #(String, List(Param)) {
   let sql = "update users set role = $1 where id = $2"
   #(sql, [ParamString(user_role_to_string(role)), ParamInt(id)])
 }
@@ -157,7 +162,9 @@ pub type UsersWithRole {
   UsersWithRole(id: Int, username: String)
 }
 
-pub fn users_with_role(role role: UserRole) {
+pub fn users_with_role(
+  role role: UserRole,
+) -> #(String, List(Param), decode.Decoder(UsersWithRole)) {
   let sql = "select id, username from users where role = $1"
   #(sql, [ParamString(user_role_to_string(role))], users_with_role_decoder())
 }

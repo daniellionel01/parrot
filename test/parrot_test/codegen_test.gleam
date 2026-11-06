@@ -10,69 +10,69 @@ import gleam/list
 import gleam/string
 import parrot/error
 import parrot/internal/codegen/runtime
-import parrot/internal/database.{MySQL, PostgreSQL, SQLite}
-import parrot_test/tooling/fixtures
+import parrot/internal/database.{Mysql, Postgresql, Sqlite}
+import parrot_test/tooling/fixture
 import parrot_test/tooling/pipeline.{type Fixture, Fixture}
 import parrot_test/tooling/summary
 import parrot_test/tooling/test_database
 
 pub fn sqlite_basic_test() {
-  check(fixtures.sqlite_basic())
+  check(fixture.sqlite_basic())
 }
 
 pub fn sqlite_column_types_test() {
-  check(fixtures.sqlite_column_types())
+  check(fixture.sqlite_column_types())
 }
 
 pub fn sqlite_named_and_slice_params_test() {
-  check(fixtures.sqlite_named_and_slice_params())
+  check(fixture.sqlite_named_and_slice_params())
 }
 
 pub fn sqlite_keywords_test() {
-  check(fixtures.sqlite_keywords())
+  check(fixture.sqlite_keywords())
 }
 
 pub fn sqlite_app_test() {
-  check(fixtures.sqlite_app())
+  check(fixture.sqlite_app())
 }
 
 pub fn sqlite_no_optional_test() {
-  check(fixtures.sqlite_no_optional())
+  check(fixture.sqlite_no_optional())
 }
 
 pub fn postgres_enums_test() {
-  check(fixtures.postgres_enums())
+  check(fixture.postgres_enums())
 }
 
 pub fn postgres_arrays_test() {
-  check(fixtures.postgres_arrays())
+  check(fixture.postgres_arrays())
 }
 
 pub fn postgres_column_types_test() {
-  check(fixtures.postgres_column_types())
+  check(fixture.postgres_column_types())
 }
 
 pub fn postgres_joins_and_commands_test() {
-  check(fixtures.postgres_joins_and_commands())
+  check(fixture.postgres_joins_and_commands())
 }
 
 pub fn postgres_app_test() {
-  check(fixtures.postgres_app())
+  check(fixture.postgres_app())
 }
 
 pub fn mysql_column_types_test() {
-  check(fixtures.mysql_column_types())
+  check(fixture.mysql_column_types())
 }
 
 pub fn mysql_app_test() {
-  check(fixtures.mysql_app())
+  check(fixture.mysql_app())
 }
 
 // === ERRORS ===============================================================
 
 pub fn sqlite_postgres_style_parameter_error_test() {
-  fixture(
-    SQLite,
+  error_fixture(
+    Sqlite,
     schema: "create table users (id integer primary key);",
     queries: "
 -- name: GetUser :one
@@ -82,8 +82,8 @@ select * from users where id = $1;",
 }
 
 pub fn postgres_unknown_table_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "create table users (id serial primary key);",
     queries: "
 -- name: GetPost :one
@@ -93,8 +93,8 @@ select * from posts where id = $1;",
 }
 
 pub fn enum_and_query_name_collision_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "
 create type status as enum ('open', 'closed');
 create table tickets (id serial primary key, status status not null);",
@@ -106,8 +106,8 @@ select status from tickets;",
 }
 
 pub fn empty_enum_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "
 create type nothing as enum ();
 create table things (id serial primary key, value nothing not null);",
@@ -119,8 +119,8 @@ select value from things;",
 }
 
 pub fn duplicate_enum_value_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "
 create type ticket_status as enum ('open', 'closed');
 create type door_status as enum ('open', 'locked');
@@ -137,8 +137,8 @@ select status from doors;",
 }
 
 pub fn enum_values_colliding_in_pascal_case_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "
 create type ticket_status as enum ('open', 'OPEN', 'closed');
 create table tickets (id serial primary key, status ticket_status not null);",
@@ -150,8 +150,8 @@ select status from tickets;",
 }
 
 pub fn postgres_unnamed_parameter_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "create table posts (id serial primary key, tags text[] not null);",
     queries: "
 -- name: PostsWithTag :many
@@ -161,8 +161,8 @@ select id from posts where $1::text = any(tags);",
 }
 
 pub fn embed_unsupported_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "
 create table authors (id serial primary key, name text not null);
 create table books (id serial primary key, author_id int not null, title text not null);",
@@ -175,8 +175,8 @@ from books join authors on authors.id = books.author_id;",
 }
 
 pub fn execrows_unsupported_error_test() {
-  fixture(
-    PostgreSQL,
+  error_fixture(
+    Postgresql,
     schema: "create table books (id serial primary key);",
     queries: "
 -- name: DeleteBook :execrows
@@ -186,8 +186,8 @@ delete from books where id = $1;",
 }
 
 pub fn execlastid_unsupported_error_test() {
-  fixture(
-    MySQL,
+  error_fixture(
+    Mysql,
     schema: "create table books (id int not null auto_increment primary key, title text not null);",
     queries: "
 -- name: CreateBook :execlastid
@@ -198,7 +198,7 @@ insert into books (title) values (?);",
 
 // === HELPERS ==============================================================
 
-fn fixture(
+fn error_fixture(
   engine: database.Engine,
   schema schema: String,
   queries queries: String,
