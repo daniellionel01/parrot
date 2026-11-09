@@ -1,8 +1,10 @@
-# Migration Guide v2 -> v3
+# Migrating from v2 to v3
 
-## Dev dependency
+## Parrot is a dev dependency now
 
-Parrot is now a dev dependency. Everything from `parrot/dev` is part of the generated module.
+Parrot only runs at development time, so it no longer belongs in your
+dependencies. Everything that used to live in `parrot/dev` is now part of the
+generated module.
 
 ```sh
 $ gleam remove parrot
@@ -10,7 +12,7 @@ $ gleam add --dev parrot
 $ gleam run -m parrot
 ```
 
-Replace `parrot/dev` with your generated module:
+Then point your imports at the generated module instead of `parrot/dev`:
 
 ```diff
 - import parrot/dev
@@ -23,11 +25,12 @@ Replace `parrot/dev` with your generated module:
 +     sql.ParamInt(x) -> pog.int(x)
 ```
 
-Same for the decoders, f.e. `dev.datetime_decoder()` -> `sql.datetime_decoder()`.
+The decoders moved too, so `dev.datetime_decoder()` becomes
+`sql.datetime_decoder()`.
 
 ## New `Param` variants
 
-Add them to your wrapper:
+Your wrapper needs to handle four new variants:
 
 ```gleam
 sql.ParamTimeOfDay(x) -> pog.calendar_time_of_day(x)
@@ -36,11 +39,17 @@ sql.ParamInet(x) -> ...
 sql.ParamMacaddr(x) -> ...
 ```
 
-pog has no encoders for `interval`, `inet` and `macaddr`, see the pog [driver.gleam](https://github.com/daniellionel01/parrot/blob/main/test_projects/postgres/src/app/driver.gleam).
+pog doesn't ship encoders for `interval`, `inet` or `macaddr`. The
+[example driver](https://github.com/daniellionel01/parrot/blob/main/test_projects/postgres/src/app/driver.gleam)
+shows one way to write them.
 
-See [wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md) for sqlight and shork.
+Using sqlight or shork? Their wrappers are in
+[wrappers](https://github.com/daniellionel01/parrot/blob/main/pages/wrappers.md).
 
-## Changed types
+## Column types that changed
+
+A few postgres columns now decode to better types. Some of the old ones were
+just wrong, like `interval` as `Int`.
 
 | Column                  | v2               | v3               |
 | ----------------------- | ---------------- | ---------------- |
