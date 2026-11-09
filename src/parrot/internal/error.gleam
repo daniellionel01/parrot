@@ -10,32 +10,23 @@ import tom
 pub type ParrotError {
   // === CONFIGURATION ========================================================
   UnknownArgument(argument: String)
-  /// A flag like `--sqlite` without its value.
   MissingFlagValue(flag: String)
   CouldNotReadGleamToml(path: String, reason: simplifile.FileError)
   InvalidGleamToml(path: String, reason: tom.ParseError)
-  /// A setting in `gleam.toml` is missing or has the wrong type.
   InvalidGleamTomlValue(reason: tom.GetError)
   UnknownEngine(name: String)
-  /// The schema comes from the files at `schema`, so the engine can't be
-  /// detected from a connection string.
   MissingEngine(schema: String)
-  /// The engine can't be detected from the connection string in `env_var`.
-  /// The connection string is left out, since it may contain a password.
+  /// Leaves out the connection string, it may contain a password.
   UnknownConnectionString(env_var: String)
-  /// There is no schema and the environment variable `env_var` is not set
-  /// or empty.
   MissingConnectionString(env_var: String)
 
   // === PROJECT ==============================================================
   CouldNotReadQueries(path: String, reason: simplifile.FileError)
-  /// There are no `*.sql` files in `sql` directories below `directory`.
   NoQueriesFound(directory: String)
 
   // === DATABASE =============================================================
   SqliteDatabaseNotFound(path: String)
-  /// `expected` is the format of a connection string. The connection string
-  /// is left out, since it may contain a password.
+  /// Leaves out the connection string, it may contain a password.
   InvalidConnectionString(expected: String)
   CouldNotFetchSchema(executable: String, reason: CommandError)
 
@@ -44,17 +35,14 @@ pub type ParrotError {
   SqlcDownloadFailed(url: String, reason: DownloadError)
   SqlcChecksumMismatch(url: String, expected: String, received: String)
   CouldNotInstallSqlc(path: String, reason: simplifile.FileError)
-  /// `sqlc.bin` is `"system"`, but there is no `sqlc` in the PATH.
   SqlcNotInPath
   CouldNotRunSqlc(binary: String, reason: CommandError)
-  /// sqlc ran but failed, f.e. because of an error in a query.
+  /// sqlc ran but exited with an error, e.g. on an invalid query.
   SqlcFailed(reason: CommandError)
-  /// Reading or writing the files parrot passes to and gets from sqlc.
   CouldNotUseWorkDirectory(path: String, reason: simplifile.FileError)
   UnexpectedSqlcOutput(reason: json.DecodeError)
 
   // === CODE GENERATION ======================================================
-  /// Two definitions of the generated module have the same name.
   DuplicateDefinition(name: String, first: Definition, second: Definition)
   EmptyEnum(enum: String)
   UnnamedParameter(query: String, position: Int)
@@ -69,24 +57,21 @@ pub type ParrotError {
 }
 
 pub type DownloadError {
-  /// F.e. because there is no internet connection.
   RequestFailed(httpc.HttpError)
   UnexpectedStatus(Int)
-  /// The download does not contain a sqlc binary.
   BinaryNotInArchive
 }
 
-/// What a definition of the generated module is generated from.
+/// What defines a name in the generated module.
 pub type Definition {
-  /// The code that is the same in every generated module, its imports and
-  /// gleam's prelude.
+  /// Shared runtime code, its imports and gleam's prelude.
   RuntimeDefinition
   /// The enum's type and functions.
   EnumDefinition(enum: String)
-  /// The constructor of one of the enum's values.
+  /// A value's constructor.
   EnumValueDefinition(enum: String, value: String)
-  /// The query's function and, if it returns rows, the row's type,
-  /// constructor and decoder.
+  /// The query's function, and the row type, constructor and decoder if it
+  /// returns rows.
   QueryDefinition(query: String)
 }
 

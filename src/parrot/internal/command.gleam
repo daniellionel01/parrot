@@ -5,22 +5,18 @@ import gleam/option.{type Option, None, Some}
 import gleam/string
 
 pub type CommandError {
-  /// It could not be started, f.e. because it is not installed.
   CouldNotStart(reason: child_process.StartError)
-  /// It exited with a non-zero `status`. `output` is everything it printed,
-  /// or `None` if its errors went straight to the terminal.
+  /// `output` is `None` when stderr went to the terminal.
   Failed(status: Int, output: Option(String))
 }
 
-/// Runs a command for its output, f.e. a schema dump. Warnings and errors
-/// on stderr go to the terminal instead of into the output.
+/// Captures stdout only, stderr goes to the terminal.
 ///
 pub fn output(command: Builder) -> Result(String, CommandError) {
   run_capturing(command, stderr: False)
 }
 
-/// Runs a command for its effect. Errors with everything it printed if it
-/// does not exit successfully.
+/// Captures stdout and stderr.
 ///
 pub fn run(command: Builder) -> Result(String, CommandError) {
   run_capturing(command, stderr: True)

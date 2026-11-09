@@ -1,7 +1,3 @@
-//// Everything that differs between SQLite, PostgreSQL and MySQL, apart from
-//// their column types: connection strings and fetching the schema.
-////
-
 import child_process
 import filepath
 import gleam/bool

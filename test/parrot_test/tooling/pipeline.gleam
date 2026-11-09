@@ -2,7 +2,8 @@
 
 import filepath
 import gleam/result
-import parrot/internal/codegen
+import parrot/internal/codegen/analyse
+import parrot/internal/codegen/print
 import parrot/internal/database.{type Engine}
 import parrot/internal/error
 import parrot/internal/project
@@ -48,9 +49,10 @@ pub fn run(fixture: Fixture) -> Result(Output, error.ParrotError) {
       queries: [queries],
     ),
   )
-  use unknown_types <- result.try(codegen.generate(output, to: module))
+  use analysed <- result.try(analyse.module(output))
+  use _ <- result.try(print.write(analysed, to: module))
   let assert Ok(module) = simplifile.read(module)
-  Ok(Output(sqlc: output, module:, unknown_types:))
+  Ok(Output(sqlc: output, module:, unknown_types: analysed.unknown_types))
 }
 
 fn write(root: String, path: String, contents: String) -> String {

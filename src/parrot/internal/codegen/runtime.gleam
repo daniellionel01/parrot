@@ -1,13 +1,9 @@
-//// Code that is the same in every generated module: the `Param` type,
-//// shared decoders and how the generated code refers to them.
-
 import parrot/internal/codegen/model.{
   type Scalar, GleamBitArray, GleamBool, GleamDate, GleamDynamic, GleamFloat,
   GleamInet, GleamInt, GleamInterval, GleamMacaddr, GleamString, GleamTimeOfDay,
   GleamTimestamp,
 }
 
-/// What `code` needs.
 pub const imports = [
   "import gleam/dynamic/decode",
   "import gleam/float",
@@ -16,8 +12,7 @@ pub const imports = [
   "import gleam/time/timestamp.{type Timestamp}",
 ]
 
-/// Types that `code`, its imports and the prelude define. A definition with
-/// the same name would shadow them.
+/// Generated types must not reuse these names.
 pub const types = [
   // prelude
   "BitArray", "Bool", "Float", "Int", "List", "Nil", "Result", "String",
@@ -28,8 +23,7 @@ pub const types = [
   "Inet", "Interval", "Param",
 ]
 
-/// Constructors and functions that `code`, its imports and the prelude
-/// define. A definition with the same name would shadow them.
+/// Generated constructors and functions must not reuse these names.
 pub const values = [
   // prelude
   "Error", "False", "Nil", "Ok", "True",
@@ -48,7 +42,6 @@ pub const values = [
   "timestamp_decoder",
 ]
 
-/// The gleam type of a scalar, its `Param` constructor and its decoder.
 pub type ScalarCode {
   ScalarCode(type_: String, param: String, decoder: String)
 }

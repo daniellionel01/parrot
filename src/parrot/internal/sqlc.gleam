@@ -1,6 +1,3 @@
-//// Running sqlc: the binary parrot downloads, the config parrot generates
-//// and the JSON sqlc generates.
-
 import child_process
 import filepath
 import gleam/bit_array
@@ -25,8 +22,8 @@ import simplifile.{Execute, FilePermissions, Read, Write}
 
 pub const sqlc_version = "1.31.1"
 
-/// sha256 of the sqlc release for each `<os>_<cpu>`, printed by
-/// `gleam run -m parrot_dev/sqlc_hash`.
+/// sha256 of the sqlc release of each platform.
+/// https://github.com/sqlc-dev/sqlc/releases
 ///
 pub const platforms = [
   #(

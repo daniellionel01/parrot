@@ -1,8 +1,10 @@
-//// Turns a `model.Module` into gleam source code. The output is formatted
-//// with `gleam format` afterwards.
+//// Output doesn't need to be pretty, `write` runs `gleam format` on it.
 
+import child_process
+import filepath
 import gleam/int
 import gleam/list
+import gleam/result
 import gleam/string
 import parrot/internal/codegen/model.{
   type Enum, type Field, type GleamType, type Module, type Param, type Query,
@@ -10,6 +12,26 @@ import parrot/internal/codegen/model.{
   ValueParam,
 }
 import parrot/internal/codegen/runtime
+import parrot/internal/command
+import parrot/internal/error.{type ParrotError}
+import simplifile
+
+pub fn write(generated: Module, to path: String) -> Result(Nil, ParrotError) {
+  let directory = filepath.directory_name(path)
+  use _ <- result.try(
+    simplifile.create_directory_all(directory)
+    |> result.map_error(error.CouldNotWriteModule(directory, _)),
+  )
+  use _ <- result.try(
+    simplifile.write(path, module(generated))
+    |> result.map_error(error.CouldNotWriteModule(path, _)),
+  )
+  child_process.from_name("gleam")
+  |> child_process.args(["format", path])
+  |> command.run
+  |> result.map_error(error.CouldNotFormatModule(path, _))
+  |> result.replace(Nil)
+}
 
 pub fn module(module: Module) -> String {
   [
@@ -198,8 +220,7 @@ fn sql(parts: List(model.SqlPart)) -> String {
   |> string.join(" <> ")
 }
 
-/// Without slices the params are a list literal, otherwise every param
-/// becomes a list and they are flattened.
+/// A list literal, or with slices a flattened list of lists.
 ///
 fn params(params: List(Param)) -> String {
   let values =
@@ -228,8 +249,6 @@ fn params(params: List(Param)) -> String {
   }
 }
 
-/// Wraps the gleam value `variable` of type `type_` in a `Param`.
-///
 fn value_to_param(variable: String, type_: GleamType) -> String {
   case type_ {
     Scalar(scalar) -> runtime.scalar(scalar).param <> "(" <> variable <> ")"
@@ -246,8 +265,6 @@ fn value_to_param(variable: String, type_: GleamType) -> String {
   }
 }
 
-/// A function turning a list item into a `Param`.
-///
 fn item_to_param(item: GleamType) -> String {
   case item {
     Scalar(scalar) -> runtime.scalar(scalar).param

@@ -6,7 +6,8 @@ import gleam/bool
 import gleam/io
 import gleam/list
 import gleam/result
-import parrot/internal/codegen
+import parrot/internal/codegen/analyse
+import parrot/internal/codegen/print
 import parrot/internal/config
 import parrot/internal/database
 import parrot/internal/error
@@ -51,6 +52,16 @@ pub fn main() -> Nil {
 @external(erlang, "erlang", "halt")
 fn exit(status: Int) -> Nil
 
+/// Generates the gleam module for every query in the project:
+///
+/// 1. collects the `*.sql` files in every `sql` directory below `src`
+/// 2. finds the sqlc binary, downloading it into `build/.parrot` if parrot
+///    manages it
+/// 3. reads the schema from files, or fetches it from the database
+/// 4. runs sqlc on the queries and schema inside of `build/.parrot`
+/// 5. writes the module to `config.output` and warns about every column type
+///    parrot does not know
+///
 fn generate(
   config: config.Config,
   root: String,
@@ -82,30 +93,43 @@ fn generate(
     schema:,
     queries:,
   ))
-  use unknown_types <- result.try(codegen.generate(
-    output,
-    to: from_root(config.output, root),
-  ))
+  use module <- result.try(analyse.module(output))
+  use _ <- result.try(print.write(module, to: from_root(config.output, root)))
 
-  list.each(unknown_types, fn(unknown) {
+  list.each(module.unknown_types, fn(unknown) {
     io.println_error(yellow("unknown column type: " <> unknown))
   })
   io.println("")
   Ok(Nil)
 }
 
+/// Path to the sqlc binary:
+///
+/// - `Managed`: parrot's own binary in `work_directory`, downloaded again if
+///   it is missing or its checksum does not match the release
+/// - `System`: `sqlc` from the `PATH`
+/// - `Binary(path)`: the binary at `path`, relative to `root`
+///
+/// parrot only knows the version of its own binary, so it checks the version
+/// of the other two and warns if it is not `sqlc.sqlc_version`.
+///
 fn sqlc_binary(
   sqlc: config.Sqlc,
   root: String,
   work_directory: String,
 ) -> Result(String, error.ParrotError) {
   case sqlc {
-    config.Managed -> sqlc.managed_binary(in: work_directory)
-    config.System ->
+    config.Managed -> {
+      sqlc.managed_binary(in: work_directory)
+    }
+    config.System -> {
       child_process.find_executable("sqlc")
       |> result.replace_error(error.SqlcNotInPath)
       |> result.try(check_version)
-    config.Binary(path) -> check_version(from_root(path, root))
+    }
+    config.Binary(path) -> {
+      check_version(from_root(path, root))
+    }
   }
 }
 

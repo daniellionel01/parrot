@@ -1,5 +1,4 @@
-//// Turns the output of sqlc into a `model.Module`. Every name is decided and
-//// every check that can fail happens here, printing the module can not fail.
+//// All validation happens here, `print` assumes a valid model.
 
 import gleam/bool
 import gleam/dict
@@ -112,8 +111,7 @@ fn query(
   ))
 }
 
-/// The variables of the query function do not shadow the `sql` it builds,
-/// nor the functions it calls.
+/// Variables must not shadow `sql` or the functions the query calls.
 ///
 fn params(
   params: List(sqlc.Param),
@@ -171,7 +169,7 @@ fn params(
   |> pair.second
 }
 
-/// The variables of the row decoder do not shadow the decoders it calls.
+/// Variables must not shadow the decoders the row decoder calls.
 ///
 fn fields(
   query: sqlc.Query,
@@ -202,7 +200,6 @@ fn fields(
   |> pair.second
 }
 
-/// The enums used by a type.
 fn enums_in(type_: GleamType) -> List(model.Enum) {
   case type_ {
     Scalar(_) -> []
@@ -211,7 +208,6 @@ fn enums_in(type_: GleamType) -> List(model.Enum) {
   }
 }
 
-/// The sql types parrot does not know used by a type.
 fn unknown_types(type_: GleamType) -> List(String) {
   case type_ {
     Scalar(GleamDynamic(sql_type:)) -> [sql_type]
@@ -231,8 +227,7 @@ fn unknown_types(type_: GleamType) -> List(String) {
   }
 }
 
-/// Labels that occur more than once get a suffix, like sqlc does for go:
-/// `id`, `id_2`.
+/// `id`, `id` -> `id`, `id_2`, like sqlc for go.
 ///
 fn unique_labels(labels: List(String)) -> List(String) {
   let all = set.from_list(labels)
@@ -246,7 +241,6 @@ fn unique_labels(labels: List(String)) -> List(String) {
   |> pair.second
 }
 
-/// `name`, or else `name` with the first suffix that is not taken.
 fn unused(name: String, taken: Set(String)) -> String {
   case set.contains(taken, name) {
     True -> suffixed(name, 2, taken)
@@ -267,7 +261,6 @@ type Command {
   WithoutRows
 }
 
-/// The query annotations parrot supports.
 const commands = [
   #(":one", WithRows),
   #(":many", WithRows),
@@ -306,15 +299,9 @@ fn split_slices(
   }
 }
 
-/// The params in the order the sql binds them.
-///
-/// For sqlite, sqlc writes named params as `?<number>`, which bind the param
-/// with that number, and keeps plain `?`s, which bind the params in the
-/// order sqlc lists them. A slice is expanded into one `?` per item, but
-/// sqlite numbers each `?` one higher than the highest number so far, so a
-/// `?<number>` after a slice binds the wrong item. That's why in queries
-/// with slices every `?<number>` is replaced with a plain `?` and the
-/// params are bound in the order they occur.
+/// sqlite numbers each `?` one past the highest number so far, so a
+/// `?<number>` after an expanded slice binds the wrong item. With slices,
+/// every `?<number>` becomes a plain `?` and params bind in order.
 ///
 fn bind_in_order(
   sql: List(model.SqlPart),
@@ -391,8 +378,7 @@ fn bind_in_order(
   }
 }
 
-/// Binds `placeholders` in order. Returns the bound params in reverse and
-/// the positional params that are left.
+/// Returns the bound params in reverse and the leftover positional params.
 ///
 fn bind_placeholders(
   placeholders: List(Placeholder),
@@ -423,15 +409,13 @@ type Placeholder {
 
 type Scan {
   Code
-  /// inside of quotes, until `end`
+  /// Inside quotes, until `end`.
   Quoted(end: String)
   LineComment
   BlockComment
 }
 
-/// Replaces every `?<number>` in `sql` with `?` and returns the
-/// placeholders in order. Placeholders inside of quotes and comments are
-/// skipped.
+/// Skips placeholders inside quotes and comments.
 ///
 fn plain_placeholders(sql: String) -> #(String, List(Placeholder)) {
   scan(string.to_graphemes(sql), Code, [], [])
@@ -599,9 +583,7 @@ fn sql_type_name(column: sqlc.Column) -> String {
   }
 }
 
-/// Finds the enum a column's type refers to. Errors if the type is not a
-/// user defined enum, which includes types from a schema that is not part
-/// of the catalog sqlc built up (f.e. one created by an extension).
+/// Errors for types outside sqlc's catalog, e.g. from an extension.
 ///
 fn find_enum(
   column: sqlc.Column,
@@ -625,9 +607,7 @@ type Namespace {
   Values
 }
 
-/// Every type, constructor and function of the generated module has to have
-/// a unique name, also the ones of parrot's own code. Otherwise the module
-/// does not compile, or one of them silently shadows an imported one.
+/// Duplicate names don't compile, or silently shadow an import.
 ///
 fn check_names(
   enums: List(model.Enum),
@@ -722,15 +702,6 @@ fn escape_keyword(name: String) -> String {
 // === CASES ================================================================
 // Thank you https://github.com/lpil/justin
 
-/// Convert a string to a `snake_case`.
-///
-/// # Examples
-///
-/// ```gleam
-/// snake_case("Hello World")
-/// // -> "hello_world"
-/// ```
-///
 fn snake_case(text: String) -> String {
   text
   |> split_words
@@ -738,15 +709,6 @@ fn snake_case(text: String) -> String {
   |> string.lowercase
 }
 
-/// Convert a string to a `PascalCase`.
-///
-/// # Examples
-///
-/// ```gleam
-/// pascal_case("Hello World")
-/// // -> "HelloWorld"
-/// ```
-///
 fn pascal_case(text: String) -> String {
   text
   |> split_words

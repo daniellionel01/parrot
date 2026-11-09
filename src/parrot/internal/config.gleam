@@ -1,9 +1,4 @@
-//// Configuration for a gleam project which is
-//// gathered from command line arguments and the
-//// `[tools.parrot]` configuration in `gleam.toml`.
-////
-//// Command line arguments take precedence over `gleam.toml`.
-////
+//// Command line flags override `[tools.parrot]` in `gleam.toml`.
 
 import gleam/dict.{type Dict}
 import gleam/list
