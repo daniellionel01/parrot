@@ -1,0 +1,22 @@
+---
+version: 2.0.2
+title: duplicate enum value
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type ticket_status as enum ('open', 'closed');
+create type door_status as enum ('open', 'locked');
+create table tickets (id serial primary key, status ticket_status not null);
+create table doors (id serial primary key, status door_status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: TicketStatuses :many
+select status from tickets;
+
+-- name: DoorStatuses :many
+select status from doors;
+
+-- error -----------------------------------------------------------------------
+
+`Open` would be defined twice in the generated module, by value 'open' of enum 'ticket_status' and by value 'open' of enum 'door_status'. Names in a gleam module must be unique, after parrot converts enum names and values to PascalCase.

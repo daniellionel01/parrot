@@ -1,0 +1,68 @@
+-- name: IntegerRoundTrip :one
+insert into integers (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: RealRoundTrip :one
+insert into reals (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: NumericRoundTrip :one
+insert into numerics (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: TextRoundTrip :one
+insert into texts (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: VarcharRoundTrip :one
+insert into varchars (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: BlobRoundTrip :one
+insert into blobs (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: BooleanRoundTrip :one
+insert into booleans (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: DateRoundTrip :one
+insert into dates (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: DatetimeRoundTrip :one
+insert into datetimes (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: SqliteWrittenDatetime :one
+insert into datetimes (value, nullable_value)
+values ('2024-03-01 12:30:00', '2024-03-01T12:30:00.250')
+returning value, nullable_value;
+
+-- name: TimestampRoundTrip :one
+insert into timestamps (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: TimeRoundTrip :one
+insert into times (value, nullable_value) values (?, ?)
+returning value, nullable_value;
+
+-- name: KeywordsRoundTrip :one
+insert into keywords ("type", "case") values (?, ?)
+returning "type", "case";
+
+-- name: InsertSlice :exec
+insert into slices (value) values (?);
+
+-- name: SelectSlice :many
+select value from slices where value in (sqlc.slice('values')) order by value;
+
+-- Named params around a slice, `min` is used twice. The `?1` in the string
+-- is not a param.
+-- name: SelectSliceBetween :many
+select value from slices
+where (value > sqlc.arg(min) or value = sqlc.arg(min))
+  and value in (sqlc.slice('values'))
+  and value <= sqlc.arg(max)
+  and '?1' = '?1'
+order by value;

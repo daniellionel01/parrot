@@ -1,0 +1,29 @@
+# Databases for the integration tests (`mise run test-integration`).
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: parrot
+      POSTGRES_PASSWORD: parrot
+      POSTGRES_DB: parrot
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "parrot"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  mysql:
+    image: mysql:8.0.30
+    environment:
+      MYSQL_ROOT_PASSWORD: parrot
+      MYSQL_DATABASE: parrot
+    ports:
+      - "33306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pparrot"]
+      interval: 2s
+      timeout: 5s
+      retries: 30

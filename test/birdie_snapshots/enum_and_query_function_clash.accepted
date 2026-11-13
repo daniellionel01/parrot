@@ -1,0 +1,20 @@
+---
+version: 2.0.2
+title: enum and query function clash
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type status as enum ('open', 'closed');
+create table tickets (id serial primary key, status status not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: GetTickets :many
+select status from tickets;
+
+-- name: StatusToString :exec
+delete from tickets;
+
+-- error -----------------------------------------------------------------------
+
+`status_to_string` would be defined twice in the generated module, by enum 'status' and by query 'StatusToString'. Consider renaming the query 'StatusToString'.

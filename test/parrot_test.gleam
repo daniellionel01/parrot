@@ -2,16 +2,9 @@ import gleeunit
 import parrot/internal/project
 import parrot/internal/sqlc
 
-pub fn main() {
+pub fn main() -> Nil {
+  // so the download does not count towards a test's timeout
+  let assert Ok(_) =
+    sqlc.managed_binary(in: project.work_directory(project.root()))
   gleeunit.main()
-}
-
-pub fn parrot_test() {
-  assert project.project_name() == "parrot"
-}
-
-pub fn os_cpu_test() {
-  // just calling these functions to make sure they're accessible
-  echo sqlc.get_os()
-  echo sqlc.get_cpu()
 }

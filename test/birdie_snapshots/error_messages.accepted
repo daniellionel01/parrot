@@ -1,0 +1,75 @@
+---
+version: 2.0.2
+title: error messages
+file: ./test/parrot_test/error_test.gleam
+test_name: error_messages_test
+---
+unknown argument `--wibble`. See `gleam run -m parrot -- --help`.
+
+`--sqlite` needs a value. See `gleam run -m parrot -- --help`.
+
+could not read `/app/gleam.toml`: Permission denied
+
+`/app/gleam.toml` is not valid toml: expected a key but found =
+
+`/app/gleam.toml` is not valid toml: `tools.parrot.output` is defined more than once
+
+invalid gleam.toml: `name` is missing
+
+invalid gleam.toml: `tools.parrot.output` has to be of type String, not Int
+
+unknown engine: oracle. Expected postgresql, mysql or sqlite.
+
+could not detect the database engine of the schema `priv/schema.sql`. Set `engine` in `[tools.parrot]` or pass `--engine`.
+
+could not detect the database engine from the connection string in `DATABASE_URL`. It has to start with `postgres`, `mysql`, `sqlite:` or `file:`. Otherwise set `engine` in `[tools.parrot]` or pass `--engine`.
+
+the environment variable `DATABASE_URL` is not set. Set it to the connection string of your database, or use `--sqlite <PATH>` or `--schema <PATH>`.
+
+could not read `/app/src` while looking for queries: Permission denied
+
+no queries were found in `/app/src`. Parrot looks for `*.sql` files inside of `sql` directories, f.e. `src/app/sql/users.sql`.
+
+sqlite database `/app/app.db` does not exist
+
+could not parse the connection string. Expected the format: mysql://user:password@host:port/database
+
+could not fetch the database schema with `pg_dump`:
+File not found: pg_dump
+
+could not fetch the database schema with `pg_dump`:
+exited with status 1, see its errors above
+
+parrot can not download sqlc for freebsd amd64. If you have a sqlc binary, set `bin` in `[tools.parrot.sqlc]` or pass `--sqlc` with its path.
+
+could not download sqlc from https://downloads.sqlc.dev/sqlc.tar.gz: could not connect, nxdomain
+
+could not download sqlc from https://downloads.sqlc.dev/sqlc.tar.gz: the server responded with status 404
+
+could not download sqlc from https://downloads.sqlc.dev/sqlc.tar.gz: the download does not contain a sqlc binary
+
+the sqlc binary downloaded from https://downloads.sqlc.dev/sqlc.tar.gz does not match the expected checksum. This could mean the download was corrupted or tampered with.
+expected: abc
+received: def
+
+could not save sqlc to `/app/build/.parrot/sqlc`: No space left on device
+
+`sqlc` is not in the PATH. Install it, or remove `--sqlc system` and `bin = "system"` in `[tools.parrot.sqlc]` to let parrot download it.
+
+could not run sqlc `/usr/bin/sqlc`: unknown command
+
+could not call `sqlc generate`:
+queries.sql:1:1: syntax error
+
+could not call `sqlc generate`:
+exited with status 1
+
+could not access `/app/build/.parrot`, which parrot uses to run sqlc: Permission denied
+
+could not read the output of sqlc: unexpected end of input
+This is most likely a bug in parrot, please open an issue: https://github.com/daniellionel01/parrot/issues
+
+could not write the generated module `/app/src/app/sql.gleam`: Permission denied
+
+could not format the generated module `/app/src/app/sql.gleam`:
+error: Syntax error

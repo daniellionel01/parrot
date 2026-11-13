@@ -1,0 +1,17 @@
+---
+version: 2.0.2
+title: empty enum
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type nothing as enum ();
+create table things (id serial primary key, value nothing not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: GetThings :many
+select value from things;
+
+-- error -----------------------------------------------------------------------
+
+enum 'nothing' has no variants. Empty enums cannot be represented in Gleam. Please add values to the enum or remove it from your schema.

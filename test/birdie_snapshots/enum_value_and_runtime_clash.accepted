@@ -1,0 +1,17 @@
+---
+version: 2.0.2
+title: enum value and runtime clash
+---
+-- schema.sql ------------------------------------------------------------------
+
+create type event_kind as enum ('date', 'meeting');
+create table events (id serial primary key, kind event_kind not null);
+
+-- queries.sql -----------------------------------------------------------------
+
+-- name: GetEvents :many
+select kind from events;
+
+-- error -----------------------------------------------------------------------
+
+`Date` would be defined twice in the generated module, by parrot's own code and by value 'date' of enum 'event_kind'. Parrot can not generate this name yet, please open an issue: https://github.com/daniellionel01/parrot/issues
